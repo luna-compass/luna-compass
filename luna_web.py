@@ -23,7 +23,7 @@ st.set_page_config(
 st.markdown("""
 <style>
 .stApp {
-    background: radial-gradient(circle at top, #fdf4ff 0%, #f5f3ff 20%, #8a2be2 100%);
+    background: radial-gradient(circle at top, #fdf4ff 0%, #f5f3ff 20%, #9400d3 100%);
 }
 
 /* タイトルの白い帯 */
@@ -645,6 +645,7 @@ with tab3:
             unsafe_allow_html=True
         )
     st.markdown("</div>", unsafe_allow_html=True)
+
 
 
 
