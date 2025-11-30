@@ -427,7 +427,7 @@ with tab1:
     st.markdown("<div class='luna-card'>", unsafe_allow_html=True)
 
     mode = st.radio(
-        "今回占う人",
+        "自分（Luna）を占う",
         ("自分を占う", "別の人を占う"),
         help="ご自身か、友人・家族など別の方かを選んでください。"
     )
@@ -645,6 +645,7 @@ with tab3:
             unsafe_allow_html=True
         )
     st.markdown("</div>", unsafe_allow_html=True)
+
 
 
 
