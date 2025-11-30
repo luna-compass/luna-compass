@@ -23,7 +23,7 @@ st.set_page_config(
 st.markdown("""
 <style>
 .stApp {
-    background: radial-gradient(circle at top, #fdf4ff 0%, #f5f3ff 20%, #0000cd 100%);
+    background: radial-gradient(circle at top, #fdf4ff 0%, #f5f3ff 20%, #4b0082 100%);
 }
 
 /* タイトルの白い帯 */
@@ -413,7 +413,7 @@ st.markdown(
     "<div style='text-align:center; margin-top:16px; margin-bottom:12px;'>"
     "<div class='luna-header-wrap'>"
     "<div class='luna-title'>Luna 占星術</div>"
-    "<div class='luna-caption'>出生時刻込み・トランジット対応 Luna 先生術</div>"
+    "<div class='luna-caption'>出生時刻込み・トランジット対応 Luna 占星術</div>"
     "</div>"
     "</div>",
     unsafe_allow_html=True
@@ -645,3 +645,4 @@ with tab3:
             unsafe_allow_html=True
         )
     st.markdown("</div>", unsafe_allow_html=True)
+
