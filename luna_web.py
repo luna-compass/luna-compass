@@ -413,7 +413,7 @@ st.markdown(
     "<div style='text-align:center; margin-top:16px; margin-bottom:12px;'>"
     "<div class='luna-header-wrap'>"
     "<div class='luna-title'>Luna 占星術</div>"
-    "<div class='luna-caption'>出生時刻込み・トランジット対応 Luna 占星術</div>"
+    "<div class='luna-caption'>出生時刻対応・トランジット対応  Luna-compass</div>"
     "</div>"
     "</div>",
     unsafe_allow_html=True
@@ -645,6 +645,7 @@ with tab3:
             unsafe_allow_html=True
         )
     st.markdown("</div>", unsafe_allow_html=True)
+
 
 
 
