@@ -8,6 +8,10 @@ import streamlit as st
 from skyfield.api import load
 from skyfield.framelib import ecliptic_frame
 
+st.markdown(
+    "<div style='text-align:center; font-size:45px; padding-top:10px;'>🌙✨</div>",
+    unsafe_allow_html=True
+)
 # ---------- ページ設定 ----------
 st.set_page_config(
     page_title="Luna占星術 Web版",
@@ -19,7 +23,7 @@ st.set_page_config(
 st.markdown("""
 <style>
 .stApp {
-    background: radial-gradient(circle at top, #fdf4ff 0%, #f5f3ff 45%, #1e1635 100%);
+    background: radial-gradient(circle at top, #fdf4ff 0%, #f5f3ff 20%, #0000cd 100%);
 }
 
 /* タイトルの白い帯 */
