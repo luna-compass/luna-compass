@@ -14,7 +14,7 @@ st.markdown(
 )
 # ---------- ページ設定 ----------
 st.set_page_config(
-    page_title="占星術 Web版",
+    page_title="Luna 占星術 Web版",
     page_icon="🌙",
     layout="centered"
 )
