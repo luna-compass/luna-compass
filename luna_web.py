@@ -368,17 +368,24 @@ def plot_horoscope(natal_longitudes, houses, transit_longitudes=None):
     return fig
 
 # ---------- カード ----------
+from pathlib import Path
+
+ASSET_DIR = Path(__file__).parent / "assets" / "tarot"
+
 CARDS = [
-    ("星", "希望・インスピレーション・『私ならできる』という感覚。"),
-    ("女教皇", "直感・知恵・静かな洞察。心の声を聴くタイミングです。"),
-    ("運命の輪", "流れが変わるタイミング。新しいチャンスが巡ってきます。"),
-    ("世界", "ひとつのサイクルの完成。次のステージへの準備が整っています。"),
-    ("月", "感情の揺れや不安。けれど、その奥に本音や本当の望みがあります。"),
-    ("太陽", "成功・喜び・祝福。自分を信じて進んで大丈夫な時期です。"),
+    ("愚者", "自由、冒険、はじまり", str(ASSET_DIR / "00_fool.png")),
+    ("魔術師", "創造、可能性、スタート", str(ASSET_DIR / "01_magician.png")),
+    ("女教皇", "直感、知性、内省", str(ASSET_DIR / "02_high_priestess.png")),
+    ("女帝", "愛、豊かさ、実り", str(ASSET_DIR / "03_empress.png")),
+    ("星", "希望、インスピレーション", str(ASSET_DIR / "17_star.png")),
 ]
 
+import random
+
 def draw_card():
+    # CARDS は (name, msg, img_path) のタプル想定
     return random.choice(CARDS)
+
 
 # ---------- 相性 ----------
 def get_element(sign):
@@ -633,18 +640,39 @@ with tab2:
 with tab3:
     st.markdown("<div class='luna-card'>", unsafe_allow_html=True)
     st.markdown("### 🔮 1枚カードメッセージ", unsafe_allow_html=True)
-    if st.button("カードを1枚引く", key="card"):
-        card_name, card_msg = draw_card()
-        st.markdown(
-            f"""
-            <div class="luna-card-box">
-                <div class="luna-subtitle">カード：{card_name}</div>
-                <div style="margin-top:6px;color:#2b1b4b;">{card_msg}</div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-    st.markdown("</div>", unsafe_allow_html=True)
+from pathlib import Path
+import streamlit as st
+
+if st.button("カードを1枚引く", key="card"):
+    card_name, card_msg, card_img = draw_card()
+
+    # 画像がある場合だけ表示（エラー防止）
+    if card_img and Path(card_img).exists():
+        
+        img_path = Path(card_img) if card_img else None
+
+    if img_path and img_path.exists():
+        col1, col2, col3 = st.columns([2, 3, 2])
+        with col2:
+            st.image(img_path.read_bytes(), width=200)
+            st.markdown(f"### {card_name}")
+            st.write(card_msg)
+
+    else:
+        st.caption("（画像がまだ未設定 or 見つかりません）")
+
+
+    # 既存の表示はそのまま
+    st.markdown(
+        f"""
+        <div class="luna-card-box">
+            <div class="luna-subtitle">カード：{card_name}</div>
+            <div style="margin-top:6px;color:#2b1b4b;">{card_msg}</div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
 
 
 
