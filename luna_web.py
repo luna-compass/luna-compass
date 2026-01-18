@@ -654,7 +654,7 @@ if st.button("カードを1枚引く", key="card"):
     if img_path and img_path.exists():
         col1, col2, col3 = st.columns([2, 3, 2])
         with col2:
-            st.image(img_path.read_bytes(), width=200)
+            st.image(img_path.read_bytes(), width=350)
             st.markdown(f"### {card_name}")
             st.write(card_msg)
 
