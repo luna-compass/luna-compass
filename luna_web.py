@@ -1,3 +1,13 @@
+import streamlit as st
+
+st.markdown("""
+<style>
+.block-container {
+    padding-top: 120px !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
 import datetime
 import random
 import io  # 追加：ダウンロード用
