@@ -38,7 +38,7 @@ st.markdown("""
 }
 
 .block-container {
-    padding-top: 3rem;
+    padding-top: 80px !important;
 }
             
 /* タイトルの白い帯 */
