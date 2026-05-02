@@ -97,6 +97,44 @@ st.markdown("""
     margin-top: 10px;
     box-shadow: 0 8px 18px rgba(15, 23, 42, 0.18);
 }
+
+@media (max-width: 768px) {
+    .block-container {
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+        padding-top: 1rem !important;
+    }
+
+    .luna-card {
+        max-width: 100% !important;
+        padding: 14px 14px !important;
+    }
+
+    .luna-title {
+        font-size: 30px !important;
+        letter-spacing: 0.18em !important;
+    }
+}
+
+button[kind="primary"] {
+    width: 100% !important;
+    height: 48px !important;
+    font-size: 16px !important;
+    border-radius: 10px !important;
+}
+            
+button[kind="primary"] {
+    margin-bottom: 12px !important;
+}            
+
+button[kind="primary"] {
+    border-radius: 999px !important;
+}
+
+button[kind="secondary"] {
+    border-radius: 999px !important;
+}
+                                                                         
 </style>
 """, unsafe_allow_html=True)
 
@@ -427,16 +465,45 @@ st.markdown(
 )
 
 # ---------- タブ構成 ----------
-tab1, tab2, tab3 = st.tabs(["🔮 ネイタル + トランジット", "💞 相性占い", "🃏 カードメッセージ"])
+# tab1, tab2, tab3 = st.tabs(["🔮 ネイタル", "トランジット","💞 相性占い", "🃏 カードメッセージ"])
+tab1, tab2, tab3, tab4 = st.tabs([
+    "🌙 ネイタル",
+    "🌞 トランジット",
+    "💞 相性占い",
+    "🃏 カードメッセージ"
+])
 
-# === タブ1：ネイタル + トランジット ===
+
+# === タブ1：ネイタル ===
 with tab1:
-    st.markdown("<div class='luna-card'>", unsafe_allow_html=True)
+
+    st.markdown("""
+    <style>
+    .luna-card {
+        max-width: 820px;
+        margin: 0 auto 24px auto;
+        padding: 18px 22px;
+        border-radius: 14px;
+        background: rgba(255,255,255,0.75);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+        backdrop-filter: blur(6px);
+    }
+    .luna-section-title {
+        font-weight: 600;
+        font-size: 18px;
+        margin: 6px 0 14px 0;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    st.markdown("<div class='luna-section-title'>👤 基本情報</div>", unsafe_allow_html=True)
+    #st.markdown("<div class='luna-section-title'>🔎 基本情報を入力</div>", unsafe_allow_html=True)
 
     mode = st.radio(
         "自分を占う",
         ("自分を占う", "別の人を占う"),
-        help="ご自身か、友人・家族など別の方かを選んでください。"
+        key="mode_natal",
+        help="ご自身か、他の人をを選んでください。"
     )
 
     if mode == "自分（Luna）を占う":
@@ -450,23 +517,44 @@ with tab1:
         default_hour = 12
         default_min = 0
 
-    name = st.text_input("お名前（ニックネームでもOK）", value=default_name)
-    birthday = st.date_input(
-        "生年月日（ネイタル）",
-        value=default_date,
-        min_value=datetime.date(1900, 1, 1),
-        max_value=datetime.date.today()
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        name = st.text_input("お名前", value=default_name, key="name_natal",
+        help="ニックネームでもOKです"
     )
 
+    with col2:
+        birthday = st.date_input(
+            "生年月日（ネイタル）",
+            value=default_date,
+            min_value=datetime.date(1900, 1, 1),
+            max_value=datetime.date.today(),
+            key="birthday_natal",
+            help="出生図を作るために使います"
+        )    
+  
+    st.markdown("<br>", unsafe_allow_html=True)       
+    st.markdown("<div class='luna-section-title'>⏰ 出生時間</div>", unsafe_allow_html=True)
+
     col_time1, col_time2 = st.columns(2)
+
     with col_time1:
-        birth_hour = st.number_input("出生時刻（時 0–23）", min_value=0, max_value=23, value=default_hour)
+        birth_hour = st.number_input("時", min_value=0, max_value=23,
+        help="分からなければそのままでOK"
+    )    
+
     with col_time2:
-        birth_minute = st.number_input("出生時刻（分 0–59）", min_value=0, max_value=59, value=default_min)
+        birth_minute = st.number_input("分", min_value=0, max_value=59)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("<div class='luna-section-title'>🌍 今日の運気</div>", unsafe_allow_html=True)
 
     tz_label = st.radio(
         "出生地のタイムゾーン",
-        ("日本（JST = UTC+9）", "世界時で計算（UTC・よく分からない場合）")
+        ("日本（JST = UTC+9）", "世界時で計算（UTC・よく分からない場合）"),
+        help="海外出生の場合のみ変更してください"
     )
     tz_offset = 9 if tz_label.startswith("日本") else 0
 
@@ -475,29 +563,51 @@ with tab1:
         value=datetime.date.today(),
         min_value=datetime.date(1900, 1, 1),
         max_value=datetime.date(2100, 12, 31),
-        key="transit_date"
+        key="transit_date",
+        help="今日や気になる日を選べます"
     )
 
-    st.markdown("---")
+    #st.markdown("---")
 
-    if st.button("🌙 ネイタル & トランジットを見る", key="single_chart"):
+    #col_btn1, col_btn2 = st.columns(2)
+
+    #with col_btn1:
+    #    btn_natal = st.button("🌙 ネイタルを見る", key="btn_natal")
+
+    #with col_btn2:
+    #    btn_transit = st.button("✨ 今日の運気を見る", key="btn_transit")    
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    col_btn1, col_btn2 = st.columns(2)
+
+    with col_btn1:
+        btn_natal = st.button("🌙 ネイタルを見る", use_container_width=True, type="primary")
+
+    with col_btn2:
+        btn_transit = st.button("✨ 今日の運気を見る", use_container_width=True)
+
+    if btn_natal or btn_transit:
+    # if st.button("🌙 ネイタル & トランジットを見る", key="single_chart"):
         # Time生成
         t_natal = make_ts_from_local(birthday, birth_hour, birth_minute, tz_offset)
         # トランジットは、その日の正午（現地時刻）で見る
         t_transit = make_ts_from_local(transit_date, 12, 0, tz_offset)
 
         # ネイタル
-        sun_sign, sun_deg, sun_lon = get_sun_info(t_natal)
-        moon_sign, moon_deg, moon_lon = get_moon_info(t_natal)
-        planets = get_planet_signs_ts(t_natal)
-        natal_longs = get_body_longitudes_ts(t_natal)
-        houses = get_equal_houses()
+        if btn_natal:
+            sun_sign, sun_deg, sun_lon = get_sun_info(t_natal)
+            moon_sign, moon_deg, moon_lon = get_moon_info(t_natal)
+            planets = get_planet_signs_ts(t_natal)
+            natal_longs = get_body_longitudes_ts(t_natal)
+            houses = get_equal_houses()
 
         # トランジット
-        t_sun_sign, t_sun_deg, t_sun_lon = get_sun_info(t_transit)
-        t_moon_sign, t_moon_deg, t_moon_lon = get_moon_info(t_transit)
-        trans_planets = get_planet_signs_ts(t_transit)
-        transit_longs = get_body_longitudes_ts(t_transit)
+        if btn_transit:
+            t_sun_sign, t_sun_deg, t_sun_lon = get_sun_info(t_transit)
+            t_moon_sign, t_moon_deg, t_moon_lon = get_moon_info(t_transit)
+            trans_planets = get_planet_signs_ts(t_transit)
+            transit_longs = get_body_longitudes_ts(t_transit)
 
         target_label = "あなた" if mode == "自分（Luna）を占う" else f"{name or 'この方'}"
 
@@ -508,6 +618,9 @@ with tab1:
         st.write("生年月日：", birthday)
         st.write("出生時刻：", f"{birth_hour:02d}:{birth_minute:02d}")
         st.write("タイムゾーン：", tz_label)
+
+        sun_sign, sun_deg, sun_lon = get_sun_info(t_natal)
+        moon_sign, moon_deg, moon_lon = get_moon_info(t_natal)
 
         sun_text = f"{sun_sign} {sun_deg:.2f}°"
         moon_text = f"{moon_sign} {moon_deg:.2f}°"
@@ -525,78 +638,147 @@ with tab1:
         )
 
         # トランジット
-        st.markdown("<div class='luna-section-title'>トランジット（選択した日の星の配置）</div>", unsafe_allow_html=True)
-        st.write("トランジット日：", transit_date)
-        trans_sun_text = f"{t_sun_sign} {t_sun_deg:.2f}°"
-        trans_moon_text = f"{t_moon_sign} {t_moon_deg:.2f}°"
+        if btn_transit:
+            st.markdown("<div class='luna-section-title'>トランジット（選択した日の星の配置）</div>", unsafe_allow_html=True)
+            st.write("トランジット日：", transit_date)
+            trans_sun_text = f"{t_sun_sign} {t_sun_deg:.2f}°"
+            trans_moon_text = f"{t_moon_sign} {t_moon_deg:.2f}°"
 
-        st.write("太陽（トランジット）：", trans_sun_text)
-        st.write("月　（トランジット）：", trans_moon_text)
+            st.write("太陽（トランジット）：", trans_sun_text)
+            st.write("月　（トランジット）：", trans_moon_text)
 
-        comp_sun = simple_compare_message(sun_text, trans_sun_text, "太陽")
-        comp_moon = simple_compare_message(moon_text, trans_moon_text, "月")
-        st.markdown(f"<div class='luna-message'>{comp_sun}</div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='luna-message'>{comp_moon}</div>", unsafe_allow_html=True)
+            comp_sun = simple_compare_message(sun_text, trans_sun_text, "太陽")
+            comp_moon = simple_compare_message(moon_text, trans_moon_text, "月")
+            st.markdown(f"<div class='luna-message'>{comp_sun}</div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='luna-message'>{comp_moon}</div>", unsafe_allow_html=True)
 
-        st.markdown("#### 主要トランジット惑星（サイン＆度数）")
-        for p in ["木星", "土星", "冥王星"]:
-            if p in trans_planets:
-                st.write(f"{p}：{trans_planets[p]}")
+            st.markdown("#### 主要トランジット惑星（サイン＆度数）")
+            for p in ["木星", "土星", "冥王星"]:
+                if p in trans_planets:
+                    st.write(f"{p}：{trans_planets[p]}")
 
         # 惑星メッセージ（ネイタル）
-        st.markdown("<div class='luna-section-title'>惑星からのメッセージ（ネイタル）</div>", unsafe_allow_html=True)
-        for p, v in planets.items():
-            st.write(f"{p}：{v}")
-            msg = get_planet_message(p)
-            if msg:
-                st.markdown(f"<div class='luna-message'>{msg}</div>", unsafe_allow_html=True)
+        if btn_natal:
+            st.markdown("<div class='luna-section-title'>惑星からのメッセージ（ネイタル）</div>", unsafe_allow_html=True)
+            for p, v in planets.items():
+                st.write(f"{p}：{v}")
+                msg = get_planet_message(p)
+                if msg:
+                    st.markdown(f"<div class='luna-message'>{msg}</div>", unsafe_allow_html=True)
 
         # ハウス（ネイタル）
-        st.markdown("<div class='luna-section-title'>ハウス（象徴的イコールハウス・ネイタル）</div>", unsafe_allow_html=True)
-        for num, info in houses.items():
-            sign = info["sign"]
-            msg = get_house_message(num, sign)
-            st.markdown(f"<div class='luna-message'>{msg}</div>", unsafe_allow_html=True)
+        if btn_natal:
+            st.markdown("<div class='luna-section-title'>ハウス（象徴的イコールハウス・ネイタル）</div>", unsafe_allow_html=True)
+            for num, info in houses.items():
+                sign = info["sign"]
+                msg = get_house_message(num, sign)
+                st.markdown(f"<div class='luna-message'>{msg}</div>", unsafe_allow_html=True)
 
         # 円形ホロ（ネイタル＋トランジット2重）
-        st.markdown("<div class='luna-section-title'>円形ホロスコープ（内側＝ネイタル／外側＝トランジット）</div>", unsafe_allow_html=True)
-        fig = plot_horoscope(natal_longs, houses, transit_longs)
-        st.pyplot(fig)
+        if btn_natal:
+            st.markdown("<div class='luna-section-title'>円形ホロスコープ（内側＝ネイタル／外側＝トランジット）</div>", unsafe_allow_html=True)
+            fig = plot_horoscope(natal_longs, houses, {})
+            st.pyplot(fig)
 
         # 🔽 ここから：画像ダウンロードボタン（追加分）
-        buf = io.BytesIO()
-        fig.savefig(buf, format="png", bbox_inches="tight")
-        buf.seek(0)
+            buf = io.BytesIO()
+            fig.savefig(buf, format="png", bbox_inches="tight")
+            buf.seek(0)
 
-        st.download_button(
-            label="📥 ホロスコープ画像をダウンロード",
-            data=buf,
-            file_name="luna_horoscope.png",
-            mime="image/png",
-        )
+            st.download_button(
+                label="📥 ホロスコープ画像をダウンロード",
+                data=buf,
+                file_name="luna_horoscope.png",
+                mime="image/png",
+            )
 
         # テキスト一覧（ネイタル・トランジット）
+    if btn_natal:
         st.markdown("#### 🔎 配置一覧（度数）")
         st.write("【ネイタル（出生）】")
+
         for name_body, deg in natal_longs.items():
             sign, d = split_sign_degree(deg)
-            st.write(f"{name_body}：{sign} {d:.2f}°")
+            st.write(f"{name_body}: {sign} {d:.2f}°")
 
-        st.write("【トランジット（選択した日）】")
+        # トランジット取得
+        t_sun_sign, t_sun_deg, t_sun_lon = get_sun_info(t_transit)
+        t_moon_sign, t_moon_deg, t_moon_lon = get_moon_info(t_transit)
+
+        st.markdown("### 🌟 今日の影響")
+
+        if sun_sign == t_sun_sign:
+            st.write("今日はあなたの本質が強く出る日です。自然体でいられます。")
+
+        else:
+            st.write("今日は外からの刺激を受けやすい日です。柔軟に対応すると良いでしょう。")
+
+        st.markdown("### 🌙 感情の流れ")
+
+        if moon_sign == t_moon_sign:
+            st.write("今日は感情が安定しやすく、安心して過ごせる日です。")
+
+        else:
+            st.write("今日は気持ちが揺れやすい日です。無理せず過ごしましょう。")    
+
+        st.markdown("### 🔮 心と行動のバランス")
+
+        if sun_sign == t_moon_sign:
+            st.write("今日は『やりたいこと』と『気持ち』が一致しやすい日です。自然に行動できます。")
+
+        elif moon_sign == t_sun_sign:
+            st.write("今日は感情が行動に影響しやすい日です。直感を大切にすると良いでしょう。")
+
+        else:
+            st.write("今日は心と行動に少しズレが出やすい日です。無理せずバランスを取りましょう。")        
+
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+# === タブ2：トランジット ===
+with tab2:
+    #st.markdown("<div class='luna-card'>", unsafe_allow_html=True)
+
+    st.subheader("🌞 トランジット")
+
+    transit_only_date = st.date_input(
+        "トランジットを見る日",
+        value=datetime.date.today(),
+        min_value=datetime.date(1900, 1, 1),
+        max_value=datetime.date(2100, 12, 31),
+        key="transit_only_date"
+    )
+
+    if st.button("🌞 トランジットを見る", key="btn_transit_only"):
+        t_transit = make_ts_from_local(transit_only_date, 12, 0, 9)
+
+        t_sun_sign, t_sun_deg, t_sun_lon = get_sun_info(t_transit)
+        t_moon_sign, t_moon_deg, t_moon_lon = get_moon_info(t_transit)
+        trans_planets = get_planet_signs_ts(t_transit)
+        transit_longs = get_body_longitudes_ts(t_transit)
+
+        st.markdown("<div class='luna-section-title'>トランジット（選択した日の星の配置）</div>", unsafe_allow_html=True)
+        st.write("トランジット日：", transit_only_date)
+        st.write("太陽：", f"{t_sun_sign} {t_sun_deg:.2f}°")
+        st.write("月　：", f"{t_moon_sign} {t_moon_deg:.2f}°")
+
+        st.markdown("#### 🔎 配置一覧（度数）")
         for name_body, deg in transit_longs.items():
             sign, d = split_sign_degree(deg)
             st.write(f"{name_body}：{sign} {d:.2f}°")
 
     st.markdown("</div>", unsafe_allow_html=True)
 
-# === タブ2：相性占い ===
-with tab2:
-    st.markdown("<div class='luna-card'>", unsafe_allow_html=True)
+
+# === タブ3：相性占い ===
+with tab3:
+    #st.markdown("<div class='luna-card'>", unsafe_allow_html=True)
     st.markdown("<div class='luna-section-title'>お二人の相性</div>", unsafe_allow_html=True)
 
     col1, col2 = st.columns(2)
     with col1:
-        name1 = st.text_input("お相手1のお名前", value="Luna")
+        name1 = st.text_input("お相手1のお名前", value="Luna", key="compat_name1")
         bday1 = st.date_input(
             "お相手1の生年月日",
             key="bday1",
@@ -605,7 +787,7 @@ with tab2:
             max_value=datetime.date.today()
         )
     with col2:
-        name2 = st.text_input("お相手2のお名前", value="", placeholder="お相手のお名前")
+        name2 = st.text_input("お相手2のお名前", value="", placeholder="お相手のお名前", key="compat_name2")
         bday2 = st.date_input(
             "お相手2の生年月日",
             key="bday2",
@@ -636,45 +818,40 @@ with tab2:
 
     st.markdown("</div>", unsafe_allow_html=True)
 
-# === タブ3：カードメッセージ ===
-with tab3:
-    st.markdown("<div class='luna-card'>", unsafe_allow_html=True)
+
+# === タブ4：カードメッセージ ===
+with tab4:
+    #st.markdown("<div class='luna-card'>", unsafe_allow_html=True)
     st.markdown("### 🔮 1枚カードメッセージ", unsafe_allow_html=True)
-from pathlib import Path
-import streamlit as st
 
-if st.button("カードを1枚引く", key="card"):
-    card_name, card_msg, card_img = draw_card()
+    if st.button("カードを1枚引く", key="card"):
+        card_name, card_msg, card_img = draw_card()
 
-    # 画像がある場合だけ表示（エラー防止）
-    if card_img and Path(card_img).exists():
-        
         img_path = Path(card_img) if card_img else None
 
-    if img_path and img_path.exists():
-        col1, col2, col3 = st.columns([2, 3, 2])
-        with col2:
-            st.image(img_path.read_bytes(), width=350)
-            st.markdown(f"### {card_name}")
-            st.write(card_msg)
+        if img_path and img_path.exists():
+            col1, col2, col3 = st.columns([2, 3, 2])
+            with col2:
+                st.image(img_path.read_bytes(), width=350)
+                st.markdown(f"### {card_name}")
+                st.write(card_msg)
+        else:
+            st.caption("（画像がまだ未設定 or 見つかりません）")
 
-    else:
-        st.caption("（画像がまだ未設定 or 見つかりません）")
+        st.markdown(
+            f"""
+            <div class="luna-card-box">
+                <div class="luna-subtitle">カード：{card_name}</div>
+                <div style="margin-top:6px;color:#2b1b4b;">{card_msg}</div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+    st.markdown("</div>", unsafe_allow_html=True)
 
 
-    # 既存の表示はそのまま
-    st.markdown(
-        f"""
-        <div class="luna-card-box">
-            <div class="luna-subtitle">カード：{card_name}</div>
-            <div style="margin-top:6px;color:#2b1b4b;">{card_msg}</div>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
 
-
-
 
 
 
