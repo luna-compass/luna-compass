@@ -1,0 +1,5 @@
+streamlit run luna_web.py
+
+git add .
+git commit -m "update"
+git push
