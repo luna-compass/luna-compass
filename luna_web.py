@@ -33,12 +33,23 @@ from skyfield.framelib import ecliptic_frame
 
 #st.markdown("<div class='luna-header'>🌙 ✨</div>", unsafe_allow_html=True)
 
+
 # ---------- ページ設定 ----------
 st.set_page_config(
     page_title="Luna 占星術 Web版",
     page_icon="🌙",
     layout="centered"
 )
+
+st.markdown("""
+<style>
+@media (max-width: 600px) {
+    .block-container {
+        padding-top: 120px !important;
+    }
+}
+</style>
+""", unsafe_allow_html=True)
 
 # ---------- スタイル ----------
 st.markdown("""
