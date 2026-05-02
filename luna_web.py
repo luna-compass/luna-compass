@@ -3,7 +3,7 @@ import streamlit as st
 st.markdown("""
 <style>
 .block-container {
-    padding-top: 120px !important;
+    padding-top: 260px !important;
 }
 </style>
 """, unsafe_allow_html=True)
