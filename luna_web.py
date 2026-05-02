@@ -5,13 +5,22 @@ import io  # 追加：ダウンロード用
 import numpy as np
 import matplotlib.pyplot as plt
 import streamlit as st
+
+st.markdown("""
+<style>
+.luna-header {
+    text-align: center;
+    font-size: 20px;  /* ←少し小さくして切れ防止 */
+    padding: 6px;
+}
+</style>
+""", unsafe_allow_html=True)
+
 from skyfield.api import load
 from skyfield.framelib import ecliptic_frame
 
-st.markdown(
-    "<div style='text-align:center; font-size:45px; padding-top:10px;'>🌙✨</div>",
-    unsafe_allow_html=True
-)
+st.markdown("<div class='luna-header'>🌙 ✨</div>", unsafe_allow_html=True)
+
 # ---------- ページ設定 ----------
 st.set_page_config(
     page_title="Luna 占星術 Web版",
@@ -133,8 +142,7 @@ button[kind="primary"] {
 
 button[kind="secondary"] {
     border-radius: 999px !important;
-}
-                                                                         
+}                                                                     
 </style>
 """, unsafe_allow_html=True)
 
