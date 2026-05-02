@@ -674,8 +674,7 @@ if st.button("カードを1枚引く", key="card"):
     )
 
 
-
-
+
 
 
 
