@@ -5,23 +5,8 @@ import io  # 追加：ダウンロード用
 import numpy as np
 import matplotlib.pyplot as plt
 import streamlit as st
-
-st.markdown("""
-<style>
-.luna-header {
-    text-align: center;
-    font-size: 16px;
-    padding-top: 0px;
-    margin-top: 0px;
-    line-height: 1;
-}
-</style>
-""", unsafe_allow_html=True)
-
 from skyfield.api import load
 from skyfield.framelib import ecliptic_frame
-
-st.markdown("<div class='luna-header'>🌙 ✨</div>", unsafe_allow_html=True)
 
 # ---------- ページ設定 ----------
 st.set_page_config(
