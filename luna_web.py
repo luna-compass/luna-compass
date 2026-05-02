@@ -10,8 +10,10 @@ st.markdown("""
 <style>
 .luna-header {
     text-align: center;
-    font-size: 20px;  /* ←少し小さくして切れ防止 */
-    padding: 6px;
+    font-size: 16px;
+    padding-top: 0px;
+    margin-top: 0px;
+    line-height: 1;
 }
 </style>
 """, unsafe_allow_html=True)
