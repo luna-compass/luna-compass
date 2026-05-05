@@ -14,25 +14,14 @@ import io  # 追加：ダウンロード用
 
 import numpy as np
 import matplotlib.pyplot as plt
-import streamlit as st
 
-#st.markdown("""
-#<style>
-#.luna-header {
-#    text-align: center;
-#    font-size: 16px;
-#    padding-top: 0px;
-#    margin-top: 0px;
-#    line-height: 1;
-#}
-#</style>
-#""", unsafe_allow_html=True)
+import datetime
 
-from skyfield.api import load
-from skyfield.framelib import ecliptic_frame
+from datetime import timedelta
 
-#st.markdown("<div class='luna-header'>🌙 ✨</div>", unsafe_allow_html=True)
+#import datetime
 
+#import datetime as dt
 
 # ---------- ページ設定 ----------
 st.set_page_config(
@@ -50,6 +39,29 @@ st.markdown("""
 }
 </style>
 """, unsafe_allow_html=True)
+
+# ---------- タイトル ----------
+st.markdown(
+    "<div style='text-align:center; margin-top:16px; margin-bottom:12px;'>"
+    "<div class='luna-header-wrap'>"
+    "<div class='luna-title'>Luna 占星術</div>"
+    "<div class='luna-caption'>出生時刻対応・トランジット対応  Luna-compass</div>"
+    "</div>"
+    "</div>",
+    unsafe_allow_html=True
+)
+
+#st.markdown("## 🔍 生年月日入力")
+
+#birth_date = st.date_input("生年月日を選択")
+#birth_time = st.time_input("出生時間", value=datetime.time(12, 0))
+#birthday = birth_date
+
+from skyfield.api import load
+from skyfield.framelib import ecliptic_frame
+
+#st.markdown("<div class='luna-header'>🌙 ✨</div>", unsafe_allow_html=True)
+
 
 # ---------- スタイル ----------
 st.markdown("""
@@ -286,24 +298,144 @@ def get_equal_houses():
     return houses
 
 # ---------- メッセージ系 ----------
-def get_sun_message(sun_sign):
-    if sun_sign == "双子座":
-        return (
-            "あなたは『知識をつなぐ魂』。<br>"
-            "好奇心と観察力で世界を読み解き、人と人・過去と未来を結ぶ存在です。<br>"
-            "学び・言葉・探究は、あなたの宿命であり才能です。"
-        )
-    else:
-        return "あなたの太陽は、あなたらしい生き方と使命を示しています。"
+#def get_sun_message(sun_sign):
+#    if sun_sign == "双子座":
+#        return (
+#            "あなたは『知識をつなぐ魂』。<br>"
+#            "好奇心と観察力で世界を読み解き、人と人・過去と未来を結ぶ存在です。<br>"
+#            "学び・言葉・探究は、あなたの宿命であり才能です。"
+#        )
+#    else:
+#        return "あなたの太陽は、あなたらしい生き方と使命を示しています。"
 
-def get_moon_message(moon_sign):
-    if "牡牛座" in moon_sign:
-        return (
-            "あなたの心は『安定・美・心地よさ』を強く求めます。<br>"
-            "本物の美、安心できる場所、あたたかい人間関係があなたを整えます。"
-        )
-    else:
-        return "あなたの心はとても繊細で豊か。安心できる環境が才能を引き出します。"
+def get_sun_message(sign):
+    messages = {
+        "牡羊座": "行動力と情熱で人生を切り開くタイプです。",
+        "牡牛座": "安定と豊かさを大切にする現実的な魂です。",
+        "双子座": "知識をつなぐ魂。好奇心と観察力で世界を読み解き、人と人・過去と未来を結ぶ存在。学び・言葉・探究は、あなたの宿命であり才能です。",
+        "蟹座": "感情と共感を大切にする優しい魂です。",
+        "獅子座": "自分らしさを表現する華やかな存在です。",
+        "乙女座": "分析力と繊細さで物事を整える力があります。",
+        "天秤座": "調和と美を大切にするバランサーです。",
+        "蠍座": "深い洞察と集中力を持つ探究者です。",
+        "射手座": "自由と成長を求める冒険者です。",
+        "山羊座": "努力と責任で成功を築く現実主義者です。",
+        "水瓶座": "独自性と未来志向の改革者です。",
+        "魚座": "感性と優しさにあふれる癒しの存在です"
+    }
+    return messages.get(sign, "あなたの太陽はあなたらしさを示しています。")
+
+#def get_moon_message(moon_sign):
+#    if "牡牛座" in moon_sign:
+#        return (
+#            "あなたの心は『安定・美・心地よさ』を強く求めます。<br>"
+#            "本物の美、安心できる場所、あたたかい人間関係があなたを整えます。"
+#        )
+#    else:
+#        return "あなたの心はとても繊細で豊か。安心できる環境が才能を引き出します。"
+    
+def get_moon_message(sign):
+    messages = {
+        "牡羊座": "感情はストレートで行動的です。",
+        "牡牛座": "安心・安定・心地よさを強く求めます。本物の美、安心できる場所、あたたかい人間関係があなたを整えます。",
+        "双子座": "感情も言葉で整理するタイプです。",
+        "蟹座": "共感力が高く、家庭的です。",
+        "獅子座": "愛されたい気持ちが強いです。",
+        "乙女座": "繊細で気配り上手です。",
+        "天秤座": "人との関係性で安心します。",
+        "蠍座": "感情が深く強いです。",
+        "射手座": "自由な感情を持っています。",
+        "山羊座": "感情をコントロールするタイプです。",
+        "水瓶座": "クールで距離感を大切にします。",
+        "魚座": "とても優しく感受性豊かです"
+    }
+    return messages.get(sign, "あなたの心は繊細で豊かです。")
+
+
+def get_mercury_message(sign):
+    messages = {
+        "牡羊座": "直感的でスピーディーな思考。思ったことをすぐ言葉にします。",
+        "牡牛座": "じっくり考えるタイプ。現実的で安定した判断をします。",
+        "双子座": "情報収集が得意。会話力が高く、頭の回転が早いです。",
+        "蟹座": "感情ベースで考える傾向。共感力が高いです。",
+        "獅子座": "自分の考えに自信があり、表現力が豊かです。",
+        "乙女座": "分析力が高く、細かいところまでよく気づきます。",
+        "天秤座": "バランス重視で、客観的に考えることができます。",
+        "蠍座": "深く掘り下げる思考。洞察力が鋭いです。",
+        "射手座": "自由で広い視野を持つ思考。哲学的です。",
+        "山羊座": "現実的で計画的な思考。結果を重視します。",
+        "水瓶座": "独創的でユニークな発想。常識にとらわれません。",
+        "魚座": "感覚的で直感重視。イメージ力が豊かです"
+    }
+    return messages.get(sign, "")
+
+def get_venus_message(sign):
+    messages = {
+        "牡羊座": "恋愛は直感型。好きになったら一直線で情熱的です。",
+        "牡牛座": "安定した愛を求めます。五感や心地よさを大切にします。",
+        "双子座": "会話が楽しい恋愛を好みます。軽やかでフレンドリーです。",
+        "蟹座": "愛情深く、守る恋愛。家庭的で安心感を重視します。",
+        "獅子座": "ドラマチックな恋愛を好み、愛情表現が豊かです。",
+        "乙女座": "細やかな気配りで愛を示すタイプ。誠実で慎重です。",
+        "天秤座": "バランスの良い恋愛。美しさや調和を重視します。",
+        "蠍座": "深く強い愛。絆や一体感をとても大切にします。",
+        "射手座": "自由な恋愛。束縛を嫌い、楽しい関係を好みます。",
+        "山羊座": "現実的で堅実な恋愛。信頼と継続を重視します。",
+        "水瓶座": "友達のような恋愛。個性と距離感を大切にします。",
+        "魚座": "ロマンチックで優しい愛。感受性が豊かです。"
+    }
+    return messages.get(sign, "")
+
+def get_mars_message(sign):
+    messages = {
+        "牡羊座": "行動が早く、エネルギッシュ。思い立ったらすぐ動きます。",
+        "牡牛座": "粘り強く着実に行動。マイペースで安定しています。",
+        "双子座": "動きが軽やかで柔軟。複数のことを同時に進めます。",
+        "蟹座": "感情で動くタイプ。守るために強くなります。",
+        "獅子座": "自信に満ちた行動力。目立つことを恐れません。",
+        "乙女座": "計画的で正確な行動。無駄を嫌います。",
+        "天秤座": "バランスを見て動くタイプ。争いを避けます。",
+        "蠍座": "集中力が強く、一点突破型。とことんやり抜きます。",
+        "射手座": "自由に動き回るタイプ。冒険心があります。",
+        "山羊座": "目的達成型。コツコツと確実に進めます。",
+        "水瓶座": "独自のやり方で動く。常識にとらわれません。",
+        "魚座": "流れに乗るタイプ。感覚的に動きます。"
+    }
+    return messages.get(sign, "")
+
+def get_jupiter_message(sign):
+    messages = {
+        "牡羊座": "チャレンジすることで運が広がります。自分から動くほどチャンスが増えます。",
+        "牡牛座": "安定と積み重ねの中で運が育ちます。お金や現実的な価値で成功しやすいです。",
+        "双子座": "情報・会話・学びで運が広がります。人との交流がチャンスを呼びます。",
+        "蟹座": "家庭・安心できる場所で運が育ちます。人を守ることで発展します。",
+        "獅子座": "自己表現・目立つことで運が広がります。自信を持つほど成功します。",
+        "乙女座": "細かい努力や分析で運が伸びます。実務能力が成功につながります。",
+        "天秤座": "人との関係で運が広がります。パートナーシップが鍵になります。",
+        "蠍座": "深い関係や集中力で運が広がります。本気で取り組むほど大きく伸びます。",
+        "射手座": "自由・冒険・学びで運が拡大します。海外や哲学とも縁があります。",
+        "山羊座": "社会的成功・努力で運が開きます。時間をかけるほど大きく成長します。",
+        "水瓶座": "独自性・未来志向で運が広がります。人と違うことが強みになります。",
+        "魚座": "感性・優しさ・直感で運が広がります。見えない世界との縁も強いです。"
+    }
+    return messages.get(sign, "")
+
+def get_saturn_message(sign):
+    messages = {
+        "牡羊座": "行動することにブレーキを感じやすいですが、乗り越えると強い実行力になります。",
+        "牡牛座": "お金や安定に対して課題を感じやすいですが、積み重ねで大きな力になります。",
+        "双子座": "言葉やコミュニケーションに慎重さが出ますが、深い思考力が育ちます。",
+        "蟹座": "感情や安心感に課題を感じやすいですが、精神的な強さを得られます。",
+        "獅子座": "自己表現にブレーキがかかりますが、乗り越えると本物の自信になります。",
+        "乙女座": "完璧主義になりやすいですが、精度の高い能力として発揮されます。",
+        "天秤座": "対人関係で悩みやすいですが、バランス感覚が鍛えられます。",
+        "蠍座": "深い感情や執着が課題ですが、圧倒的な集中力に変わります。",
+        "射手座": "自由と責任のバランスが課題ですが、哲学的な深さを得ます。",
+        "山羊座": "責任が重く感じやすいですが、大きな成功をつかむ力があります。",
+        "水瓶座": "個性を出すことに葛藤がありますが、独自の価値を確立できます。",
+        "魚座": "曖昧さに不安を感じますが、精神的な強さと優しさが育ちます。"
+    }
+    return messages.get(sign, "")
 
 def get_planet_message(name):
     messages = {
@@ -317,6 +449,52 @@ def get_planet_message(name):
         "冥王星": "魂レベルの変容・大きな転機を表します。",
     }
     return messages.get(name, "")
+
+def get_aspects(planets):
+    aspects = []
+    aspect_defs = {
+        "コンジャンクション": 0,
+        "セクスタイル": 60,
+        "スクエア": 90,
+        "トライン": 120,
+        "オポジション": 180
+    }
+
+    for p1_name, p1_deg in planets.items():
+        for p2_name, p2_deg in planets.items():
+            if p1_name == p2_name:
+                continue
+
+            diff = abs(p1_deg - p2_deg)
+            if diff > 180:
+                diff = 360 - diff
+
+    for p1_name, p1_deg in planets.items():
+        for p2_name, p2_deg in planets.items():
+
+            # ★これを入れる（ここ！）
+            if p1_name >= p2_name:
+                continue
+
+            diff = abs(p1_deg - p2_deg)
+            if diff > 180:
+                diff = 360 - diff
+
+            for aspect_name, angle in aspect_defs.items():
+                if abs(diff - angle) < 5:
+                    aspects.append({
+                        "p1": p1_name,
+                        "p2": p2_name,
+                        "type": aspect_name
+                    })
+
+    return aspects
+
+def get_aspect_message(p1, p2, aspect):
+    if p1 == "火星" and p2 == "金星" and aspect == "セクスタイル":
+        return "行動と愛情のバランスが良く、自然体で人と関われる魅力があります。"
+
+    return "この配置はあなたに独自の個性と可能性を与えています。"
 
 def get_house_message(house_num, sign):
     base = f"{house_num}ハウス（{sign}）："
@@ -396,15 +574,15 @@ def plot_horoscope(natal_longitudes, houses, transit_longitudes=None):
             color="#7c3aed", linewidth=1.2)
 
     # ハウス線＆番号
-    for num, info in houses.items():
-        cusp_deg = info["cusp_deg"]
-        angle_rad = np.deg2rad(cusp_deg)
+    for i, cusp in enumerate(houses):
+        angle_rad = np.deg2rad(cusp)
+
         ax.plot([angle_rad, angle_rad], [0.0, 0.7],
                 linewidth=0.7, color="#9ca3af")
 
-        label_angle = np.deg2rad(cusp_deg + 15)
-        ax.text(label_angle, 0.15, str(num),
-                ha="center", va="center", fontsize=10, color="#111827")
+        label_angle = np.deg2rad(cusp + 15)
+        ax.text(label_angle, 0.15, str(i+1),
+                ha='center', va='center', fontsize=10, color="#111827")
 
     # ① ネイタル（内側）
     for name, deg in natal_longitudes.items():
@@ -488,19 +666,35 @@ def compatibility_message(sun1, sun2, moon1, moon2, name1="Aさん", name2="Bさ
 
     return base + msg + moon_part
 
-# ---------- タイトル ----------
-st.markdown(
-    "<div style='text-align:center; margin-top:16px; margin-bottom:12px;'>"
-    "<div class='luna-header-wrap'>"
-    "<div class='luna-title'>Luna 占星術</div>"
-    "<div class='luna-caption'>出生時刻対応・トランジット対応  Luna-compass</div>"
-    "</div>"
-    "</div>",
-    unsafe_allow_html=True
-)
+# ---------- ASC ----------
+#import streamlit as st
+import swisseph as swe
+
+# ←ここに入れる！
+def get_sign(deg):
+    signs = ["牡羊座","牡牛座","双子座","蟹座","獅子座","乙女座",
+             "天秤座","蠍座","射手座","山羊座","水瓶座","魚座"]
+    return signs[int(deg / 30)]
+
+def get_asc_message(sign):
+    messages = {
+        "牡羊座": "第一印象はとても行動的で、思い立ったらすぐ動くタイプです。",
+        "牡牛座": "落ち着いた雰囲気で、安心感を与える第一印象を持っています。",
+        "双子座": "軽やかで話しやすく、知的な印象を与えます。",
+        "蟹座": "優しく親しみやすく、安心感を与える存在です。",
+        "獅子座": "明るく華やかで、人を惹きつける存在感があります。",
+        "乙女座": "丁寧で落ち着いた、信頼感のある印象です。",
+        "天秤座": "上品でバランス感覚があり、社交的な雰囲気です。",
+        "蠍座": "静かながらも強い意志を感じさせる印象です。",
+        "射手座": "自由で伸びやか、明るく前向きな印象を与えます。",
+        "山羊座": "しっかりしていて、責任感のある印象を持たれます。",
+        "水瓶座": "個性的でユニーク、独自の空気感を持っています。",
+        "魚座": "柔らかく優しい、感受性豊かな印象です。"
+    }
+    return messages.get(sign, "")
+
 
 # ---------- タブ構成 ----------
-# tab1, tab2, tab3 = st.tabs(["🔮 ネイタル", "トランジット","💞 相性占い", "🃏 カードメッセージ"])
 tab1, tab2, tab3, tab4 = st.tabs([
     "🌙 ネイタル",
     "🌞 トランジット",
@@ -511,6 +705,21 @@ tab1, tab2, tab3, tab4 = st.tabs([
 
 # === タブ1：ネイタル ===
 with tab1:
+    st.write("テスト：ここからネイタル")
+
+    # 入力
+    #birthday = st.date_input("生年月日")
+
+    # 仮の時間
+    birth_hour = 12
+    birth_minute = 0
+
+    # 変換
+    # year = default_date.year
+    # month = default_date.month
+    # day = default_date.day
+    # hour = default_hour + default_min / 60
+
 
     st.markdown("""
     <style>
@@ -633,9 +842,56 @@ with tab1:
         if btn_natal:
             sun_sign, sun_deg, sun_lon = get_sun_info(t_natal)
             moon_sign, moon_deg, moon_lon = get_moon_info(t_natal)
+
             planets = get_planet_signs_ts(t_natal)
             natal_longs = get_body_longitudes_ts(t_natal)
-            houses = get_equal_houses()
+            #houses = get_equal_houses()
+
+            # ★ここに追加
+            #year = birthday.year
+            #month = birthday.month
+            #day = birthday.day
+            #hour = birth_hour + birth_minute / 60.0 - 9
+
+            #jd = swe.julday(year, month, day, hour)
+
+                     
+
+
+            #from datetime import datetime, timedelta
+
+            # 入力 → JST
+            # dt_local = datetime(
+            dt_local = datetime.datetime(
+                birthday.year,
+                birthday.month,
+                birthday.day,
+                int(birth_hour),
+                int(birth_minute)
+            )
+
+            # JST → UTC（必須）
+            dt_utc = dt_local - timedelta(hours=9)
+
+            # ★ここが毎回新しく計算される
+            jd = swe.julday(
+                dt_utc.year,
+                dt_utc.month,
+                dt_utc.day,
+                dt_utc.hour + dt_utc.minute / 60.0
+            )
+
+            lat = 35.68
+            lon = 139.76
+
+            houses, ascmc = swe.houses(jd, lat, lon, b'P')
+            asc = ascmc[0]
+
+            #st.write("DEBUG ASC:", asc)
+            asc_deg = asc % 30
+
+            asc_sign = get_sign(asc)
+
 
         # トランジット
         if btn_transit:
@@ -704,10 +960,130 @@ with tab1:
         # ハウス（ネイタル）
         if btn_natal:
             st.markdown("<div class='luna-section-title'>ハウス（象徴的イコールハウス・ネイタル）</div>", unsafe_allow_html=True)
-            for num, info in houses.items():
-                sign = info["sign"]
-                msg = get_house_message(num, sign)
-                st.markdown(f"<div class='luna-message'>{msg}</div>", unsafe_allow_html=True)
+
+            # ★ここだけ使う（birthday に統一）
+            year = birthday.year
+            month = birthday.month
+            day = birthday.day
+            hour = birth_hour + birth_minute / 60
+
+            # jd = swe.julday(year, month, day, hour)
+
+            lat = 35.68
+            lon = 139.76
+
+            houses, ascmc = swe.houses(jd, lat, lon, b'P')
+            asc = ascmc[0]
+
+            asc_sign = get_sign(asc)
+
+
+        for i, cusp in enumerate(houses):
+            house_num = i + 1
+            sign = get_sign(cusp)
+            msg = get_house_message(house_num, sign)
+
+            st.markdown(f"<div class='luna-message'>{msg}</div>", unsafe_allow_html=True)                  
+
+        st.markdown("### 🌙 第一印象（ASC）")
+        #st.write(f"{asc_sign} {asc:.2f}°")
+        st.write(f"{asc_sign} {asc_deg:.2f}°")
+        st.write(get_asc_message(asc_sign))    
+
+        # 🌞 太陽（本質）
+        sun = swe.calc_ut(jd, swe.SUN)[0][0]
+        sun_sign = get_sign(sun)
+
+        st.markdown("## ☀ 太陽（本質）")
+        st.write(f"{sun_sign} {sun:.2f}°")
+        st.write(get_sun_message(sun_sign))
+
+        # 🌙 月（感情）
+        moon = swe.calc_ut(jd, swe.MOON)[0][0]
+        moon_sign = get_sign(moon)
+
+        st.markdown("## 🌙 月（感情）")
+        st.write(f"{moon_sign} {moon:.2f}°")     
+        st.write(get_moon_message(moon_sign)) 
+
+        # 水星
+        mercury = swe.calc_ut(jd, swe.MERCURY)[0][0]
+        mercury_sign = get_sign(mercury)
+
+        st.markdown("## ☿ 水星（思考）")
+        st.write(f"{mercury_sign} {mercury:.2f}°")
+        st.write(get_mercury_message(mercury_sign))
+
+
+        # 金星
+        venus = swe.calc_ut(jd, swe.VENUS)[0][0]
+        venus_sign = get_sign(venus)
+
+        st.markdown("## ♀ 金星（愛・好み）")
+        st.write(f"{venus_sign} {venus:.2f}°")
+        st.write(get_venus_message(venus_sign))
+
+
+        # 火星
+        mars = swe.calc_ut(jd, swe.MARS)[0][0]
+        mars_sign = get_sign(mars)
+
+        st.markdown("## ♂ 火星（行動）")
+        st.write(f"{mars_sign} {mars:.2f}°")
+        st.write(get_mars_message(mars_sign))   
+
+
+        # 木星
+        jupiter = swe.calc_ut(jd, swe.JUPITER)[0][0]
+        jupiter_sign = get_sign(jupiter)
+
+        st.markdown("## ♃ 木星（拡大・発展）")
+        st.write(f"{jupiter_sign} {jupiter:.2f}°")
+        st.write(get_planet_message("木星"))
+
+        # 土星
+        saturn = swe.calc_ut(jd, swe.SATURN)[0][0]
+        saturn_sign = get_sign(saturn)
+
+        st.markdown("## ♄ 土星（課題・責任）")
+        st.write(f"{saturn_sign} {saturn:.2f}°")
+        st.write(get_planet_message("土星"))   
+
+   # ←ここに追加
+        planets = {
+            "太陽": sun,
+            "月": moon,
+            "水星": mercury,
+            "金星": venus,
+            "火星": mars
+        }       
+
+        st.markdown("## 🔷 アスペクト（関係性）")
+
+        aspects = get_aspects(planets)
+
+        for a in aspects:
+            st.write(f"{a['p1']} × {a['p2']} ：{a['type']}")
+            msg = get_aspect_message(a["p1"], a["p2"], a["type"])
+
+            msg = get_aspect_message(a["p1"], a["p2"], a["type"])
+            st.write(msg)     
+
+        st.markdown("## 🌟 性格まとめ")
+
+        summary = []
+
+        summary.append(get_sun_message(sun_sign))
+        summary.append(get_moon_message(moon_sign))
+        summary.append(get_venus_message(venus_sign))
+        summary.append(get_mars_message(mars_sign))
+
+        for a in aspects:
+            summary.append(get_aspect_message(a["p1"], a["p2"], a["type"]))
+
+        for s in summary:
+            st.write("・" + s)           
+
 
         # 円形ホロ（ネイタル＋トランジット2重）
         if btn_natal:
@@ -779,7 +1155,8 @@ with tab2:
 
     transit_only_date = st.date_input(
         "トランジットを見る日",
-        value=datetime.date.today(),
+        #value=datetime.date.today(),
+        value=datetime.datetime.now().date(),
         min_value=datetime.date(1900, 1, 1),
         max_value=datetime.date(2100, 12, 31),
         key="transit_only_date"
