@@ -1,5 +1,12 @@
 import streamlit as st
 
+# ---------- ページ設定 ----------
+st.set_page_config(
+    page_title="Luna 占星術 Web版",
+    page_icon="🌙",
+    layout="centered"
+)
+
 st.markdown("""
 <style>
 .block-container {
@@ -49,13 +56,6 @@ st.markdown("""
 #import datetime
 
 #import datetime as dt
-
-# ---------- ページ設定 ----------
-st.set_page_config(
-    page_title="Luna 占星術 Web版",
-    page_icon="🌙",
-    layout="centered"
-)
 
 st.markdown("""
 <style>
@@ -550,100 +550,131 @@ def simple_compare_message(natal_text, transit_text, label):
             "ふだんの傾向に、期間限定で別のテーマが重なっているタイミングです。"
         )
 
-# ---------- 円形ホロスコープ（ネイタル＋トランジット2重） ----------
 def plot_horoscope(natal_longitudes, houses, transit_longitudes=None):
+
+    import numpy as np
+    import matplotlib.pyplot as plt
+
     SIGN_LABELS = [
-        "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
-        "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"
+        "Aries","Taurus","Gemini","Cancer","Leo","Virgo",
+        "Libra","Scorpio","Sagittarius","Capricorn","Aquarius","Pisces"
     ]
 
     PLANET_LABELS = {
-        "太陽": "Sun",
-        "月": "Moon",
-        "水星": "Me",
-        "金星": "Ve",
-        "火星": "Ma",
-        "木星": "Jup",
-        "土星": "Sat",
-        "天王星": "Ur",
-        "海王星": "Ne",
-        "冥王星": "Pl",
+        "太陽":"Sun","月":"Moon","水星":"Me","金星":"Ve","火星":"Ma",
+        "木星":"Jup","土星":"Sat","天王星":"Ur","海王星":"Ne","冥王星":"Pl"
     }
 
-    fig = plt.figure(figsize=(5.6, 5.6))
+    asc = houses[0]
+
+    def angle(deg):
+        return np.deg2rad((asc - deg) % 360)
+
+    fig = plt.figure(figsize=(6,6))
     ax = fig.add_subplot(111, polar=True)
 
-    ax.set_facecolor("#f5f3ff")
-
-    ax.set_theta_zero_location("E")
+    ax.set_theta_zero_location("W")
     ax.set_theta_direction(-1)
 
-    ax.set_rlim(0, 1.0)
-    ax.set_yticklabels([])
-
-    # サイン帯
-    for i, label in enumerate(SIGN_LABELS):
-        start_deg = i * 30
-        end_deg = start_deg + 30
-        theta = np.deg2rad(np.linspace(start_deg, end_deg, 50))
-        r_inner = 0.7
-        r_outer = 0.9
-        color = "#ede9fe" if i % 2 == 0 else "#e0e7ff"
-        ax.fill_between(theta, r_inner, r_outer, color=color, alpha=1.0)
-
-        label_angle = np.deg2rad(start_deg + 15)
-        ax.text(label_angle, 0.8, label,
-                ha="center", va="center", fontsize=10, color="#111827")
-
-    # 外周円
-    circle_theta = np.linspace(0, 2 * np.pi, 300)
-    ax.plot(circle_theta, [0.9] * len(circle_theta),
-            color="#7c3aed", linewidth=1.2)
-
-    # ハウス線＆番号
-    for i, cusp in enumerate(houses):
-        angle_rad = np.deg2rad(cusp)
-
-        ax.plot([angle_rad, angle_rad], [0.0, 0.7],
-                linewidth=0.7, color="#9ca3af")
-
-        label_angle = np.deg2rad(cusp + 15)
-        ax.text(label_angle, 0.15, str(i+1),
-                ha='center', va='center', fontsize=10, color="#111827")
-
-    # ① ネイタル（内側）
-    for name, deg in natal_longitudes.items():
-        angle = np.deg2rad(deg)
-
-        if name == "太陽":
-            r = 0.72
-            ax.scatter(angle, r, s=90, marker="o", color="#f97316", zorder=3)
-        elif name == "月":
-            r = 0.68
-            ax.scatter(angle, r, s=80, marker="D", color="#4b5563", zorder=3)
-        else:
-            r = 0.64
-            ax.scatter(angle, r, s=65, marker="o", color="#111827", zorder=3)
-
-        label = PLANET_LABELS.get(name, name)
-        ax.text(angle, r + 0.08, label,
-                ha="center", va="center", fontsize=9, color="#111827")
-
-    # ② トランジット（外側・薄い色）
-    if transit_longitudes is not None:
-        for name, deg in transit_longitudes.items():
-            angle = np.deg2rad(deg)
-            r = 0.82
-            ax.scatter(angle, r, s=55, marker="^", color="#60a5fa", alpha=0.8, zorder=2)
-
-            label = PLANET_LABELS.get(name, name)
-            ax.text(angle, r + 0.06, label,
-                    ha="center", va="center", fontsize=8, color="#1d4ed8", alpha=0.9)
-
-    ax.set_xticklabels([])
+    ax.set_rlim(0,1)
+    ax.set_xticks([])
+    ax.set_yticks([])
     ax.grid(False)
-    plt.tight_layout(pad=0.1)
+
+    # ===== サイン帯（これで固定）=====
+    for i,label in enumerate(SIGN_LABELS):
+        start = i * 30
+        end = start + 30
+
+        theta = angle(np.linspace(start, end, 100))
+        label_angle = angle(start + 15)
+
+        color = "#ede9fe" if i % 2 == 0 else "#e0e7ff"
+
+        ax.fill_between(theta, 0.72, 0.92, color=color)
+        ax.text(label_angle, 0.82, label, ha="center", va="center", fontsize=10)
+
+    # ===== 円 =====
+    circle = np.linspace(0, 2*np.pi, 400)
+    ax.plot(circle, [0.92]*len(circle), color="#7c3aed")
+    ax.plot(circle, [0.72]*len(circle), color="#c4b5fd")
+    ax.plot(circle, [0.98]*len(circle), color="black")
+
+    # ===== ハウス =====
+    for i, cusp in enumerate(houses):
+        th = angle(cusp)
+        ax.plot([th, th], [0, 0.72], color="gray", linewidth=1)
+
+        next_cusp = houses[(i+1)%12]
+        mid = (cusp + ((next_cusp - cusp) % 360)/2) % 360
+
+        ax.text(angle(mid), 0.30, str(i+1),
+                ha="center", va="center", fontsize=10)
+
+    # ===== 天体 =====
+    for name, deg in natal_longitudes.items():
+        th = angle(deg)
+        label = PLANET_LABELS.get(name, name)
+        color = "red" if name == "太陽" else "black"
+
+        ax.scatter(th, 0.62, s=40, color=color)
+        ax.text(th, 0.68, label, ha="center", fontsize=8)
+
+    # ===== トランジット =====
+    if transit_longitudes:
+        for name, deg in transit_longitudes.items():
+            th = np.deg2rad((asc - deg) % 360)
+            ax.scatter(th, 0.78, s=25, color="blue")
+
     return fig
+
+# ---------- トランジット ----------
+
+def get_transit_positions(year, month, day):
+    import swisseph as swe
+    jd = swe.julday(year, month, day, 12.0)
+
+    planets = {
+        "太陽": swe.SUN,
+        "月": swe.MOON,
+        "水星": swe.MERCURY,
+        "金星": swe.VENUS,
+        "火星": swe.MARS,
+        "木星": swe.JUPITER,
+        "土星": swe.SATURN,
+    }
+
+    result = {}
+    for name, p in planets.items():
+        lon = swe.calc_ut(jd, p)[0][0]
+        result[name] = lon
+
+    return result
+
+# import swisseph as swe
+
+# def get_transit_positions(year, month, day):
+#     # UTCで12時固定（ズレ防止）
+#     jd = swe.julday(year, month, day, 12.0)
+
+#     planets = {
+#         "☉ 太陽": swe.SUN,
+#         "☽ 月": swe.MOON,
+#         "☿ 水星": swe.MERCURY,
+#         "♀ 金星": swe.VENUS,
+#         "♂ 火星": swe.MARS,
+#         "♃ 木星": swe.JUPITER,
+#         "♄ 土星": swe.SATURN,
+#     }
+
+#     result = {}
+
+#     for name, p in planets.items():
+#         lon = swe.calc_ut(jd, p)[0][0]
+#         result[name] = lon
+
+#     return result
+
 
 # ---------- カード ----------
 from pathlib import Path
@@ -864,7 +895,7 @@ import swisseph as swe
 def get_sign(deg):
     signs = ["牡羊座","牡牛座","双子座","蟹座","獅子座","乙女座",
              "天秤座","蠍座","射手座","山羊座","水瓶座","魚座"]
-    return signs[int(deg / 30)]
+    return signs[int((deg % 360) / 30)]
 
 def get_asc_message(sign):
     messages = {
@@ -885,31 +916,24 @@ def get_asc_message(sign):
 
 
 # ---------- タブ構成 ----------
-tab1, tab2, tab3, tab4 = st.tabs([
-    "🌙 ネイタル",
-    "🌞 トランジット",
-    "💞 相性占い",
-    "🃏 カードメッセージ"
-])
+# tab1, tab2, tab3, tab4 = st.tabs([
+#     "🌙 ネイタル",
+#     "🌞 トランジット",
+#     "💞 相性占い",
+#     "🃏 カードメッセージ"
+# ])
 
+tab1, tab2, tab3, tab4, tab5 = st.tabs([
+    "🌙 ネイタル",
+    "🌍 トランジット",
+    "💕 相性",
+    "🔮 カード",
+    "📖 詳細説明"
+])
 
 # === タブ1：ネイタル ===
 with tab1:
     st.write("テスト：ここからネイタル")
-
-    # 入力
-    #birthday = st.date_input("生年月日")
-
-    # 仮の時間
-    birth_hour = 12
-    birth_minute = 0
-
-    # 変換
-    # year = default_date.year
-    # month = default_date.month
-    # day = default_date.day
-    # hour = default_hour + default_min / 60
-
 
     st.markdown("""
     <style>
@@ -931,16 +955,15 @@ with tab1:
     """, unsafe_allow_html=True)
 
     st.markdown("<div class='luna-section-title'>👤 基本情報</div>", unsafe_allow_html=True)
-    #st.markdown("<div class='luna-section-title'>🔎 基本情報を入力</div>", unsafe_allow_html=True)
 
     mode = st.radio(
         "自分を占う",
         ("自分を占う", "別の人を占う"),
         key="mode_natal",
-        help="ご自身か、他の人をを選んでください。"
+        help="ご自身か、他の人を選んでください。"
     )
 
-    if mode == "自分（Luna）を占う":
+    if mode == "自分を占う":
         default_name = "Luna"
         default_date = datetime.date(1968, 5, 27)
         default_hour = 0
@@ -951,13 +974,15 @@ with tab1:
         default_hour = 12
         default_min = 0
 
-
     col1, col2 = st.columns(2)
 
     with col1:
-        name = st.text_input("お名前", value=default_name, key="name_natal",
-        help="ニックネームでもOKです"
-    )
+        name = st.text_input(
+            "お名前",
+            value=default_name,
+            key="name_natal",
+            help="ニックネームでもOKです"
+        )
 
     with col2:
         birthday = st.date_input(
@@ -967,20 +992,31 @@ with tab1:
             max_value=datetime.date.today(),
             key="birthday_natal",
             help="出生図を作るために使います"
-        )    
-  
-    st.markdown("<br>", unsafe_allow_html=True)       
+        )
+
+    st.markdown("<br>", unsafe_allow_html=True)
     st.markdown("<div class='luna-section-title'>⏰ 出生時間</div>", unsafe_allow_html=True)
 
     col_time1, col_time2 = st.columns(2)
 
     with col_time1:
-        birth_hour = st.number_input("時", min_value=0, max_value=23,
-        help="分からなければそのままでOK"
-    )    
+        birth_hour = st.number_input(
+            "時",
+            min_value=0,
+            max_value=23,
+            value=default_hour,
+            key="birth_hour_natal",
+            help="分からなければそのままでOK"
+        )
 
     with col_time2:
-        birth_minute = st.number_input("分", min_value=0, max_value=59)
+        birth_minute = st.number_input(
+            "分",
+            min_value=0,
+            max_value=59,
+            value=default_min,
+            key="birth_minute_natal"
+        )
 
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown("<div class='luna-section-title'>🌍 今日の運気</div>", unsafe_allow_html=True)
@@ -988,6 +1024,7 @@ with tab1:
     tz_label = st.radio(
         "出生地のタイムゾーン",
         ("日本（JST = UTC+9）", "世界時で計算（UTC・よく分からない場合）"),
+        key="tz_label_natal",
         help="海外出生の場合のみ変更してください"
     )
     tz_offset = 9 if tz_label.startswith("日本") else 0
@@ -1001,110 +1038,214 @@ with tab1:
         help="今日や気になる日を選べます"
     )
 
-    #st.markdown("---")
-
-    #col_btn1, col_btn2 = st.columns(2)
-
-    #with col_btn1:
-    #    btn_natal = st.button("🌙 ネイタルを見る", key="btn_natal")
-
-    #with col_btn2:
-    #    btn_transit = st.button("✨ 今日の運気を見る", key="btn_transit")    
-
     st.markdown("<br>", unsafe_allow_html=True)
 
     col_btn1, col_btn2 = st.columns(2)
 
     with col_btn1:
-        btn_natal = st.button("🌙 ネイタルを見る", use_container_width=True, type="primary")
+        btn_natal = st.button("🌙 ネイタルを見る", use_container_width=True, type="primary", key="btn_natal_tab1")
 
     with col_btn2:
-        btn_transit = st.button("✨ 今日の運気を見る", use_container_width=True)
+        btn_transit = st.button("✨ 今日の運気を見る", use_container_width=True, key="btn_transit_tab1")
 
     if btn_natal or btn_transit:
-    # if st.button("🌙 ネイタル & トランジットを見る", key="single_chart"):
-        # Time生成
-        t_natal = make_ts_from_local(birthday, birth_hour, birth_minute, tz_offset)
-        # トランジットは、その日の正午（現地時刻）で見る
-        t_transit = make_ts_from_local(transit_date, 12, 0, tz_offset)
+        # =====================================================
+        # Tab1 共通計算：ネイタル・ハウス・トランジットをここで一括作成
+        # =====================================================
+        t_natal = make_ts_from_local(birthday, int(birth_hour), int(birth_minute), tz_offset)
+        natal_longs = get_body_longitudes_ts(t_natal)
 
-        # ネイタル
-        if btn_natal:
-            sun_sign, sun_deg, sun_lon = get_sun_info(t_natal)
-            moon_sign, moon_deg, moon_lon = get_moon_info(t_natal)
+        # ネイタル：太陽・月・各惑星
+        sun_sign, sun_deg, sun_lon = get_sun_info(t_natal)
+        moon_sign, moon_deg, moon_lon = get_moon_info(t_natal)
+        planets = get_planet_signs_ts(t_natal)
 
-            planets = get_planet_signs_ts(t_natal)
-            natal_longs = get_body_longitudes_ts(t_natal)
-            #houses = get_equal_houses()
+        sun = natal_longs.get("太陽", sun_lon)
+        moon = natal_longs.get("月", moon_lon)
+        mercury = natal_longs.get("水星", 0.0)
+        venus = natal_longs.get("金星", 0.0)
+        mars = natal_longs.get("火星", 0.0)
+        jupiter = natal_longs.get("木星", 0.0)
+        saturn = natal_longs.get("土星", 0.0)
 
-            # ★ここに追加
-            #year = birthday.year
-            #month = birthday.month
-            #day = birthday.day
-            #hour = birth_hour + birth_minute / 60.0 - 9
+        mercury_sign, mercury_deg = split_sign_degree(mercury)
+        venus_sign, venus_deg = split_sign_degree(venus)
+        mars_sign, mars_deg = split_sign_degree(mars)
+        jupiter_sign, jupiter_deg = split_sign_degree(jupiter)
+        saturn_sign, saturn_deg = split_sign_degree(saturn)
 
-            #jd = swe.julday(year, month, day, hour)
+        sun_text = f"{sun_sign} {sun_deg:.2f}°"
+        moon_text = f"{moon_sign} {moon_deg:.2f}°"
 
-                     
+        # ハウス計算：Placidus / 東京固定
+        dt_utc = datetime.datetime(
+            birthday.year,
+            birthday.month,
+            birthday.day,
+            int(birth_hour),
+            int(birth_minute)
+        ) - datetime.timedelta(hours=tz_offset)
 
+        jd = swe.julday(
+            dt_utc.year,
+            dt_utc.month,
+            dt_utc.day,
+            dt_utc.hour + dt_utc.minute / 60.0
+        )
 
-            #from datetime import datetime, timedelta
+        lat = 35.68
+        lon = 139.76
+        house_cusps, ascmc = swe.houses(jd, lat, lon, b'P')
+        houses = house_cusps
 
-            # 入力 → JST
-            # dt_local = datetime(
-            dt_local = datetime.datetime(
-                birthday.year,
-                birthday.month,
-                birthday.day,
-                int(birth_hour),
-                int(birth_minute)
-            )
+        asc = ascmc[0]
+        asc_deg = asc % 30
+        asc_sign = get_sign(asc)
 
-            # JST → UTC（必須）
-            dt_utc = dt_local - timedelta(hours=9)
-
-            # ★ここが毎回新しく計算される
-            jd = swe.julday(
-                dt_utc.year,
-                dt_utc.month,
-                dt_utc.day,
-                dt_utc.hour + dt_utc.minute / 60.0
-            )
-
-            lat = 35.68
-            lon = 139.76
-
-            houses, ascmc = swe.houses(jd, lat, lon, b'P')
-            asc = ascmc[0]
-
-            #st.write("DEBUG ASC:", asc)
-            asc_deg = asc % 30
-
-            asc_sign = get_sign(asc)
-
-
-        # トランジット
+        # トランジット：押した時だけ外側に重ねる
+        transit_longs = None
+        trans_planets = {}
         if btn_transit:
+            t_transit = make_ts_from_local(transit_date, 12, 0, tz_offset)
             t_sun_sign, t_sun_deg, t_sun_lon = get_sun_info(t_transit)
             t_moon_sign, t_moon_deg, t_moon_lon = get_moon_info(t_transit)
             trans_planets = get_planet_signs_ts(t_transit)
             transit_longs = get_body_longitudes_ts(t_transit)
 
-        target_label = "あなた" if mode == "自分（Luna）を占う" else f"{name or 'この方'}"
+        # 詳細説明タブ用に保存
+        st.session_state["natal_detail"] = {
+            "sun": sun,
+            "sun_sign": sun_sign,
+            "sun_deg": sun_deg,
+            "moon": moon,
+            "moon_sign": moon_sign,
+            "moon_deg": moon_deg,
+            "mercury": mercury,
+            "mercury_sign": mercury_sign,
+            "mercury_deg": mercury_deg,
+            "venus": venus,
+            "venus_sign": venus_sign,
+            "venus_deg": venus_deg,
+            "mars": mars,
+            "mars_sign": mars_sign,
+            "mars_deg": mars_deg,
+            "jupiter": jupiter,
+            "jupiter_sign": jupiter_sign,
+            "jupiter_deg": jupiter_deg,
+            "saturn": saturn,
+            "saturn_sign": saturn_sign,
+            "saturn_deg": saturn_deg,
+        }
 
-        # 基本情報
+        target_label = "あなた" if mode == "自分を占う" else f"{name or 'この方'}"
+
         st.markdown("<div class='luna-section-title'>ネイタル（出生図）</div>", unsafe_allow_html=True)
         st.write("鑑定対象：", target_label)
         st.write("名前：", name)
         st.write("生年月日：", birthday)
-        st.write("出生時刻：", f"{birth_hour:02d}:{birth_minute:02d}")
+        st.write("出生時刻：", f"{int(birth_hour):02d}:{int(birth_minute):02d}")
         st.write("タイムゾーン：", tz_label)
 
-        sun_sign, sun_deg, sun_lon = get_sun_info(t_natal)
-        moon_sign, moon_deg, moon_lon = get_moon_info(t_natal)
+        if btn_transit:
+            st.markdown("<div class='luna-section-title'>トランジット（選択した日の星の配置）</div>", unsafe_allow_html=True)
+            st.write("トランジット日：", transit_date)
+            trans_sun_text = f"{t_sun_sign} {t_sun_deg:.2f}°"
+            trans_moon_text = f"{t_moon_sign} {t_moon_deg:.2f}°"
+            st.write("太陽（トランジット）：", trans_sun_text)
+            st.write("月　（トランジット）：", trans_moon_text)
+            st.markdown(f"<div class='luna-message'>{simple_compare_message(sun_text, trans_sun_text, '太陽')}</div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='luna-message'>{simple_compare_message(moon_text, trans_moon_text, '月')}</div>", unsafe_allow_html=True)
 
-        sun_text = f"{sun_sign} {sun_deg:.2f}°"
-        moon_text = f"{moon_sign} {moon_deg:.2f}°"
+            st.markdown("#### 主要トランジット惑星（サイン＆度数）")
+            for p in ["木星", "土星", "冥王星"]:
+                if p in trans_planets:
+                    st.write(f"{p}：{trans_planets[p]}")
+
+        if btn_natal:
+            st.markdown("## ☺ 第一印象（ASC）")
+            st.write(f"{asc_sign} {asc_deg:.2f}°")
+            st.write(get_asc_message(asc_sign))
+
+            st.markdown("## ☀ 太陽（本質）")
+            st.write(sun_text)
+            st.write(get_sun_message(sun_sign))
+
+            st.markdown("## ☽ 月（感情）")
+            st.write(moon_text)
+            st.write(get_moon_message(moon_sign))
+
+            st.markdown("## ☿ 水星（思考）")
+            st.write(f"{mercury_sign} {mercury_deg:.2f}°")
+            st.write(get_mercury_message(mercury_sign))
+
+            st.markdown("## ♀ 金星（愛・好み）")
+            st.write(f"{venus_sign} {venus_deg:.2f}°")
+            st.write(get_venus_message(venus_sign))
+
+            st.markdown("## ♂ 火星（行動）")
+            st.write(f"{mars_sign} {mars_deg:.2f}°")
+            st.write(get_mars_message(mars_sign))
+
+            st.markdown("## ♃ 木星（拡大・発展）")
+            st.write(f"{jupiter_sign} {jupiter_deg:.2f}°")
+            st.write(get_jupiter_message(jupiter_sign))
+
+            st.markdown("## ♄ 土星（課題・責任）")
+            st.write(f"{saturn_sign} {saturn_deg:.2f}°")
+            st.write(get_saturn_message(saturn_sign))
+
+            aspect_planets = {
+                "太陽": sun,
+                "月": moon,
+                "水星": mercury,
+                "金星": venus,
+                "火星": mars,
+            }
+            aspects = get_aspects(aspect_planets)
+            st.markdown("## 🔷 アスペクト（関係性）")
+            if aspects:
+                for a in aspects:
+                    st.write(f"{a['p1']} × {a['p2']} ：{a['type']}")
+                    st.write(get_aspect_message(a["p1"], a["p2"], a["type"]))
+            else:
+                st.write("主要アスペクトはありません。")
+
+            st.markdown("## 🌟 性格まとめ")
+            summary = [
+                get_sun_message(sun_sign),
+                get_moon_message(moon_sign),
+                get_venus_message(venus_sign),
+                get_mars_message(mars_sign),
+            ]
+            for a in aspects:
+                summary.append(get_aspect_message(a["p1"], a["p2"], a["type"]))
+            for s in summary:
+                st.write("・" + s)
+
+        # 円形ホロスコープ
+        st.markdown("<div class='luna-section-title'>円形ホロスコープ（内側=ネイタル／外側=トランジット）</div>", unsafe_allow_html=True)
+        fig = plot_horoscope(natal_longs, houses, transit_longs)
+        st.pyplot(fig)
+
+        # 画像保存
+        buf = io.BytesIO()
+        fig.savefig(buf, format="png", bbox_inches="tight")
+        buf.seek(0)
+        st.download_button(
+            label="☁ ホロスコープ画像をダウンロード",
+            data=buf,
+            file_name="luna_horoscope.png",
+            mime="image/png",
+        )
+
+        st.markdown("#### 🔎 配置一覧（度数）")
+        st.write("【ネイタル（出生）】")
+        for name_body, deg in natal_longs.items():
+            sign, d = split_sign_degree(deg)
+            st.write(f"{name_body}: {sign} {d:.2f}°")
+
+        st.markdown("<br><br><br>", unsafe_allow_html=True)
+        st.markdown("## 🔍 ホロスコープ（詳細）")
 
         st.write("太陽：", sun_text)
         st.markdown(
@@ -1114,264 +1255,102 @@ with tab1:
 
         st.write("月　：", moon_text)
         st.markdown(
-            f"<div class='luna-message'>{get_moon_message(moon_text)}</div>",
+            f"<div class='luna-message'>{get_moon_message(moon_sign)}</div>",
             unsafe_allow_html=True
         )
 
-        # トランジット
-        if btn_transit:
-            st.markdown("<div class='luna-section-title'>トランジット（選択した日の星の配置）</div>", unsafe_allow_html=True)
-            st.write("トランジット日：", transit_date)
-            trans_sun_text = f"{t_sun_sign} {t_sun_deg:.2f}°"
-            trans_moon_text = f"{t_moon_sign} {t_moon_deg:.2f}°"
+        st.markdown("<div class='luna-section-title'>惑星からのメッセージ（ネイタル）</div>", unsafe_allow_html=True)
+        for p, v in planets.items():
+            st.write(f"{p}：{v}")
+            msg = get_planet_message(p)
+            if msg:
+                st.markdown(f"<div class='luna-message'>{msg}</div>", unsafe_allow_html=True)
 
-            st.write("太陽（トランジット）：", trans_sun_text)
-            st.write("月　（トランジット）：", trans_moon_text)
-
-            comp_sun = simple_compare_message(sun_text, trans_sun_text, "太陽")
-            comp_moon = simple_compare_message(moon_text, trans_moon_text, "月")
-            st.markdown(f"<div class='luna-message'>{comp_sun}</div>", unsafe_allow_html=True)
-            st.markdown(f"<div class='luna-message'>{comp_moon}</div>", unsafe_allow_html=True)
-
-            st.markdown("#### 主要トランジット惑星（サイン＆度数）")
-            for p in ["木星", "土星", "冥王星"]:
-                if p in trans_planets:
-                    st.write(f"{p}：{trans_planets[p]}")
-
-        # 惑星メッセージ（ネイタル）
-        if btn_natal:
-            st.markdown("<div class='luna-section-title'>惑星からのメッセージ（ネイタル）</div>", unsafe_allow_html=True)
-            for p, v in planets.items():
-                st.write(f"{p}：{v}")
-                msg = get_planet_message(p)
-                if msg:
-                    st.markdown(f"<div class='luna-message'>{msg}</div>", unsafe_allow_html=True)
-
-        # ハウス（ネイタル）
-        if btn_natal:
-            st.markdown("<div class='luna-section-title'>ハウス（象徴的イコールハウス・ネイタル）</div>", unsafe_allow_html=True)
-
-            # ★ここだけ使う（birthday に統一）
-            year = birthday.year
-            month = birthday.month
-            day = birthday.day
-            hour = birth_hour + birth_minute / 60
-
-            # jd = swe.julday(year, month, day, hour)
-
-            lat = 35.68
-            lon = 139.76
-
-            houses, ascmc = swe.houses(jd, lat, lon, b'P')
-            asc = ascmc[0]
-
-            asc_sign = get_sign(asc)
-
-
-        for i, cusp in enumerate(houses):
+        st.markdown("<div class='luna-section-title'>ハウス（Placidus・ネイタル）</div>", unsafe_allow_html=True)
+        for i, cusp in enumerate(house_cusps):
             house_num = i + 1
             sign = get_sign(cusp)
             msg = get_house_message(house_num, sign)
+            st.markdown(f"<div class='luna-message'>{msg}</div>", unsafe_allow_html=True)
 
-            st.markdown(f"<div class='luna-message'>{msg}</div>", unsafe_allow_html=True)                  
-
-        st.markdown("### 🌙 第一印象（ASC）")
-        #st.write(f"{asc_sign} {asc:.2f}°")
-        st.write(f"{asc_sign} {asc_deg:.2f}°")
-        st.write(get_asc_message(asc_sign))    
-
-        # 🌞 太陽（本質）
-        sun = swe.calc_ut(jd, swe.SUN)[0][0]
-        sun_sign = get_sign(sun)
-
-        st.markdown("## ☀ 太陽（本質）")
-        st.write(f"{sun_sign} {sun:.2f}°")
-        st.write(get_sun_message(sun_sign))
-
-        # 🌙 月（感情）
-        moon = swe.calc_ut(jd, swe.MOON)[0][0]
-        moon_sign = get_sign(moon)
-
-        st.markdown("## 🌙 月（感情）")
-        st.write(f"{moon_sign} {moon:.2f}°")     
-        st.write(get_moon_message(moon_sign)) 
-
-        # 水星
-        mercury = swe.calc_ut(jd, swe.MERCURY)[0][0]
-        mercury_sign = get_sign(mercury)
-
-        st.markdown("## ☿ 水星（思考）")
-        st.write(f"{mercury_sign} {mercury:.2f}°")
-        st.write(get_mercury_message(mercury_sign))
-
-
-        # 金星
-        venus = swe.calc_ut(jd, swe.VENUS)[0][0]
-        venus_sign = get_sign(venus)
-
-        st.markdown("## ♀ 金星（愛・好み）")
-        st.write(f"{venus_sign} {venus:.2f}°")
-        st.write(get_venus_message(venus_sign))
-
-
-        # 火星
-        mars = swe.calc_ut(jd, swe.MARS)[0][0]
-        mars_sign = get_sign(mars)
-
-        st.markdown("## ♂ 火星（行動）")
-        st.write(f"{mars_sign} {mars:.2f}°")
-        st.write(get_mars_message(mars_sign))   
-
-
-        # 木星
-        jupiter = swe.calc_ut(jd, swe.JUPITER)[0][0]
-        jupiter_sign = get_sign(jupiter)
-
-        st.markdown("## ♃ 木星（拡大・発展）")
-        st.write(f"{jupiter_sign} {jupiter:.2f}°")
-        st.write(get_planet_message("木星"))
-
-        # 土星
-        saturn = swe.calc_ut(jd, swe.SATURN)[0][0]
-        saturn_sign = get_sign(saturn)
-
-        st.markdown("## ♄ 土星（課題・責任）")
-        st.write(f"{saturn_sign} {saturn:.2f}°")
-        st.write(get_planet_message("土星"))   
-
-   # ←ここに追加
-        planets = {
-            "太陽": sun,
-            "月": moon,
-            "水星": mercury,
-            "金星": venus,
-            "火星": mars
-        }       
-
-        st.markdown("## 🔷 アスペクト（関係性）")
-
-        aspects = get_aspects(planets)
-
-        for a in aspects:
-            st.write(f"{a['p1']} × {a['p2']} ：{a['type']}")
-            msg = get_aspect_message(a["p1"], a["p2"], a["type"])
-
-            msg = get_aspect_message(a["p1"], a["p2"], a["type"])
-            st.write(msg)     
-
-        st.markdown("## 🌟 性格まとめ")
-
-        summary = []
-
-        summary.append(get_sun_message(sun_sign))
-        summary.append(get_moon_message(moon_sign))
-        summary.append(get_venus_message(venus_sign))
-        summary.append(get_mars_message(mars_sign))
-
-        for a in aspects:
-            summary.append(get_aspect_message(a["p1"], a["p2"], a["type"]))
-
-        for s in summary:
-            st.write("・" + s)           
-
-
-        # 円形ホロ（ネイタル＋トランジット2重）
-        if btn_natal:
-            st.markdown("<div class='luna-section-title'>円形ホロスコープ（内側＝ネイタル／外側＝トランジット）</div>", unsafe_allow_html=True)
-            fig = plot_horoscope(natal_longs, houses, {})
-            st.pyplot(fig)
-
-        # 🔽 ここから：画像ダウンロードボタン（追加分）
-            buf = io.BytesIO()
-            fig.savefig(buf, format="png", bbox_inches="tight")
-            buf.seek(0)
-
-            st.download_button(
-                label="📥 ホロスコープ画像をダウンロード",
-                data=buf,
-                file_name="luna_horoscope.png",
-                mime="image/png",
-            )
-
-        # テキスト一覧（ネイタル・トランジット）
-    if btn_natal:
-        st.markdown("#### 🔎 配置一覧（度数）")
-        st.write("【ネイタル（出生）】")
-
-        for name_body, deg in natal_longs.items():
-            sign, d = split_sign_degree(deg)
-            st.write(f"{name_body}: {sign} {d:.2f}°")
-
-        # トランジット取得
-        t_sun_sign, t_sun_deg, t_sun_lon = get_sun_info(t_transit)
-        t_moon_sign, t_moon_deg, t_moon_lon = get_moon_info(t_transit)
-
-        st.markdown("### 🌟 今日の影響")
-
-        if sun_sign == t_sun_sign:
-            st.write("今日はあなたの本質が強く出る日です。自然体でいられます。")
-
-        else:
-            st.write("今日は外からの刺激を受けやすい日です。柔軟に対応すると良いでしょう。")
-
-        st.markdown("### 🌙 感情の流れ")
-
-        if moon_sign == t_moon_sign:
-            st.write("今日は感情が安定しやすく、安心して過ごせる日です。")
-
-        else:
-            st.write("今日は気持ちが揺れやすい日です。無理せず過ごしましょう。")    
-
-        st.markdown("### 🔮 心と行動のバランス")
-
-        if sun_sign == t_moon_sign:
-            st.write("今日は『やりたいこと』と『気持ち』が一致しやすい日です。自然に行動できます。")
-
-        elif moon_sign == t_sun_sign:
-            st.write("今日は感情が行動に影響しやすい日です。直感を大切にすると良いでしょう。")
-
-        else:
-            st.write("今日は心と行動に少しズレが出やすい日です。無理せずバランスを取りましょう。")        
-
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    st.markdown("</div>", unsafe_allow_html=True)
-
-# === タブ2：トランジット ===
+# =========================
+# 🌍 Tab2：トランジット
+# =========================
 with tab2:
-    #st.markdown("<div class='luna-card'>", unsafe_allow_html=True)
 
-    st.subheader("🌞 トランジット")
+    st.subheader("🌍 トランジット")
 
-    transit_only_date = st.date_input(
+    # ▼ ここ重要（ローカルでdatetime使う＝衝突防止）
+    import datetime as dt
+
+    transit_date = st.date_input(
         "トランジットを見る日",
-        #value=datetime.date.today(),
-        value=datetime.datetime.now().date(),
-        min_value=datetime.date(1900, 1, 1),
-        max_value=datetime.date(2100, 12, 31),
-        key="transit_only_date"
+        value=dt.date.today(),
+        key="transit_date_only"
     )
 
-    if st.button("🌞 トランジットを見る", key="btn_transit_only"):
-        t_transit = make_ts_from_local(transit_only_date, 12, 0, 9)
+    if st.button("🌍 トランジットを見る", key="btn_transit_only"):
 
+        # ▼ 時刻作成（そのまま）
+        t_transit = make_ts_from_local(transit_date, 12, 0, 9)
+
+        # ▼ 各天体
         t_sun_sign, t_sun_deg, t_sun_lon = get_sun_info(t_transit)
         t_moon_sign, t_moon_deg, t_moon_lon = get_moon_info(t_transit)
-        trans_planets = get_planet_signs_ts(t_transit)
+
         transit_longs = get_body_longitudes_ts(t_transit)
 
-        st.markdown("<div class='luna-section-title'>トランジット（選択した日の星の配置）</div>", unsafe_allow_html=True)
-        st.write("トランジット日：", transit_only_date)
-        st.write("太陽：", f"{t_sun_sign} {t_sun_deg:.2f}°")
-        st.write("月　：", f"{t_moon_sign} {t_moon_deg:.2f}°")
+        st.markdown(
+            "<div class='luna-section-title'>トランジット（その日の星の配置）</div>",
+            unsafe_allow_html=True
+        )
 
-        st.markdown("#### 🔎 配置一覧（度数）")
+        st.write("日付：", transit_date)
+        st.write("☉ 太陽：", f"{t_sun_sign} {t_sun_deg:.2f}°")
+        st.write("☽ 月：", f"{t_moon_sign} {t_moon_deg:.2f}°")
+
+        st.markdown("### 🪐 各天体")
+
+        # ▼ カード表示
         for name_body, deg in transit_longs.items():
             sign, d = split_sign_degree(deg)
-            st.write(f"{name_body}：{sign} {d:.2f}°")
 
-    st.markdown("</div>", unsafe_allow_html=True)
+            st.markdown(f"""
+            <div class="luna-card">
+                <div class="luna-section-title">{name_body}</div>
+                <div>{sign} {d:.1f}°</div>
+            </div>
+            """, unsafe_allow_html=True)
 
+        # ===== 一言メッセージ =====
+        st.markdown("### ✨ 今日の流れ")
+
+        if t_sun_sign == "牡羊座":
+            msg = "👉 新しいことを始める力が強い日。動くほど流れが開けます。"
+        elif t_sun_sign == "牡牛座":
+            msg = "👉 お金・安定・現実面を整える日。無駄を削る判断がそのまま結果に直結します"
+        elif t_sun_sign == "双子座":
+            msg = "👉 情報・会話・発信が鍵。動き回るほどチャンスが増えます。"
+        elif t_sun_sign == "蟹座":
+            msg = "👉 心・家・安心がテーマ。自分を守る行動が運を上げます。"
+        elif t_sun_sign == "獅子座":
+            msg = "👉 自分を出す日。主役意識で動くほど評価が上がります。"
+        elif t_sun_sign == "乙女座":
+            msg = "👉 整理・改善が運気アップ。細かい見直しが大きな差に。"
+        elif t_sun_sign == "天秤座":
+            msg = "👉 人間関係が鍵。バランスと調和を意識すると流れが良くなる。"
+        elif t_sun_sign == "蠍座":
+            msg = "👉 深く集中する日。1つに絞ると強い成果が出ます。"
+        elif t_sun_sign == "射手座":
+            msg = "👉 広げる日。学び・挑戦・遠くに目を向けると運が動く。"
+        elif t_sun_sign == "山羊座":
+            msg = "👉 仕事・結果重視。現実的な行動が評価につながる日。"
+        elif t_sun_sign == "水瓶座":
+            msg = "👉 発想の転換が鍵。いつもと違うやり方で突破できます。"
+        elif t_sun_sign == "魚座":
+            msg = "👉 感性と流れに乗る日。無理せず委ねると良い方向へ。"
+
+        st.write(msg)            
 
 # === タブ3：相性占い ===
 with tab3:
@@ -1420,35 +1399,6 @@ with tab3:
 
     st.markdown("</div>", unsafe_allow_html=True)
 
-
-# === タブ4：カードメッセージ ===
-# with tab4:
-#     #st.markdown("<div class='luna-card'>", unsafe_allow_html=True)
-#     st.markdown("### 🔮 1枚カードメッセージ", unsafe_allow_html=True)
-
-#     if st.button("カードを1枚引く", key="card"):
-#         card_name, card_msg, card_img = draw_card()
-
-#         img_path = Path(card_img) if card_img else None
-
-#         if img_path and img_path.exists():
-#             col1, col2, col3 = st.columns([2, 3, 2])
-#             with col2:
-#                 st.image(img_path.read_bytes(), width=350)
-#                 st.markdown(f"### {card_name}")
-#                 st.write(card_msg)
-#         else:
-#             st.caption("（画像がまだ未設定 or 見つかりません）")
-
-#         st.markdown(
-#             f"""
-#             <div class="luna-card-box">
-#                 <div class="luna-subtitle">カード：{card_name}</div>
-#                 <div style="margin-top:6px;color:#2b1b4b;">{card_msg}</div>
-#             </div>
-#             """,
-#             unsafe_allow_html=True
-#         )
 
 # === タブ4：カードメッセージ ===
 from pathlib import Path
@@ -1559,10 +1509,86 @@ with tab4:
         """, unsafe_allow_html=True)
 
 
-        # st.markdown(f"""
-        # <div class="luna-card-box">
-        #     <div class="luna-title">{name}</div>
-        #     <div class="luna-text">{msg}</div>
-        # </div>
-        # """, unsafe_allow_html=True)              
 
+with tab5:
+
+    st.markdown("## 📖 詳細説明")
+
+    detail = st.session_state.get("natal_detail")
+
+    if not detail:
+        st.info("まずTab1で『🌙 ネイタルを見る』を押してください。詳細説明はその結果を使って表示します。")
+    else:
+        sun = detail["sun"]
+        sun_sign = detail["sun_sign"]
+        sun_deg = detail["sun_deg"]
+        moon = detail["moon"]
+        moon_sign = detail["moon_sign"]
+        moon_deg = detail["moon_deg"]
+        mercury = detail["mercury"]
+        mercury_sign = detail["mercury_sign"]
+        mercury_deg = detail["mercury_deg"]
+        venus = detail["venus"]
+        venus_sign = detail["venus_sign"]
+        venus_deg = detail["venus_deg"]
+        mars = detail["mars"]
+        mars_sign = detail["mars_sign"]
+        mars_deg = detail["mars_deg"]
+        jupiter_sign = detail["jupiter_sign"]
+        jupiter_deg = detail["jupiter_deg"]
+        saturn_sign = detail["saturn_sign"]
+        saturn_deg = detail["saturn_deg"]
+
+        st.markdown("## ☀ 太陽（本質）")
+        st.write(f"{sun_sign} {sun_deg:.2f}°")
+        st.write(get_sun_message(sun_sign))
+
+        st.markdown("## 🌙 月（感情）")
+        st.write(f"{moon_sign} {moon_deg:.2f}°")
+        st.write(get_moon_message(moon_sign))
+
+        st.markdown("## ☿ 水星（思考）")
+        st.write(f"{mercury_sign} {mercury_deg:.2f}°")
+        st.write(get_mercury_message(mercury_sign))
+
+        st.markdown("## ♀ 金星（愛・好み）")
+        st.write(f"{venus_sign} {venus_deg:.2f}°")
+        st.write(get_venus_message(venus_sign))
+
+        st.markdown("## ♂ 火星（行動）")
+        st.write(f"{mars_sign} {mars_deg:.2f}°")
+        st.write(get_mars_message(mars_sign))
+
+        st.markdown("## ♃ 木星（拡大・発展）")
+        st.write(f"{jupiter_sign} {jupiter_deg:.2f}°")
+        st.write(get_jupiter_message(jupiter_sign))
+
+        st.markdown("## ♄ 土星（課題・責任）")
+        st.write(f"{saturn_sign} {saturn_deg:.2f}°")
+        st.write(get_saturn_message(saturn_sign))
+
+        st.markdown("## 🔷 アスペクト")
+        aspect_planets = {
+            "太陽": sun,
+            "月": moon,
+            "水星": mercury,
+            "金星": venus,
+            "火星": mars
+        }
+        aspects = get_aspects(aspect_planets)
+
+        for a in aspects:
+            st.write(f"{a['p1']} × {a['p2']} ：{a['type']}")
+            st.write(get_aspect_message(a["p1"], a["p2"], a["type"]))
+
+        st.markdown("## 🌟 性格まとめ")
+        summary = [
+            get_sun_message(sun_sign),
+            get_moon_message(moon_sign),
+            get_venus_message(venus_sign),
+            get_mars_message(mars_sign),
+        ]
+        for a in aspects:
+            summary.append(get_aspect_message(a["p1"], a["p2"], a["type"]))
+        for s in summary:
+            st.write("・" + s)
