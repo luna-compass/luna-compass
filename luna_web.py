@@ -110,7 +110,7 @@ st.markdown("""
     box-shadow: 0 8px 20px rgba(15, 23, 42, 0.18);
 }
 .luna-title {
-    font-size: 22px !important;
+    font-size: 20px !important;
     text-align: center;
     font-weight: 700;
     letter-spacing: 0.24em;
@@ -186,7 +186,7 @@ st.markdown("""
     }
 
     .luna-title {
-        font-size: 30px !important;
+        font-size: 20px !important;
         letter-spacing: 0.18em !important;
     }
 }
