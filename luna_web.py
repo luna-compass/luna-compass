@@ -41,7 +41,7 @@ st.markdown("""
 }
 
 .luna-title {
-    font-size: 22px;
+    font-size: 18px;
     font-weight: bold;
     color: #5a2a83;
 }
@@ -110,7 +110,7 @@ st.markdown("""
     box-shadow: 0 8px 20px rgba(15, 23, 42, 0.18);
 }
 .luna-title {
-    font-size: 30px !important;
+    font-size: 22px !important;
     text-align: center;
     font-weight: 700;
     letter-spacing: 0.24em;
@@ -120,7 +120,7 @@ st.markdown("""
 .luna-caption {
     text-align: center;
     color: #4b5563;
-    font-size: 13px;
+    font-size: 11px;
 }
 
 /* メインカード */
