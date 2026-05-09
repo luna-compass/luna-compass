@@ -1162,35 +1162,35 @@ with tab1:
                     st.write(f"{p}：{trans_planets[p]}")
 
         if btn_natal:
-            st.markdown("## ☺ 第一印象（ASC）")
+            st.markdown("### ☺ 第一印象（ASC）")
             st.write(f"{asc_sign} {asc_deg:.2f}°")
             st.write(get_asc_message(asc_sign))
 
-            st.markdown("## ☀ 太陽（本質）")
+            st.markdown("### ☀ 太陽（本質）")
             st.write(sun_text)
             st.write(get_sun_message(sun_sign))
 
-            st.markdown("## ☽ 月（感情）")
+            st.markdown("### ☽ 月（感情）")
             st.write(moon_text)
             st.write(get_moon_message(moon_sign))
 
-            st.markdown("## ☿ 水星（思考）")
+            st.markdown("### ☿ 水星（思考）")
             st.write(f"{mercury_sign} {mercury_deg:.2f}°")
             st.write(get_mercury_message(mercury_sign))
 
-            st.markdown("## ♀ 金星（愛・好み）")
+            st.markdown("### ♀ 金星（愛・好み）")
             st.write(f"{venus_sign} {venus_deg:.2f}°")
             st.write(get_venus_message(venus_sign))
 
-            st.markdown("## ♂ 火星（行動）")
+            st.markdown("### ♂ 火星（行動）")
             st.write(f"{mars_sign} {mars_deg:.2f}°")
             st.write(get_mars_message(mars_sign))
 
-            st.markdown("## ♃ 木星（拡大・発展）")
+            st.markdown("### ♃ 木星（拡大・発展）")
             st.write(f"{jupiter_sign} {jupiter_deg:.2f}°")
             st.write(get_jupiter_message(jupiter_sign))
 
-            st.markdown("## ♄ 土星（課題・責任）")
+            st.markdown("### ♄ 土星（課題・責任）")
             st.write(f"{saturn_sign} {saturn_deg:.2f}°")
             st.write(get_saturn_message(saturn_sign))
 
@@ -1202,7 +1202,7 @@ with tab1:
                 "火星": mars,
             }
             aspects = get_aspects(aspect_planets)
-            st.markdown("## 🔷 アスペクト（関係性）")
+            st.markdown("### 🔷 アスペクト（関係性）")
             if aspects:
                 for a in aspects:
                     st.write(f"{a['p1']} × {a['p2']} ：{a['type']}")
@@ -1210,7 +1210,7 @@ with tab1:
             else:
                 st.write("主要アスペクトはありません。")
 
-            st.markdown("## 🌟 性格まとめ")
+            st.markdown("### 🌟 性格まとめ")
             summary = [
                 get_sun_message(sun_sign),
                 get_moon_message(moon_sign),
@@ -1245,7 +1245,7 @@ with tab1:
             st.write(f"{name_body}: {sign} {d:.2f}°")
 
         st.markdown("<br><br><br>", unsafe_allow_html=True)
-        st.markdown("## 🔍 ホロスコープ（詳細）")
+        st.markdown("### 🔍 ホロスコープ（詳細）")
 
         st.write("太陽：", sun_text)
         st.markdown(
@@ -1512,7 +1512,7 @@ with tab4:
 
 with tab5:
 
-    st.markdown("## 📖 詳細説明")
+    st.markdown("### 📖 詳細説明")
 
     detail = st.session_state.get("natal_detail")
 
@@ -1539,35 +1539,35 @@ with tab5:
         saturn_sign = detail["saturn_sign"]
         saturn_deg = detail["saturn_deg"]
 
-        st.markdown("## ☀ 太陽（本質）")
+        st.markdown("### ☀ 太陽（本質）")
         st.write(f"{sun_sign} {sun_deg:.2f}°")
         st.write(get_sun_message(sun_sign))
 
-        st.markdown("## 🌙 月（感情）")
+        st.markdown("### 🌙 月（感情）")
         st.write(f"{moon_sign} {moon_deg:.2f}°")
         st.write(get_moon_message(moon_sign))
 
-        st.markdown("## ☿ 水星（思考）")
+        st.markdown("### ☿ 水星（思考）")
         st.write(f"{mercury_sign} {mercury_deg:.2f}°")
         st.write(get_mercury_message(mercury_sign))
 
-        st.markdown("## ♀ 金星（愛・好み）")
+        st.markdown("### ♀ 金星（愛・好み）")
         st.write(f"{venus_sign} {venus_deg:.2f}°")
         st.write(get_venus_message(venus_sign))
 
-        st.markdown("## ♂ 火星（行動）")
+        st.markdown("### ♂ 火星（行動）")
         st.write(f"{mars_sign} {mars_deg:.2f}°")
         st.write(get_mars_message(mars_sign))
 
-        st.markdown("## ♃ 木星（拡大・発展）")
+        st.markdown("### ♃ 木星（拡大・発展）")
         st.write(f"{jupiter_sign} {jupiter_deg:.2f}°")
         st.write(get_jupiter_message(jupiter_sign))
 
-        st.markdown("## ♄ 土星（課題・責任）")
+        st.markdown("### ♄ 土星（課題・責任）")
         st.write(f"{saturn_sign} {saturn_deg:.2f}°")
         st.write(get_saturn_message(saturn_sign))
 
-        st.markdown("## 🔷 アスペクト")
+        st.markdown("### 🔷 アスペクト")
         aspect_planets = {
             "太陽": sun,
             "月": moon,
@@ -1581,7 +1581,7 @@ with tab5:
             st.write(f"{a['p1']} × {a['p2']} ：{a['type']}")
             st.write(get_aspect_message(a["p1"], a["p2"], a["type"]))
 
-        st.markdown("## 🌟 性格まとめ")
+        st.markdown("### 🌟 性格まとめ")
         summary = [
             get_sun_message(sun_sign),
             get_moon_message(moon_sign),
