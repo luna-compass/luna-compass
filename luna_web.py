@@ -28,6 +28,8 @@ from datetime import timedelta
 
 from pathlib import Path
 
+import pandas as pd
+
 # 👇ここに追加！！
 st.markdown("""
 <style>
@@ -41,7 +43,7 @@ st.markdown("""
 }
 
 .luna-title {
-    font-size: 18px;
+    font-size: 20px;
     font-weight: bold;
     color: #5a2a83;
 }
@@ -110,7 +112,7 @@ st.markdown("""
     box-shadow: 0 8px 20px rgba(15, 23, 42, 0.18);
 }
 .luna-title {
-    font-size: 18px !important;
+    font-size: 20px !important;
     text-align: center;
     font-weight: 700;
     letter-spacing: 0.24em;
@@ -121,6 +123,14 @@ st.markdown("""
     text-align: center;
     color: #4b5563;
     font-size: 11px;
+}
+.luna-subtitle {
+    font-size: 13px;
+    color: #7a6a9a;
+    margin-top: -8px;
+    margin-bottom: 14px;
+    font-style: italic;
+    line-height: 1.6;
 }
 
 /* メインカード */
@@ -134,7 +144,7 @@ st.markdown("""
 
 /* セクション見出し */
 .luna-section-title {
-    font-size: 18px;
+    font-size: 20px;
     margin-top: 20px;
     margin-bottom: 10px;
     color: #2b1b4b;
@@ -186,7 +196,7 @@ st.markdown("""
     }
 
     .luna-title {
-        font-size: 18px !important;
+        font-size: 20px !important;
         letter-spacing: 0.18em !important;
     }
 }
@@ -339,7 +349,7 @@ def get_sun_message(sign):
     messages = {
         "牡羊座": "行動力と情熱で人生を切り開くタイプです。",
         "牡牛座": "安定と豊かさを大切にする現実的な魂です。",
-        "双子座": "知識をつなぐ魂。好奇心と観察力で世界を読み解き、人と人・過去と未来を結ぶ存在。学び・言葉・探究は、あなたの宿命であり才能です。",
+        "双子座": "軽やかな知性と好奇心で人生を切り開く存在です。言葉と出会いを通して世界を広げ、自分らしい輝きを放ちます。",
         "蟹座": "感情と共感を大切にする優しい魂です。",
         "獅子座": "自分らしさを表現する華やかな存在です。",
         "乙女座": "分析力と繊細さで物事を整える力があります。",
@@ -383,7 +393,7 @@ def get_mercury_message(sign):
     messages = {
         "牡羊座": "直感的でスピーディーな思考。思ったことをすぐ言葉にします。",
         "牡牛座": "じっくり考えるタイプ。現実的で安定した判断をします。",
-        "双子座": "情報収集が得意。会話力が高く、頭の回転が早いです。",
+        "双子座": "知識をつなぎ、人と世界を結ぶ存在。好奇心と学びの力で可能性を広げます。",
         "蟹座": "感情ベースで考える傾向。共感力が高いです。",
         "獅子座": "自分の考えに自信があり、表現力が豊かです。",
         "乙女座": "分析力が高く、細かいところまでよく気づきます。",
@@ -461,6 +471,57 @@ def get_saturn_message(sign):
         "山羊座": "責任が重く感じやすいですが、大きな成功をつかむ力があります。",
         "水瓶座": "個性を出すことに葛藤がありますが、独自の価値を確立できます。",
         "魚座": "曖昧さに不安を感じますが、精神的な強さと優しさが育ちます。"
+    }
+    return messages.get(sign, "")
+
+def get_uranus_message(sign):
+    messages = {
+        "牡羊座": "新しい時代を切り開く革命の炎。常識に縛られず、自分だけの道を突き進みます。",
+        "牡牛座": "価値観を静かに変革する存在。本物の豊かさと自由を求めます。",
+        "双子座": "情報・知識・ネットワークを革新する力。新しい発想で世界をつなぎます。",
+        "蟹座": "心や居場所の在り方を変えていく世代。感情と自由の両立を学びます。",
+        "獅子座": "個性を大胆に表現する輝き。創造性と独自性で人を惹きつけます。",
+        "乙女座": "既存システムを改善し、現実をアップデートする分析者です。",
+        "天秤座": "人間関係や愛の価値観を刷新する存在。調和の新しい形を作ります。",
+        "蠍座": "深い変容を恐れない魂。極限から新しい力を生み出します。",
+        "射手座": "自由な思想と冒険心で世界を広げる改革者です。",
+        "山羊座": "社会構造を変えていく責任ある改革者。古い仕組みを更新します。",
+        "水瓶座": "未来そのものを象徴する存在。独創性と自由精神で時代を切り開きます。",
+        "魚座": "境界を超えて共鳴する感性。精神世界や癒しに深くつながります。"
+    }
+    return messages.get(sign, "")
+
+def get_neptune_message(sign):
+    messages = {
+        "牡羊座": "直感と情熱が混ざり合う幻想の魂。夢を追いかけ、新しい感性の世界を切り開きます。",
+        "牡牛座": "美しさや安心感に深く共鳴する存在。感覚を通して癒しと豊かさを求めます。",
+        "双子座": "言葉や情報に幻想とインスピレーションを宿す魂。自由な発想で世界をつなぎます。",
+        "蟹座": "優しさと共感力に満ちた存在。人の心を包み込み、癒しを与えます。",
+        "獅子座": "夢や理想を表現する創造者。幻想的な輝きで人を魅了します。",
+        "乙女座": "繊細な感覚と奉仕精神を持つ存在。見えない部分まで丁寧に整えます。",
+        "天秤座": "愛や調和に理想を求める魂。人との美しいつながりを大切にします。",
+        "蠍座": "深い精神世界と強い直感を持つ存在。見えない真実を感じ取ります。",
+        "射手座": "理想と自由を追い求める旅人。精神的な探究を通して世界を広げます。",
+        "山羊座": "夢を現実へ形にする力。静かに理想を積み上げていく存在です。",
+        "水瓶座": "未来感覚と直感に優れた存在。新しい時代のビジョンを受け取ります。",
+        "魚座": "境界を超えて共鳴する魂。癒し・芸術・スピリチュアルな感性に深くつながります。"
+    }
+    return messages.get(sign, "")
+
+def get_pluto_message(sign):
+    messages = {
+        "牡羊座": "強烈な生命力と再生の力を持つ存在。限界を超えて新しい道を切り開きます。",
+        "牡牛座": "価値観を根底から変えていく魂。本物の豊かさと力を求めます。",
+        "双子座": "知識や言葉を通して世界を変革する存在。情報に深い影響力を持ちます。",
+        "蟹座": "感情や家族のテーマに深い変容をもたらす魂。心の再生を経験します。",
+        "獅子座": "圧倒的な存在感と創造力を持つ存在。自己表現を通して世界に影響を与えます。",
+        "乙女座": "現実や仕組みを徹底的に改善する改革者。細部に強い力を宿します。",
+        "天秤座": "人間関係を通して深い変化を経験する存在。愛と絆の本質を学びます。",
+        "蠍座": "極限から再生する力を持つ魂。破壊と再生を繰り返しながら進化します。",
+        "射手座": "真実を求め続ける探究者。思想や信念を通して世界を変えていきます。",
+        "山羊座": "社会や構造を根本から変革する存在。強い責任感と影響力を持ちます。",
+        "水瓶座": "時代そのものを変える革新的な魂。未来への変化を加速させます。",
+        "魚座": "見えない世界と深く結びついた存在。魂レベルの癒しと変容をもたらします。"
     }
     return messages.get(sign, "")
 
@@ -917,8 +978,8 @@ def get_asc_message(sign):
 
 # ---------- タブ構成 ----------
 # tab1, tab2, tab3, tab4 = st.tabs([
-#     "🌙 ネイタル",
-#     "🌞 トランジット",
+#     "🌙 あなたの本質",
+#     "🌞 今日の運気",
 #     "💞 相性占い",
 #     "🃏 カードメッセージ"
 # ])
@@ -933,7 +994,7 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs([
 
 # === タブ1：ネイタル ===
 with tab1:
-    st.write("テスト：ここからネイタル")
+    #st.write("テスト：ここからネイタル")
 
     st.markdown("""
     <style>
@@ -1018,8 +1079,8 @@ with tab1:
             key="birth_minute_natal"
         )
 
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown("<div class='luna-section-title'>🌍 今日の運気</div>", unsafe_allow_html=True)
+    #st.markdown("<br>", unsafe_allow_html=True)
+    #st.markdown("<div class='luna-section-title'>🌍 今日の運気</div>", unsafe_allow_html=True)
 
     tz_label = st.radio(
         "出生地のタイムゾーン",
@@ -1028,6 +1089,21 @@ with tab1:
         help="海外出生の場合のみ変更してください"
     )
     tz_offset = 9 if tz_label.startswith("日本") else 0
+
+    cities = pd.read_csv("cities.csv")
+
+    city = st.selectbox(
+            "出生地",
+            cities["city"]
+    )
+
+    row = cities[cities["city"] == city].iloc[0]
+
+    lat = row["lat"]
+    lon = row["lon"]
+
+    lat = row["lat"]
+    lon = row["lon"]
 
     transit_date = st.date_input(
         "トランジットを見る日（今日・気になる日など）",
@@ -1093,8 +1169,23 @@ with tab1:
             dt_utc.hour + dt_utc.minute / 60.0
         )
 
-        lat = 35.68
-        lon = 139.76
+        # cities = pd.read_csv("cities.csv")
+
+        # city = st.selectbox(
+        #     "出生地",
+        #     cities["city"]
+        # )
+
+        # row = cities[cities["city"] == city].iloc[0]
+
+        # lat = row["lat"]
+        # lon = row["lon"]
+
+        # lat = row["lat"]
+        # lon = row["lon"]
+
+        #lat = 35.68
+        #lon = 139.76
         house_cusps, ascmc = swe.houses(jd, lat, lon, b'P')
         houses = house_cusps
 
@@ -1162,38 +1253,258 @@ with tab1:
                     st.write(f"{p}：{trans_planets[p]}")
 
         if btn_natal:
+            # =========================================
+            # ☺ ASC
+            # =========================================
+
             st.markdown("### ☺ 第一印象（ASC）")
-            st.write(f"{asc_sign} {asc_deg:.2f}°")
-            st.write(get_asc_message(asc_sign))
+            st.markdown(
+                "<div class='luna-subtitle'>あなたが自然に放つ雰囲気</div>",
+                unsafe_allow_html=True
+            )
+
+            st.markdown(
+                f"<div class='luna-subtext'>{asc_sign} {asc_deg:.2f}°</div>",
+                unsafe_allow_html=True
+            )
+
+            st.markdown(
+                f"<div class='luna-message'>{get_asc_message(asc_sign)}</div>",
+                unsafe_allow_html=True
+            )
+
+
+            # =========================================
+            # ☀ 太陽
+            # =========================================
 
             st.markdown("### ☀ 太陽（本質）")
-            st.write(sun_text)
-            st.write(get_sun_message(sun_sign))
+            st.markdown(
+                "<div class='luna-subtitle'>あなたらしさの中心</div>",
+                unsafe_allow_html=True
+            )
+
+            st.markdown(
+                f"<div class='luna-subtext'>{sun_text}</div>",
+                unsafe_allow_html=True
+            )
+
+            st.markdown(
+                f"<div class='luna-message'>{get_sun_message(sun_sign)}</div>",
+                unsafe_allow_html=True
+            )
+
+
+            # =========================================
+            # ☽ 月
+            # =========================================
 
             st.markdown("### ☽ 月（感情）")
-            st.write(moon_text)
-            st.write(get_moon_message(moon_sign))
+            st.markdown(
+                "<div class='luna-subtitle'>心が安心する場所</div>",
+                unsafe_allow_html=True
+            )
+
+            st.markdown(
+                f"<div class='luna-subtext'>{moon_text}</div>",
+                unsafe_allow_html=True
+            )
+
+            st.markdown(
+                f"<div class='luna-message'>{get_moon_message(moon_sign)}</div>",
+                unsafe_allow_html=True
+            )
+
+
+            # =========================================
+            # ☿ 水星
+            # =========================================
 
             st.markdown("### ☿ 水星（思考）")
-            st.write(f"{mercury_sign} {mercury_deg:.2f}°")
-            st.write(get_mercury_message(mercury_sign))
+            st.markdown(
+                "<div class='luna-subtitle'>考え方と伝え方の特徴</div>",
+                unsafe_allow_html=True
+            )
+
+            st.markdown(
+                f"<div class='luna-subtext'>{mercury_sign} {mercury_deg:.2f}°</div>",
+                unsafe_allow_html=True
+            )
+
+            st.markdown(
+                f"<div class='luna-message'>{get_mercury_message(mercury_sign)}</div>",
+                unsafe_allow_html=True
+            )
+
+
+            # =========================================
+            # ♀ 金星
+            # =========================================
 
             st.markdown("### ♀ 金星（愛・好み）")
-            st.write(f"{venus_sign} {venus_deg:.2f}°")
-            st.write(get_venus_message(venus_sign))
+            st.markdown(
+                "<div class='luna-subtitle'>愛し方と魅力の傾向</div>",
+                unsafe_allow_html=True
+            )
+
+            st.markdown(
+                f"<div class='luna-subtext'>{venus_sign} {venus_deg:.2f}°</div>",
+                unsafe_allow_html=True
+            )
+
+            st.markdown(
+                f"<div class='luna-message'>{get_venus_message(venus_sign)}</div>",
+                unsafe_allow_html=True
+            )
+
+
+            # =========================================
+            # ♂ 火星
+            # =========================================
 
             st.markdown("### ♂ 火星（行動）")
-            st.write(f"{mars_sign} {mars_deg:.2f}°")
-            st.write(get_mars_message(mars_sign))
+            st.markdown(
+                "<div class='luna-subtitle'>エネルギーの使い方</div>",
+                unsafe_allow_html=True
+            )
+
+            st.markdown(
+                f"<div class='luna-subtext'>{mars_sign} {mars_deg:.2f}°</div>",
+                unsafe_allow_html=True
+            )
+
+            st.markdown(
+                f"<div class='luna-message'>{get_mars_message(mars_sign)}</div>",
+                unsafe_allow_html=True
+            )
+
+
+            # =========================================
+            # ♃ 木星
+            # =========================================
 
             st.markdown("### ♃ 木星（拡大・発展）")
-            st.write(f"{jupiter_sign} {jupiter_deg:.2f}°")
-            st.write(get_jupiter_message(jupiter_sign))
+            st.markdown(
+                "<div class='luna-subtitle'>幸運が広がる方向</div>",
+                unsafe_allow_html=True
+            )
+
+            st.markdown(
+                f"<div class='luna-subtext'>{jupiter_sign} {jupiter_deg:.2f}°</div>",
+                unsafe_allow_html=True
+            )
+
+            st.markdown(
+                f"<div class='luna-message'>{get_jupiter_message(jupiter_sign)}</div>",
+                unsafe_allow_html=True
+            )
+
+
+            # =========================================
+            # ♄ 土星
+            # =========================================
 
             st.markdown("### ♄ 土星（課題・責任）")
-            st.write(f"{saturn_sign} {saturn_deg:.2f}°")
-            st.write(get_saturn_message(saturn_sign))
+            st.markdown(
+                "<div class='luna-subtitle'>人生で深めていくテーマ</div>",
+                unsafe_allow_html=True
+            )
 
+            st.markdown(
+                f"<div class='luna-subtext'>{saturn_sign} {saturn_deg:.2f}°</div>",
+                unsafe_allow_html=True
+            )
+
+            st.markdown(
+                f"<div class='luna-message'>{get_saturn_message(saturn_sign)}</div>",
+                unsafe_allow_html=True
+            )
+
+            uranus_sign, uranus_deg = split_sign_degree(natal_longs["天王星"])
+            neptune_sign, neptune_deg = split_sign_degree(natal_longs["海王星"])
+            pluto_sign, pluto_deg = split_sign_degree(natal_longs["冥王星"])            
+
+            # =========================================
+            # ♅ 天王星（覚醒・個性）
+            # =========================================
+
+            uranus_sign, uranus_deg = split_sign_degree(natal_longs["天王星"])
+
+            st.markdown("### ♅ 天王星（覚醒・個性）")
+
+            st.markdown("""
+            あなたの中にある
+            「人と違う感性」を表します。
+
+            常識に縛られず、
+            未来を切り開く力です。
+            """)
+
+            st.markdown(
+                f"<div class='luna-subtext'>{uranus_sign}座 {uranus_deg:.2f}°</div>",
+                unsafe_allow_html=True
+            )
+
+            st.markdown(
+                f"<div class='luna-message'>{get_uranus_message(uranus_sign)}</div>",
+                unsafe_allow_html=True
+            )
+
+
+            # =========================================
+            # ♆ 海王星（夢・直感）
+            # =========================================
+
+            neptune_sign, neptune_deg = split_sign_degree(natal_longs["海王星"])
+
+            st.markdown("### ♆ 海王星（夢・直感）")
+
+            st.markdown("""
+            直感・夢・精神性・芸術感覚を表します。
+
+            見えない世界とのつながりや、
+            深い共感力を示します。
+            """)
+
+            st.markdown(
+                f"<div class='luna-subtext'>{neptune_sign}座 {neptune_deg:.2f}°</div>",
+                unsafe_allow_html=True
+            )
+
+            st.markdown(
+                f"<div class='luna-message'>{get_neptune_message(neptune_sign)}</div>",
+                unsafe_allow_html=True
+            )
+
+
+            # =========================================
+            # ♇ 冥王星（変容・再生）
+            # =========================================
+
+            pluto_sign, pluto_deg = split_sign_degree(natal_longs["冥王星"])
+
+            st.markdown("### ♇ 冥王星（変容・再生）")
+
+            st.markdown("""
+            人生の大きな変化や、
+            魂レベルのテーマを表します。
+
+            壊して再生する力を持つ星です。
+            """)
+
+            st.markdown(
+                f"<div class='luna-subtext'>{pluto_sign}座 {pluto_deg:.2f}°</div>",
+                unsafe_allow_html=True
+            )
+
+            st.markdown(
+                f"<div class='luna-message'>{get_pluto_message(pluto_sign)}</div>",
+                unsafe_allow_html=True
+            )         
+
+            
+
+            st.markdown("<br>", unsafe_allow_html=True)
             aspect_planets = {
                 "太陽": sun,
                 "月": moon,
@@ -1210,6 +1521,8 @@ with tab1:
             else:
                 st.write("主要アスペクトはありません。")
 
+            st.markdown("<br>", unsafe_allow_html=True)
+
             st.markdown("### 🌟 性格まとめ")
             summary = [
                 get_sun_message(sun_sign),
@@ -1222,8 +1535,20 @@ with tab1:
             for s in summary:
                 st.write("・" + s)
 
+        st.markdown("<br>", unsafe_allow_html=True)
         # 円形ホロスコープ
-        st.markdown("<div class='luna-section-title'>円形ホロスコープ（内側=ネイタル／外側=トランジット）</div>", unsafe_allow_html=True)
+        #st.markdown("<div class='luna-section-title'>円形ホロスコープ（内側=ネイタル／外側=トランジット）</div>", unsafe_allow_html=True)
+        st.markdown("""
+        <div style="
+        font-size:34px;
+        font-weight:700;
+        margin-top:20px;
+        margin-bottom:18px;
+        color:#2d2d2d;
+        ">
+        🌙 円形ホロスコープ
+        </div>
+        """, unsafe_allow_html=True)
         fig = plot_horoscope(natal_longs, houses, transit_longs)
         st.pyplot(fig)
 
@@ -1238,13 +1563,14 @@ with tab1:
             mime="image/png",
         )
 
-        st.markdown("#### 🔎 配置一覧（度数）")
-        st.write("【ネイタル（出生）】")
-        for name_body, deg in natal_longs.items():
-            sign, d = split_sign_degree(deg)
-            st.write(f"{name_body}: {sign} {d:.2f}°")
+        # st.markdown("<br>", unsafe_allow_html=True)
+        # st.markdown("#### 🔎 配置一覧（度数）")
+        # st.write("【ネイタル（出生）】")
+        # for name_body, deg in natal_longs.items():
+        #     sign, d = split_sign_degree(deg)
+        #     st.write(f"{name_body}: {sign} {d:.2f}°")
 
-        st.markdown("<br><br><br>", unsafe_allow_html=True)
+        st.markdown("<br><br>", unsafe_allow_html=True)
         st.markdown("### 🔍 ホロスコープ（詳細）")
 
         st.write("太陽：", sun_text)
@@ -1259,19 +1585,59 @@ with tab1:
             unsafe_allow_html=True
         )
 
-        st.markdown("<div class='luna-section-title'>惑星からのメッセージ（ネイタル）</div>", unsafe_allow_html=True)
-        for p, v in planets.items():
-            st.write(f"{p}：{v}")
-            msg = get_planet_message(p)
-            if msg:
-                st.markdown(f"<div class='luna-message'>{msg}</div>", unsafe_allow_html=True)
+        # st.markdown("<div class='luna-section-title'>惑星からのメッセージ（ネイタル）</div>", unsafe_allow_html=True)
+        # for p, v in planets.items():
+        #     st.write(f"{p}：{v}")
+        #     msg = get_planet_message(p)
+        #     if msg:
+        #         st.markdown(f"<div class='luna-message'>{msg}</div>", unsafe_allow_html=True)
 
-        st.markdown("<div class='luna-section-title'>ハウス（Placidus・ネイタル）</div>", unsafe_allow_html=True)
-        for i, cusp in enumerate(house_cusps):
-            house_num = i + 1
-            sign = get_sign(cusp)
-            msg = get_house_message(house_num, sign)
-            st.markdown(f"<div class='luna-message'>{msg}</div>", unsafe_allow_html=True)
+        for p, v in planets.items():
+
+            st.write(f"{p}:{v}")
+
+            sign = v.split()[0]
+
+            if p == "水星":
+                msg = get_mercury_message(sign)
+
+            elif p == "金星":
+                msg = get_venus_message(sign)
+
+            elif p == "火星":
+                msg = get_mars_message(sign)
+
+            elif p == "木星":
+                msg = get_jupiter_message(sign)
+
+            elif p == "土星":
+                msg = get_saturn_message(sign)
+
+            elif p == "天王星":
+                msg = get_uranus_message(sign)
+
+            elif p == "海王星":
+                msg = get_neptune_message(sign)
+
+            elif p == "冥王星":
+                msg = get_pluto_message(sign)
+
+            else:
+                msg = get_planet_message(p)
+
+            if msg:
+                st.markdown(
+                    f"<div class='luna-message'>{msg}</div>",
+                    unsafe_allow_html=True
+                )        
+
+        # st.markdown("<div class='luna-section-title'>ハウス（Placidus・ネイタル）"
+        # "</div>", unsafe_allow_html=True)
+        # for i, cusp in enumerate(house_cusps):
+        #     house_num = i + 1
+        #     sign = get_sign(cusp)
+        #     msg = get_house_message(house_num, sign)
+        #     st.markdown(f"<div class='luna-message'>{msg}</div>", unsafe_allow_html=True)
 
 # =========================
 # 🌍 Tab2：トランジット
@@ -1509,86 +1875,190 @@ with tab4:
         """, unsafe_allow_html=True)
 
 
-
 with tab5:
 
-    st.markdown("### 📖 詳細説明")
+    st.markdown("## 📖 星からのガイド")
 
-    detail = st.session_state.get("natal_detail")
+    st.markdown("### ☺ ASC（第一印象）")
+    st.markdown("""
+人生の入り口に宿るエネルギー。  
+あなたが自然に放つ雰囲気や、  
+人が最初に感じ取る空気を映し出します。  
 
-    if not detail:
-        st.info("まずTab1で『🌙 ネイタルを見る』を押してください。詳細説明はその結果を使って表示します。")
-    else:
-        sun = detail["sun"]
-        sun_sign = detail["sun_sign"]
-        sun_deg = detail["sun_deg"]
-        moon = detail["moon"]
-        moon_sign = detail["moon_sign"]
-        moon_deg = detail["moon_deg"]
-        mercury = detail["mercury"]
-        mercury_sign = detail["mercury_sign"]
-        mercury_deg = detail["mercury_deg"]
-        venus = detail["venus"]
-        venus_sign = detail["venus_sign"]
-        venus_deg = detail["venus_deg"]
-        mars = detail["mars"]
-        mars_sign = detail["mars_sign"]
-        mars_deg = detail["mars_deg"]
-        jupiter_sign = detail["jupiter_sign"]
-        jupiter_deg = detail["jupiter_deg"]
-        saturn_sign = detail["saturn_sign"]
-        saturn_deg = detail["saturn_deg"]
+この世界とどう関わり、
+どんな扉を開いていくのかを示す大切なポイントです。
+""")
 
-        st.markdown("### ☀ 太陽（本質）")
-        st.write(f"{sun_sign} {sun_deg:.2f}°")
-        st.write(get_sun_message(sun_sign))
+    st.markdown("### ☀ 太陽（本質）")
+    st.markdown("""
+人生を照らす中心の光。  
+あなたらしさと、生きる方向性を映し出します。  
 
-        st.markdown("### 🌙 月（感情）")
-        st.write(f"{moon_sign} {moon_deg:.2f}°")
-        st.write(get_moon_message(moon_sign))
+情熱・誇り・存在感は、
+魂がこの人生で輝くための力です。
+""")
 
-        st.markdown("### ☿ 水星（思考）")
-        st.write(f"{mercury_sign} {mercury_deg:.2f}°")
-        st.write(get_mercury_message(mercury_sign))
+    st.markdown("### ☽ 月（感情）")
+    st.markdown("""
+心の奥で静かに揺れる感情。  
+安心できる場所や、
+素のあなたを映し出します。  
 
-        st.markdown("### ♀ 金星（愛・好み）")
-        st.write(f"{venus_sign} {venus_deg:.2f}°")
-        st.write(get_venus_message(venus_sign))
+感情の流れは、
+魂が安らぎを求める方向を教えてくれます。
+""")
 
-        st.markdown("### ♂ 火星（行動）")
-        st.write(f"{mars_sign} {mars_deg:.2f}°")
-        st.write(get_mars_message(mars_sign))
+    st.markdown("### ☿ 水星（思考）")
+    st.markdown("""
+知識をつなぐ魂。  
+好奇心と観察力で世界を読み解き、  
+人と人・過去と未来を結ぶ存在。  
 
-        st.markdown("### ♃ 木星（拡大・発展）")
-        st.write(f"{jupiter_sign} {jupiter_deg:.2f}°")
-        st.write(get_jupiter_message(jupiter_sign))
+学び・言葉・探究は、
+あなたの宿命であり才能です。
+""")
 
-        st.markdown("### ♄ 土星（課題・責任）")
-        st.write(f"{saturn_sign} {saturn_deg:.2f}°")
-        st.write(get_saturn_message(saturn_sign))
+    st.markdown("### ♀ 金星（愛情）")
+    st.markdown("""
+心が美しいと感じるもの。  
+愛し方や魅力、
+心地よさの感覚を表します。  
 
-        st.markdown("### 🔷 アスペクト")
-        aspect_planets = {
-            "太陽": sun,
-            "月": moon,
-            "水星": mercury,
-            "金星": venus,
-            "火星": mars
-        }
-        aspects = get_aspects(aspect_planets)
+喜びや愛情は、
+人生を豊かに彩る優しい光です。
+""")
 
-        for a in aspects:
-            st.write(f"{a['p1']} × {a['p2']} ：{a['type']}")
-            st.write(get_aspect_message(a["p1"], a["p2"], a["type"]))
+    st.markdown("### ♂ 火星（行動）")
+    st.markdown("""
+内側から燃え上がる行動の炎。  
+情熱・決断力・前へ進む力を表します。  
 
-        st.markdown("### 🌟 性格まとめ")
-        summary = [
-            get_sun_message(sun_sign),
-            get_moon_message(moon_sign),
-            get_venus_message(venus_sign),
-            get_mars_message(mars_sign),
-        ]
-        for a in aspects:
-            summary.append(get_aspect_message(a["p1"], a["p2"], a["type"]))
-        for s in summary:
-            st.write("・" + s)
+あなたが何に向かって力を使い、
+どう世界を切り開いていくのかを示します。
+""")
+
+    st.markdown("### ♃ 木星（発展）")
+    st.markdown("""
+可能性を広げる幸運の星。  
+成長・発展・希望の方向を示します。  
+
+新しい世界へ踏み出す時、
+木星は未来への扉を開いてくれます。
+""")
+
+    st.markdown("### ♄ 土星（課題）")
+    st.markdown("""
+時間をかけて育てる魂のテーマ。  
+責任・試練・人生の課題を表します。  
+
+簡単ではないからこそ、
+そこには本物の強さと深みが宿ります。
+""")
+    
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    st.markdown("### 🏠 ハウスの意味ガイド")
+
+    HOUSE_GUIDE = {
+        1: "自分自身・性格・第一印象の領域です。",
+        2: "お金・才能・所有・価値観の領域です。",
+        3: "学び・コミュニケーション・兄弟姉妹の領域です。",
+        4: "家・家族・ルーツ・安心できる場所の領域です。",
+        5: "恋愛・創造性・趣味・自己表現の領域です。",
+        6: "仕事・健康・日々の習慣の領域です。",
+        7: "パートナーシップ・契約・対人関係の領域です。",
+        8: "心の深い結びつき・共有資産・変容の領域です。",
+        9: "哲学・専門的学び・海外・精神性の領域です。",
+        10: "社会的地位・キャリア・使命の領域です。",
+        11: "仲間・コミュニティ・未来のビジョンの領域です。",
+        12: "潜在意識・癒し・見えない世界の領域です。",
+    }
+
+    for house_num, msg in HOUSE_GUIDE.items():
+        st.markdown(f"### {house_num}ハウス")
+        st.markdown(
+            f"<div class='luna-message'>{msg}</div>",
+            unsafe_allow_html=True
+        )
+    
+# with tab5:
+
+#     st.markdown("### 📖 詳細説明")
+
+#     detail = st.session_state.get("natal_detail")
+
+#     if not detail:
+#         st.info("まずTab1で『🌙 ネイタルを見る』を押してください。詳細説明はその結果を使って表示します。")
+#     else:
+#         sun = detail["sun"]
+#         sun_sign = detail["sun_sign"]
+#         sun_deg = detail["sun_deg"]
+#         moon = detail["moon"]
+#         moon_sign = detail["moon_sign"]
+#         moon_deg = detail["moon_deg"]
+#         mercury = detail["mercury"]
+#         mercury_sign = detail["mercury_sign"]
+#         mercury_deg = detail["mercury_deg"]
+#         venus = detail["venus"]
+#         venus_sign = detail["venus_sign"]
+#         venus_deg = detail["venus_deg"]
+#         mars = detail["mars"]
+#         mars_sign = detail["mars_sign"]
+#         mars_deg = detail["mars_deg"]
+#         jupiter_sign = detail["jupiter_sign"]
+#         jupiter_deg = detail["jupiter_deg"]
+#         saturn_sign = detail["saturn_sign"]
+#         saturn_deg = detail["saturn_deg"]
+
+#         st.markdown("### ☀ 太陽（本質）")
+#         st.write(f"{sun_sign} {sun_deg:.2f}°")
+#         st.write(get_sun_message(sun_sign))
+
+#         st.markdown("### 🌙 月（感情）")
+#         st.write(f"{moon_sign} {moon_deg:.2f}°")
+#         st.write(get_moon_message(moon_sign))
+
+#         st.markdown("### ☿ 水星（思考）")
+#         st.write(f"{mercury_sign} {mercury_deg:.2f}°")
+#         st.write(get_mercury_message(mercury_sign))
+
+#         st.markdown("### ♀ 金星（愛・好み）")
+#         st.write(f"{venus_sign} {venus_deg:.2f}°")
+#         st.write(get_venus_message(venus_sign))
+
+#         st.markdown("### ♂ 火星（行動）")
+#         st.write(f"{mars_sign} {mars_deg:.2f}°")
+#         st.write(get_mars_message(mars_sign))
+
+#         st.markdown("### ♃ 木星（拡大・発展）")
+#         st.write(f"{jupiter_sign} {jupiter_deg:.2f}°")
+#         st.write(get_jupiter_message(jupiter_sign))
+
+#         st.markdown("### ♄ 土星（課題・責任）")
+#         st.write(f"{saturn_sign} {saturn_deg:.2f}°")
+#         st.write(get_saturn_message(saturn_sign))
+
+#         st.markdown("### 🔷 アスペクト")
+#         aspect_planets = {
+#             "太陽": sun,
+#             "月": moon,
+#             "水星": mercury,
+#             "金星": venus,
+#             "火星": mars
+#         }
+#         aspects = get_aspects(aspect_planets)
+
+#         for a in aspects:
+#             st.write(f"{a['p1']} × {a['p2']} ：{a['type']}")
+#             st.write(get_aspect_message(a["p1"], a["p2"], a["type"]))
+
+#         st.markdown("### 🌟 性格まとめ")
+#         summary = [
+#             get_sun_message(sun_sign),
+#             get_moon_message(moon_sign),
+#             get_venus_message(venus_sign),
+#             get_mars_message(mars_sign),
+#         ]
+#         for a in aspects:
+#             summary.append(get_aspect_message(a["p1"], a["p2"], a["type"]))
+#         for s in summary:
+#             st.write("・" + s)
