@@ -7,7 +7,7 @@ st.set_page_config(
     layout="centered"
 )
 
-# ---------- スタイル ----------
+# ---------- スタイル ----------\
 st.markdown("""
 <style>
 .stApp {
@@ -15,6 +15,9 @@ st.markdown("""
 }
 .block-container {
     padding-top: 80px !important;
+}
+ header[data-testid="stHeader"] {
+    display: none !important;
 }
 .luna-header-wrap {
     background: rgba(255, 255, 255, 0.92);
