@@ -20,7 +20,11 @@ ELEMENTS = {
 
 # ---------- 天文準備 ----------
 TS = load.timescale()
-EPH = load("de421.bsp")
+
+try:
+    EPH = load("de406.bsp")
+except:
+    EPH = load("de421.bsp")    
 
 # ---------- ヘルパー：度数 → サイン＋度 ----------
 def split_sign_degree(lon_deg: float):

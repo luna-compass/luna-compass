@@ -70,7 +70,7 @@ def show(tab):
             birthday = st.date_input(
                 "生年月日（ネイタル）",
                 value=default_date,
-                min_value=datetime.date(1900, 1, 1),
+                min_value=datetime.date(1800, 1, 1),
                 max_value=datetime.date.today(),
                 key="birthday_natal",
                 help="出生図を作るために使います"
