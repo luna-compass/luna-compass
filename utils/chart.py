@@ -1,10 +1,7 @@
 # utils/chart.py
-# ホロスコープ円形チャート描画（v3：ラベル完全外出し＋凡例方式）
-
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
-
+from utils.astro import split_sign_degree
 
 def plot_horoscope(natal_longitudes, houses, transit_longitudes=None):
 
@@ -13,153 +10,193 @@ def plot_horoscope(natal_longitudes, houses, transit_longitudes=None):
         "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"
     ]
 
-    PLANET_ORDER = ["太陽", "月", "水星", "金星", "火星", "木星", "土星", "天王星", "海王星", "冥王星"]
+    SIGN_SHORT = {
+        "牡羊座":"Ari","牡牛座":"Tau","双子座":"Gem","蟹座":"Can","獅子座":"Leo","乙女座":"Vir",
+        "天秤座":"Lib","蠍座":"Sco","射手座":"Sag","山羊座":"Cap","水瓶座":"Aqu","魚座":"Pis"
+    }
 
     PLANET_LABELS = {
-        "太陽": "☉Sun", "月": "☽Moon", "水星": "☿Me", "金星": "♀Ve", "火星": "♂Ma",
-        "木星": "♃Jup", "土星": "♄Sat", "天王星": "♅Ur", "海王星": "♆Ne", "冥王星": "♇Pl"
+        "太陽":"Sun","月":"Moon","水星":"Me","金星":"Ve","火星":"Ma",
+        "木星":"Jup","土星":"Sat","天王星":"Ur","海王星":"Ne","冥王星":"Pl"
     }
 
     PLANET_COLORS = {
-        "太陽": "#e53e3e",
-        "月":   "#6b7280",
-        "水星": "#2563eb",
-        "金星": "#16a34a",
-        "火星": "#dc2626",
-        "木星": "#9333ea",
-        "土星": "#92400e",
-        "天王星": "#0891b2",
-        "海王星": "#1d4ed8",
-        "冥王星": "#374151",
+        "太陽": "#e53e3e", "月": "#6b7280", "水星": "#2563eb", "金星": "#16a34a",
+        "火星": "#dc2626", "木星": "#9333ea", "土星": "#92400e",
+        "天王星": "#0891b2", "海王星": "#1d4ed8", "冥王星": "#374151",
     }
 
-    # 天体番号（チャート上に表示する番号）
-    PLANET_NUM = {name: str(i + 1) for i, name in enumerate(PLANET_ORDER)}
+    PLANET_ORDER = ["太陽","月","水星","金星","火星","木星","土星","天王星","海王星","冥王星"]
+
+    # アスペクト定義
+    ASPECT_STYLES = {
+        "コンジャンクション": {"color": "#e53e3e", "lw": 1.5, "ls": "-"},
+        "トライン":           {"color": "#16a34a", "lw": 1.2, "ls": "-"},
+        "スクエア":           {"color": "#dc2626", "lw": 1.0, "ls": "--"},
+        "セクスタイル":       {"color": "#2563eb", "lw": 0.8, "ls": "-"},
+        "オポジション":       {"color": "#9333ea", "lw": 1.0, "ls": "--"},
+    }
 
     asc = houses[0]
 
-    def to_rad(deg):
+    def angle(deg):
         return np.deg2rad((asc - deg) % 360)
 
     def polar_to_xy(th, r):
-        x = r * np.cos(th - np.pi / 2)
-        y = r * np.sin(th - np.pi / 2)
-        return x, y
+        return r * np.cos(th - np.pi/2), r * np.sin(th - np.pi/2)
 
-    # figureサイズを大きめに（下に凡例スペース確保）
-    fig = plt.figure(figsize=(8, 10))
-    fig.patch.set_facecolor("#f5f3ff")
-
-    # チャートエリア（上部）
-    ax = fig.add_axes([0.05, 0.22, 0.90, 0.75])
+    fig, ax = plt.subplots(figsize=(10, 11))
     ax.set_aspect("equal")
     ax.axis("off")
-    ax.set_xlim(-1.35, 1.35)
-    ax.set_ylim(-1.35, 1.35)
+    ax.set_xlim(-1.05, 1.05)
+    ax.set_ylim(-1.30, 1.05)
+    fig.patch.set_facecolor("#f5f3ff")
     ax.set_facecolor("#f5f3ff")
 
     def draw_circle(r, color, lw=1.0):
-        c = plt.Circle((0, 0), r, color=color, fill=False, linewidth=lw)
-        ax.add_patch(c)
+        ax.add_patch(plt.Circle((0,0), r, color=color, fill=False, linewidth=lw))
 
-    # ===== 円 =====
-    draw_circle(0.98, "#4c1d95", lw=1.2)
-    draw_circle(0.92, "#7c3aed", lw=1.0)
-    draw_circle(0.72, "#a78bfa", lw=1.0)
-    draw_circle(0.60, "#c4b5fd", lw=0.7)
+    draw_circle(0.98, "#4c1d95", lw=3.0)
+    draw_circle(0.92, "#7c3aed", lw=2.5)
+    draw_circle(0.72, "#a78bfa", lw=2.5)
+    draw_circle(0.60, "#c4b5fd", lw=1.5)
 
-    # ===== サイン帯 =====
+    # サイン帯
     for i, label in enumerate(SIGN_LABELS):
-        thetas = np.linspace(to_rad(i * 30), to_rad((i + 1) * 30), 50)
-        xs_o = 0.92 * np.cos(thetas - np.pi / 2)
-        ys_o = 0.92 * np.sin(thetas - np.pi / 2)
-        xs_i = 0.72 * np.cos(thetas - np.pi / 2)
-        ys_i = 0.72 * np.sin(thetas - np.pi / 2)
-        xs = np.concatenate([xs_o, xs_i[::-1]])
-        ys = np.concatenate([ys_o, ys_i[::-1]])
+        thetas = np.linspace(angle(i*30), angle((i+1)*30), 50)
+        xs_o = 0.92 * np.cos(thetas - np.pi/2)
+        ys_o = 0.92 * np.sin(thetas - np.pi/2)
+        xs_i = 0.72 * np.cos(thetas - np.pi/2)
+        ys_i = 0.72 * np.sin(thetas - np.pi/2)
         color = "#ede9fe" if i % 2 == 0 else "#ddd6fe"
-        ax.fill(xs, ys, color=color, alpha=0.9)
-
-        mid_th = to_rad(i * 30 + 15)
-        lx, ly = polar_to_xy(mid_th, 0.82)
+        ax.fill(np.concatenate([xs_o, xs_i[::-1]]),
+                np.concatenate([ys_o, ys_i[::-1]]), color=color, alpha=0.9)
+        lx, ly = polar_to_xy(angle(i*30+15), 0.82)
         ax.text(lx, ly, label, ha="center", va="center",
-                fontsize=6.5, color="#4c1d95", fontweight="bold")
+                fontsize=14, color="#4c1d95", fontweight="bold")
 
-    # ===== ハウス線 =====
+    # ハウス線
     for i, cusp in enumerate(houses):
-        th = to_rad(cusp)
+        th = angle(cusp)
         x0, y0 = polar_to_xy(th, 0.0)
         x1, y1 = polar_to_xy(th, 0.72)
-        lw  = 1.5 if i == 0 else 0.6
-        col = "#4c1d95" if i == 0 else "#9ca3af"
-        ax.plot([x0, x1], [y0, y1], color=col, linewidth=lw)
+        ax.plot([x0,x1],[y0,y1], color="#4c1d95" if i==0 else "#9ca3af",
+                linewidth=2.5 if i==0 else 1.2)
+        next_cusp = houses[(i+1)%12]
+        mid = (cusp + ((next_cusp-cusp)%360)/2) % 360
+        mx, my = polar_to_xy(angle(mid), 0.36)
+        ax.text(mx, my, str(i+1), ha="center", va="center",
+                fontsize=14, color="#6b7280")
 
-        next_cusp = houses[(i + 1) % 12]
-        mid = (cusp + ((next_cusp - cusp) % 360) / 2) % 360
-        mid_th = to_rad(mid)
-        mx, my = polar_to_xy(mid_th, 0.36)
-        ax.text(mx, my, str(i + 1), ha="center", va="center",
-                fontsize=8, color="#6b7280")
+    # アスペクトライン
+    aspect_defs = {"コンジャンクション":0,"トライン":120,"スクエア":90,"セクスタイル":60,"オポジション":180}
+    planet_degs = {n: d for n, d in natal_longitudes.items()}
+    names = list(planet_degs.keys())
+    for i in range(len(names)):
+        for j in range(i+1, len(names)):
+            p1, p2 = names[i], names[j]
+            d1, d2 = planet_degs[p1], planet_degs[p2]
+            diff = abs(d1 - d2) % 360
+            if diff > 180:
+                diff = 360 - diff
+            for asp_name, asp_angle in aspect_defs.items():
+                if abs(diff - asp_angle) < 6:
+                    style = ASPECT_STYLES[asp_name]
+                    th1 = angle(d1)
+                    th2 = angle(d2)
+                    x1, y1 = polar_to_xy(th1, 0.60)
+                    x2, y2 = polar_to_xy(th2, 0.60)
+                    ax.plot([x1,x2],[y1,y2], color=style["color"],
+                            linewidth=style["lw"], linestyle=style["ls"],
+                            alpha=0.5, zorder=2)
 
-    # ===== 天体ドット＋番号 =====
-    DOT_R = 0.64
+    # 天体ドット＋ラベル（重なり解消）
+    dot_info = []
     for name in PLANET_ORDER:
         if name not in natal_longitudes:
             continue
         deg = natal_longitudes[name]
-        th = to_rad(deg)
-        px, py = polar_to_xy(th, DOT_R)
+        th = angle(deg)
         color = PLANET_COLORS.get(name, "black")
-        num = PLANET_NUM[name]
+        label = PLANET_LABELS.get(name, name)
+        dot_info.append({"name": name, "th": th, "deg": deg, "color": color, "label": label})
 
-        # ドット
-        ax.plot(px, py, "o", color=color, markersize=8, zorder=5)
-        # 番号をドットの上に白文字で表示
-        ax.text(px, py, num, ha="center", va="center",
-                fontsize=5.5, color="white", fontweight="bold", zorder=6)
+    # ドットを描画
+    for item in dot_info:
+        px, py = polar_to_xy(item["th"], 0.64)
+        ax.plot(px, py, "o", color=item["color"], markersize=12, zorder=5)
 
-    # ===== トランジット =====
+    # ラベルの重なり解消：角度順にソートして押し広げる
+    dot_info.sort(key=lambda x: x["th"] % (2*np.pi))
+    label_ths = [item["th"] % (2*np.pi) for item in dot_info]
+
+    MIN_GAP = 0.25
+    for _ in range(50):
+        changed = False
+        for i in range(len(label_ths)):
+            for j in range(len(label_ths)):
+                if i == j:
+                    continue
+                diff = label_ths[i] - label_ths[j]
+                if diff > np.pi: diff -= 2*np.pi
+                elif diff < -np.pi: diff += 2*np.pi
+                if 0 < abs(diff) < MIN_GAP:
+                    push = (MIN_GAP - abs(diff)) / 2 + 0.01
+                    label_ths[i] += push * np.sign(diff)
+                    label_ths[j] -= push * np.sign(diff)
+                    changed = True
+        if not changed:
+            break
+
+    # ラベル描画（ドットから線を引いて外側に表示）
+    LABEL_R = 0.70
+    for i, item in enumerate(dot_info):
+        th_dot = item["th"]
+        th_label = label_ths[i]
+        color = item["color"]
+        label = item["label"]
+
+        dx, dy = polar_to_xy(th_dot, 0.66)
+        lx, ly = polar_to_xy(th_label, LABEL_R)
+
+        # 引き出し線
+        ax.plot([dx, lx], [dy, ly], color=color, linewidth=0.8, alpha=0.5, zorder=3)
+
+        # ラベル
+        ax.text(lx, ly, label, ha="center", va="center",
+                fontsize=11, color=color, fontweight="bold",
+                bbox=dict(boxstyle="round,pad=0.15", facecolor="white",
+                          edgecolor=color, linewidth=0.8, alpha=0.9),
+                zorder=6)
+
+    # トランジット
     if transit_longitudes:
         for name, deg in transit_longitudes.items():
-            th = to_rad(deg)
+            th = angle(deg)
             tx, ty = polar_to_xy(th, 0.78)
-            ax.plot(tx, ty, "^", color="blue", markersize=5, alpha=0.6, zorder=4)
+            ax.plot(tx, ty, "^", color="blue", markersize=8, alpha=0.6, zorder=4)
 
-    # ===== 凡例エリア（チャート下） =====
-    ax_leg = fig.add_axes([0.03, 0.01, 0.94, 0.20])
-    ax_leg.axis("off")
-    ax_leg.set_facecolor("#f5f3ff")
-    ax_leg.set_xlim(0, 10)
-    ax_leg.set_ylim(0, 4)
+    # 凡例
+    row1, row2 = [], []
+    for i, name in enumerate(PLANET_ORDER):
+        if name not in natal_longitudes:
+            continue
+        sign, d = split_sign_degree(natal_longitudes[name])
+        sign_en = SIGN_SHORT.get(sign, sign[:3])
+        label = PLANET_LABELS.get(name, name)
+        entry = f"{label}:{sign_en}{d:.0f}"
+        if i < 5:
+            row1.append(entry)
+        else:
+            row2.append(entry)
 
-    ax_leg.text(5, 3.5, "── 天体一覧 ──", ha="center", va="center",
-                fontsize=9, color="#4c1d95", fontweight="bold")
-
-    # 5列×2行で表示
-    cols = 5
-    items = [(name, PLANET_NUM[name], PLANET_LABELS[name], PLANET_COLORS[name])
-             for name in PLANET_ORDER if name in natal_longitudes]
-
-    for idx, (name, num, label, color) in enumerate(items):
-        row = idx // cols
-        col = idx % cols
-        x = 0.8 + col * 1.85
-        y = 2.7 - row * 1.3
-
-        deg = natal_longitudes[name]
-        from utils.astro import split_sign_degree
-        sign, d = split_sign_degree(deg)
-
-        # 番号付き丸
-        circle = plt.Circle((x, y), 0.28, color=color, zorder=3)
-        ax_leg.add_patch(circle)
-        ax_leg.text(x, y, num, ha="center", va="center",
-                    fontsize=7, color="white", fontweight="bold", zorder=4)
-
-        # 天体名と度数
-        ax_leg.text(x + 0.38, y + 0.15, label,
-                    ha="left", va="center", fontsize=7.5, color=color, fontweight="bold")
-        ax_leg.text(x + 0.38, y - 0.25, f"{sign} {d:.1f}°",
-                    ha="left", va="center", fontsize=6.5, color="#374151")
+    ax.text(0, -1.12, "  |  ".join(row1), ha="center", va="center",
+            fontsize=13, color="#1a202c", fontweight="bold",
+            bbox=dict(boxstyle="round,pad=0.5", facecolor="white",
+                      edgecolor="#7c3aed", linewidth=2.0))
+    ax.text(0, -1.26, "  |  ".join(row2), ha="center", va="center",
+            fontsize=13, color="#1a202c", fontweight="bold",
+            bbox=dict(boxstyle="round,pad=0.5", facecolor="white",
+                      edgecolor="#7c3aed", linewidth=2.0))
 
     return fig
