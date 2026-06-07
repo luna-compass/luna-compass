@@ -712,29 +712,7 @@ def get_transit_positions(year, month, day):
 
     return result
 
-# import swisseph as swe
 
-# def get_transit_positions(year, month, day):
-#     # UTCで12時固定（ズレ防止）
-#     jd = swe.julday(year, month, day, 12.0)
-
-#     planets = {
-#         "☉ 太陽": swe.SUN,
-#         "☽ 月": swe.MOON,
-#         "☿ 水星": swe.MERCURY,
-#         "♀ 金星": swe.VENUS,
-#         "♂ 火星": swe.MARS,
-#         "♃ 木星": swe.JUPITER,
-#         "♄ 土星": swe.SATURN,
-#     }
-
-#     result = {}
-
-#     for name, p in planets.items():
-#         lon = swe.calc_ut(jd, p)[0][0]
-#         result[name] = lon
-
-#     return result
 
 
 # ---------- カード ----------
@@ -861,17 +839,7 @@ TAROT_REVERSE = {
     "world": "未完成。もう一歩が必要。",
 }
 
-#import random
 
-# def draw_card():
-#     card_key, filename = random.choice(cards)
-
-#     card_name = TAROT_NAME_JP[card_key]
-#     card_msg = TAROT_BASE[card_key]
-
-#     card_img = f"assets/tarot/{filename}"
-
-#     return card_name, card_msg, card_img
 
 def draw_card():
     import random
@@ -1079,8 +1047,7 @@ with tab1:
             key="birth_minute_natal"
         )
 
-    #st.markdown("<br>", unsafe_allow_html=True)
-    #st.markdown("<div class='luna-section-title'>🌍 今日の運気</div>", unsafe_allow_html=True)
+
 
     tz_label = st.radio(
         "出生地のタイムゾーン",
@@ -1169,23 +1136,7 @@ with tab1:
             dt_utc.hour + dt_utc.minute / 60.0
         )
 
-        # cities = pd.read_csv("cities.csv")
 
-        # city = st.selectbox(
-        #     "出生地",
-        #     cities["city"]
-        # )
-
-        # row = cities[cities["city"] == city].iloc[0]
-
-        # lat = row["lat"]
-        # lon = row["lon"]
-
-        # lat = row["lat"]
-        # lon = row["lon"]
-
-        #lat = 35.68
-        #lon = 139.76
         house_cusps, ascmc = swe.houses(jd, lat, lon, b'P')
         houses = house_cusps
 
@@ -1563,12 +1514,7 @@ with tab1:
             mime="image/png",
         )
 
-        # st.markdown("<br>", unsafe_allow_html=True)
-        # st.markdown("#### 🔎 配置一覧（度数）")
-        # st.write("【ネイタル（出生）】")
-        # for name_body, deg in natal_longs.items():
-        #     sign, d = split_sign_degree(deg)
-        #     st.write(f"{name_body}: {sign} {d:.2f}°")
+
 
         st.markdown("<br><br>", unsafe_allow_html=True)
         st.markdown("### 🔍 ホロスコープ（詳細）")
@@ -1585,12 +1531,7 @@ with tab1:
             unsafe_allow_html=True
         )
 
-        # st.markdown("<div class='luna-section-title'>惑星からのメッセージ（ネイタル）</div>", unsafe_allow_html=True)
-        # for p, v in planets.items():
-        #     st.write(f"{p}：{v}")
-        #     msg = get_planet_message(p)
-        #     if msg:
-        #         st.markdown(f"<div class='luna-message'>{msg}</div>", unsafe_allow_html=True)
+
 
         for p, v in planets.items():
 
@@ -1631,13 +1572,7 @@ with tab1:
                     unsafe_allow_html=True
                 )        
 
-        # st.markdown("<div class='luna-section-title'>ハウス（Placidus・ネイタル）"
-        # "</div>", unsafe_allow_html=True)
-        # for i, cusp in enumerate(house_cusps):
-        #     house_num = i + 1
-        #     sign = get_sign(cusp)
-        #     msg = get_house_message(house_num, sign)
-        #     st.markdown(f"<div class='luna-message'>{msg}</div>", unsafe_allow_html=True)
+
 
 # =========================
 # 🌍 Tab2：トランジット
@@ -1980,85 +1915,3 @@ with tab5:
             unsafe_allow_html=True
         )
     
-# with tab5:
-
-#     st.markdown("### 📖 詳細説明")
-
-#     detail = st.session_state.get("natal_detail")
-
-#     if not detail:
-#         st.info("まずTab1で『🌙 ネイタルを見る』を押してください。詳細説明はその結果を使って表示します。")
-#     else:
-#         sun = detail["sun"]
-#         sun_sign = detail["sun_sign"]
-#         sun_deg = detail["sun_deg"]
-#         moon = detail["moon"]
-#         moon_sign = detail["moon_sign"]
-#         moon_deg = detail["moon_deg"]
-#         mercury = detail["mercury"]
-#         mercury_sign = detail["mercury_sign"]
-#         mercury_deg = detail["mercury_deg"]
-#         venus = detail["venus"]
-#         venus_sign = detail["venus_sign"]
-#         venus_deg = detail["venus_deg"]
-#         mars = detail["mars"]
-#         mars_sign = detail["mars_sign"]
-#         mars_deg = detail["mars_deg"]
-#         jupiter_sign = detail["jupiter_sign"]
-#         jupiter_deg = detail["jupiter_deg"]
-#         saturn_sign = detail["saturn_sign"]
-#         saturn_deg = detail["saturn_deg"]
-
-#         st.markdown("### ☀ 太陽（本質）")
-#         st.write(f"{sun_sign} {sun_deg:.2f}°")
-#         st.write(get_sun_message(sun_sign))
-
-#         st.markdown("### 🌙 月（感情）")
-#         st.write(f"{moon_sign} {moon_deg:.2f}°")
-#         st.write(get_moon_message(moon_sign))
-
-#         st.markdown("### ☿ 水星（思考）")
-#         st.write(f"{mercury_sign} {mercury_deg:.2f}°")
-#         st.write(get_mercury_message(mercury_sign))
-
-#         st.markdown("### ♀ 金星（愛・好み）")
-#         st.write(f"{venus_sign} {venus_deg:.2f}°")
-#         st.write(get_venus_message(venus_sign))
-
-#         st.markdown("### ♂ 火星（行動）")
-#         st.write(f"{mars_sign} {mars_deg:.2f}°")
-#         st.write(get_mars_message(mars_sign))
-
-#         st.markdown("### ♃ 木星（拡大・発展）")
-#         st.write(f"{jupiter_sign} {jupiter_deg:.2f}°")
-#         st.write(get_jupiter_message(jupiter_sign))
-
-#         st.markdown("### ♄ 土星（課題・責任）")
-#         st.write(f"{saturn_sign} {saturn_deg:.2f}°")
-#         st.write(get_saturn_message(saturn_sign))
-
-#         st.markdown("### 🔷 アスペクト")
-#         aspect_planets = {
-#             "太陽": sun,
-#             "月": moon,
-#             "水星": mercury,
-#             "金星": venus,
-#             "火星": mars
-#         }
-#         aspects = get_aspects(aspect_planets)
-
-#         for a in aspects:
-#             st.write(f"{a['p1']} × {a['p2']} ：{a['type']}")
-#             st.write(get_aspect_message(a["p1"], a["p2"], a["type"]))
-
-#         st.markdown("### 🌟 性格まとめ")
-#         summary = [
-#             get_sun_message(sun_sign),
-#             get_moon_message(moon_sign),
-#             get_venus_message(venus_sign),
-#             get_mars_message(mars_sign),
-#         ]
-#         for a in aspects:
-#             summary.append(get_aspect_message(a["p1"], a["p2"], a["type"]))
-#         for s in summary:
-#             st.write("・" + s)
