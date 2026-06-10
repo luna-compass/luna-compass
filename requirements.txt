@@ -4,3 +4,4 @@ numpy
 pytz
 matplotlib
 pyswisseph
+reportlab

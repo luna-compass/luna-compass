@@ -19,6 +19,7 @@ from utils.messages import (
     get_house_planet_message
 )
 from utils.chart import plot_horoscope
+from utils.pdf_report import create_reading_pdf
 
 
 def get_house_num(planet_deg, house_cusps):
@@ -198,3 +199,76 @@ def show(tab, user_info):
             ]
             for s in summary:
                 st.markdown(f"<div class='luna-message'>{s}</div>", unsafe_allow_html=True)
+
+            # ===== ⑦PDF鑑定書ダウンロード =====
+            st.markdown("---")
+            st.markdown("### 📄 鑑定書PDFをダウンロード")
+
+            # ホロスコープ画像をbytesで取得
+            chart_buf = io.BytesIO()
+            fig.savefig(chart_buf, format="png", dpi=150, bbox_inches="tight")
+            chart_buf.seek(0)
+
+            # 数秘術計算
+            def reduce_num(n):
+                while n > 9 and n not in (11, 22, 33):
+                    n = sum(int(d) for d in str(n))
+                return n
+
+            digits = str(birthday.year) + str(birthday.month).zfill(2) + str(birthday.day).zfill(2)
+            life_path = reduce_num(sum(int(d) for d in digits))
+            birthday_num = reduce_num(birthday.day)
+            ruler_num = reduce_num(sum(int(d) for d in str(birthday.year)))
+
+            from utils.messages import LIFE_PATH_MESSAGES
+            lp_data = LIFE_PATH_MESSAGES.get(life_path, {})
+
+            # user_dataを組み立て
+            user_data = {
+                "name": name or "　",
+                "birthday": f"{birthday.year}年{birthday.month}月{birthday.day}日",
+                "birth_time": f"{int(birth_hour):02d}:{int(birth_minute):02d}",
+                "reading_date": datetime.date.today().strftime("%Y年%m月%d日"),
+                "asc_sign": asc_sign,
+                "asc_deg": f"{asc_deg_val:.1f}°",
+                "asc_message": get_asc_message(asc_sign),
+                "sun_sign": sun_sign, "sun_deg": f"{sun_deg:.1f}°",
+                "sun_house": planet_houses["太陽"], "sun_message": get_sun_message(sun_sign),
+                "moon_sign": moon_sign, "moon_deg": f"{moon_deg:.1f}°",
+                "moon_house": planet_houses["月"], "moon_message": get_moon_message(moon_sign),
+                "mercury_sign": mercury_sign, "mercury_deg": f"{mercury_deg:.1f}°",
+                "mercury_house": planet_houses["水星"], "mercury_message": get_mercury_message(mercury_sign),
+                "venus_sign": venus_sign, "venus_deg": f"{venus_deg:.1f}°",
+                "venus_house": planet_houses["金星"], "venus_message": get_venus_message(venus_sign),
+                "mars_sign": mars_sign, "mars_deg": f"{mars_deg:.1f}°",
+                "mars_house": planet_houses["火星"], "mars_message": get_mars_message(mars_sign),
+                "jupiter_sign": jupiter_sign, "jupiter_deg": f"{jupiter_deg:.1f}°",
+                "jupiter_house": planet_houses["木星"], "jupiter_message": get_jupiter_message(jupiter_sign),
+                "saturn_sign": saturn_sign, "saturn_deg": f"{saturn_deg:.1f}°",
+                "saturn_house": planet_houses["土星"], "saturn_message": get_saturn_message(saturn_sign),
+                "uranus_sign": uranus_sign, "uranus_deg": f"{uranus_deg:.1f}°",
+                "uranus_house": planet_houses["天王星"], "uranus_message": get_uranus_message(uranus_sign),
+                "neptune_sign": neptune_sign, "neptune_deg": f"{neptune_deg:.1f}°",
+                "neptune_house": planet_houses["海王星"], "neptune_message": get_neptune_message(neptune_sign),
+                "pluto_sign": pluto_sign, "pluto_deg": f"{pluto_deg:.1f}°",
+                "pluto_house": planet_houses["冥王星"], "pluto_message": get_pluto_message(pluto_sign),
+                "aspects": [
+                    {"p1": a["p1"], "p2": a["p2"], "type": a["type"],
+                     "message": get_aspect_message(a["p1"], a["p2"], a["type"])}
+                    for a in aspects
+                ],
+                "life_path": life_path,
+                "birthday_num": birthday_num,
+                "ruler_num": ruler_num,
+                "life_path_message": lp_data.get("message", ""),
+                "overall_message": "　".join(summary),
+            }
+
+            pdf_buf = create_reading_pdf(user_data, chart_buf)
+            st.download_button(
+                label="📄 鑑定書PDFをダウンロード",
+                data=pdf_buf,
+                file_name=f"luna_reading_{name or 'guest'}.pdf",
+                mime="application/pdf",
+                use_container_width=True,
+            )
