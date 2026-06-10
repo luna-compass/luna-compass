@@ -1,4 +1,6 @@
 import streamlit as st
+import datetime
+import pandas as pd
 
 # ---------- ページ設定 ----------
 st.set_page_config(
@@ -7,7 +9,7 @@ st.set_page_config(
     layout="centered"
 )
 
-# ---------- スタイル ----------\
+# ---------- スタイル ----------
 st.markdown("""
 <style>
 .stApp {
@@ -16,7 +18,7 @@ st.markdown("""
 .block-container {
     padding-top: 80px !important;
 }
- header[data-testid="stHeader"] {
+header[data-testid="stHeader"] {
     display: none !important;
 }
 .luna-header-wrap {
@@ -126,6 +128,61 @@ st.markdown(
     unsafe_allow_html=True
 )
 
+# ---------- 共通入力フォーム ----------
+st.markdown("<div class='luna-section-title'>👤 基本情報</div>", unsafe_allow_html=True)
+
+mode = st.radio(
+    "占う対象",
+    ("自分を占う", "別の人を占う"),
+    key="mode_common",
+    horizontal=True
+)
+
+if mode == "自分を占う":
+    default_name = "Luna"
+    default_date = datetime.date(1968, 5, 27)
+    default_hour = 0
+    default_min = 0
+else:
+    default_name = ""
+    default_date = datetime.date(1990, 1, 1)
+    default_hour = 12
+    default_min = 0
+
+col1, col2 = st.columns(2)
+with col1:
+    name = st.text_input("お名前", value=default_name, key="name_common", help="ニックネームでもOKです")
+with col2:
+    birthday = st.date_input(
+        "生年月日",
+        value=default_date,
+        min_value=datetime.date(1800, 1, 1),
+        max_value=datetime.date.today(),
+        key="birthday_common"
+    )
+
+col_t1, col_t2 = st.columns(2)
+with col_t1:
+    birth_hour = st.number_input("出生時（時）", min_value=0, max_value=23, value=default_hour, key="hour_common", help="不明な場合は0のままでOK")
+with col_t2:
+    birth_minute = st.number_input("出生時（分）", min_value=0, max_value=59, value=default_min, key="minute_common")
+
+tz_label = st.radio(
+    "出生地のタイムゾーン",
+    ("日本（JST = UTC+9）", "世界時で計算（UTC）"),
+    key="tz_common",
+    horizontal=True
+)
+tz_offset = 9 if tz_label.startswith("日本") else 0
+
+cities = pd.read_csv("cities.csv")
+city = st.selectbox("出生地", cities["city"], key="city_common")
+row = cities[cities["city"] == city].iloc[0]
+lat = float(row["lat"])
+lon_city = float(row["lon"])
+
+st.markdown("---")
+
 # ---------- タブ構成 ----------
 tab1, tab2, tab3, tab4, tab5 = st.tabs([
     "🌙 ネイタル",
@@ -138,8 +195,20 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs([
 # ---------- 各タブ呼び出し ----------
 from tabs import natal, transit, compatibility, cards, guide
 
-natal.show(tab1)
-transit.show(tab2)
+# 共通情報をまとめて渡す
+user_info = {
+    "name": name,
+    "birthday": birthday,
+    "birth_hour": birth_hour,
+    "birth_minute": birth_minute,
+    "tz_offset": tz_offset,
+    "lat": lat,
+    "lon": lon_city,
+    "mode": mode,
+}
+
+natal.show(tab1, user_info)
+transit.show(tab2, user_info)
 compatibility.show(tab3)
 cards.show(tab4)
 guide.show(tab5)
