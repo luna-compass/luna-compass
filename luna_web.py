@@ -16,7 +16,7 @@ st.markdown("""
     background: radial-gradient(circle at top, #fdf4ff 0%, #f5f3ff 20%, #8a2be2 100%);
 }
 .block-container {
-    padding-top: 80px !important;
+    padding-top: 20px !important;
 }
 header[data-testid="stHeader"] {
     display: none !important;
