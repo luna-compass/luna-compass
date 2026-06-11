@@ -18,6 +18,9 @@ st.markdown("""
 .block-container {
     padding-top: 20px !important;
 }
+.stMainBlockContainer {
+    padding-top: 10px !important;
+}            
 header[data-testid="stHeader"] {
     display: none !important;
 }
