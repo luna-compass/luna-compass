@@ -96,7 +96,7 @@ header[data-testid="stHeader"] {
     .block-container {
         padding-left: 1rem !important;
         padding-right: 1rem !important;
-        padding-top: 1rem !important;
+        padding-top: 5px !important;
     }
     .luna-card {
         max-width: 100% !important;
