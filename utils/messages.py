@@ -386,3 +386,18 @@ def get_house_planet_message(house_num, planet_name):
     }
     theme = house_themes.get(house_num, f"{house_num}ハウス")
     return f"{planet_name}が{house_num}ハウス（{theme}）にあります。このテーマがあなたの{planet_name}の働きに影響します。"
+
+LIFE_PATH_MESSAGES = {
+    1: {"message": "自分の力で道を切り開く、先駆者の魂を持っています。"},
+    2: {"message": "人と人をつなぐ、調和の橋渡し役です。"},
+    3: {"message": "喜びと創造性を周囲に広げる、表現の天才です。"},
+    4: {"message": "地道な努力と誠実さで、確かなものを築き上げる魂です。"},
+    5: {"message": "自由と変化を愛する、冒険の魂です。"},
+    6: {"message": "愛と調和を大切にする、奉仕の魂です。"},
+    7: {"message": "真実と知恵を探求する、内省の魂です。"},
+    8: {"message": "物質的な成功と権力を手にする、達成の魂です。"},
+    9: {"message": "すべてを包み込む、博愛の魂です。"},
+    11: {"message": "霊的な直感と啓示を持つ、マスターナンバーの魂です。"},
+    22: {"message": "大きな夢を現実に変える、最強のマスターナンバーです。"},
+    33: {"message": "愛と奉仕の最高形、マスターティーチャーの魂です。"},
+}
