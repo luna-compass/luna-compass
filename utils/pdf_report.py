@@ -7,12 +7,18 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 import io
 
-# 日本語フォント登録
-# pdfmetrics.registerFont(TTFont('JP', '/usr/share/fonts/opentype/ipafont-gothic/ipag.ttf'))
-# pdfmetrics.registerFont(TTFont('JPB', '/usr/share/fonts/truetype/fonts-japanese-gothic.ttf'))
-
-pdfmetrics.registerFont(TTFont('JP', 'C:/Windows/Fonts/msgothic.ttc'))
-pdfmetrics.registerFont(TTFont('JPB', 'C:/Windows/Fonts/msgothic.ttc'))
+import os
+_BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_FONT_PATHS = [
+    os.path.join(_BASE, 'fonts', 'gothic.ttc'),
+    '/usr/share/fonts/opentype/ipafont-gothic/ipag.ttf',
+    '/usr/share/fonts/truetype/fonts-japanese-gothic.ttf',
+]
+for _path in _FONT_PATHS:
+    if os.path.exists(_path):
+        pdfmetrics.registerFont(TTFont('JP', _path))
+        pdfmetrics.registerFont(TTFont('JPB', _path))
+        break
 
 PURPLE_DARK  = colors.HexColor("#4c1d95")
 PURPLE_MID   = colors.HexColor("#7c3aed")
