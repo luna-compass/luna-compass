@@ -147,11 +147,61 @@ def get_aspects(planets):
                     })
     return aspects
 
+# サインの短いキーワード（比較メッセージ用）
+SIGN_KEYWORDS = {
+    "牡羊座": "行動力と情熱",
+    "牡牛座": "安定と豊かさ",
+    "双子座": "知性と柔軟さ",
+    "蟹座": "感情と共感",
+    "獅子座": "表現力と自信",
+    "乙女座": "分析と誠実さ",
+    "天秤座": "調和とバランス",
+    "蠍座": "深さと集中力",
+    "射手座": "自由と探究心",
+    "山羊座": "努力と現実感",
+    "水瓶座": "独自性と未来志向",
+    "魚座": "感性と優しさ",
+}
+
+# サイン×サインの組み合わせメッセージ（同じ元素・モード）
+ELEMENT_MAP = {
+    "牡羊座": "火", "獅子座": "火", "射手座": "火",
+    "牡牛座": "地", "乙女座": "地", "山羊座": "地",
+    "双子座": "風", "天秤座": "風", "水瓶座": "風",
+    "蟹座": "水", "蠍座": "水", "魚座": "水",
+}
+
+def _extract_sign(text):
+    """'双子座 5.4°' などからサイン名だけ取り出す"""
+    for s in SIGNS:
+        if text.startswith(s):
+            return s
+    return None
+
 def simple_compare_message(natal_text, transit_text, label):
-    if natal_text == transit_text:
-        return f"{label}はネイタル・トランジットともに『{natal_text}』。<br>自分らしさと、その日の流れが重なりやすい配置です。"
-    else:
+    natal_sign = _extract_sign(natal_text)
+    transit_sign = _extract_sign(transit_text)
+
+    natal_kw = SIGN_KEYWORDS.get(natal_sign, "あなたらしさ")
+    transit_kw = SIGN_KEYWORDS.get(transit_sign, "今日のテーマ")
+
+    if natal_sign == transit_sign:
         return (
-            f"{label}のネイタルは『{natal_text}』、トランジットは『{transit_text}』。<br>"
-            "ふだんの傾向に、期間限定で別のテーマが重なっているタイミングです。"
+            f"{label}はネイタル・トランジットともに{natal_sign}。"
+            f"「{natal_kw}」というあなた本来のテーマが今の流れとぴったり重なっています。"
+            f"自分らしさを素直に出しやすい時期です。"
         )
+
+    natal_elem = ELEMENT_MAP.get(natal_sign, "")
+    transit_elem = ELEMENT_MAP.get(transit_sign, "")
+
+    if natal_elem == transit_elem:
+        elem_msg = f"同じ{natal_elem}のサイン同士で、エネルギーの方向性が共鳴しやすい組み合わせです。"
+    else:
+        elem_msg = f"{natal_elem}と{transit_elem}のエネルギーが混ざり合い、新しい視点が生まれやすい時期です。"
+
+    return (
+        f"{label}のネイタルは{natal_sign}（{natal_kw}）、今日のトランジットは{transit_sign}（{transit_kw}）。"
+        f"{elem_msg}"
+        f"ふだんとは少し違うアプローチで動くと、新しい流れが開けます。"
+    )

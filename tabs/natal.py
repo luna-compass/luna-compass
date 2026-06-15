@@ -178,8 +178,17 @@ def show(tab, user_info):
 
             # ===== ⑤アスペクト =====
             st.markdown("---")
-            aspect_planets = {"太陽": sun, "月": moon, "水星": mercury, "金星": venus, "火星": mars}
-            aspects = get_aspects(aspect_planets)
+            aspect_planets = {
+                "太陽": sun, "月": moon, "水星": mercury, "金星": venus, "火星": mars,
+                "木星": jupiter, "土星": saturn,
+                "天王星": natal_longs["天王星"], "海王星": natal_longs["海王星"], "冥王星": natal_longs["冥王星"],
+            }
+            OUTER_PLANETS = {"天王星", "海王星", "冥王星"}
+            aspects_raw = get_aspects(aspect_planets)
+            aspects = [
+                a for a in aspects_raw
+                if not (a["p1"] in OUTER_PLANETS and a["p2"] in OUTER_PLANETS)
+            ]
             st.markdown("### 🔷 アスペクト（天体の関係性）")
             if aspects:
                 for a in aspects:
@@ -188,17 +197,21 @@ def show(tab, user_info):
             else:
                 st.write("主要アスペクトはありません。")
 
-            # ===== ⑥性格まとめ =====
+            # ===== ⑥総合メッセージ =====
             st.markdown("---")
-            st.markdown("### 🌟 性格まとめ")
-            summary = [
-                f"☀ 太陽（{sun_sign}・{planet_houses['太陽']}ハウス）：{get_sun_message(sun_sign)}",
-                f"☽ 月（{moon_sign}・{planet_houses['月']}ハウス）：{get_moon_message(moon_sign)}",
-                f"♀ 金星（{venus_sign}・{planet_houses['金星']}ハウス）：{get_venus_message(venus_sign)}",
-                f"♂ 火星（{mars_sign}・{planet_houses['火星']}ハウス）：{get_mars_message(mars_sign)}",
-            ]
-            for s in summary:
-                st.markdown(f"<div class='luna-message'>{s}</div>", unsafe_allow_html=True)
+            st.markdown("### 🌟 総合メッセージ")
+            asc_part = f"あなたは{asc_sign}のASCを持ち、{get_asc_message(asc_sign)}"
+            sun_part = f"太陽は{sun_sign}の{planet_houses['太陽']}ハウスに位置し、{get_sun_message(sun_sign)}"
+            moon_part = f"月は{moon_sign}の{planet_houses['月']}ハウスにあり、{get_moon_message(moon_sign)}"
+            aspect_part = ""
+            if aspects:
+                a0 = aspects[0]
+                aspect_part = f"また、{a0['p1']}と{a0['p2']}の{a0['type']}が示すように、{get_aspect_message(a0['p1'], a0['p2'], a0['type'])}"
+            overall_text = f"{asc_part} {sun_part} {moon_part}"
+            if aspect_part:
+                overall_text += f" {aspect_part}"
+            st.markdown(f"<div class='luna-message'>{overall_text}</div>", unsafe_allow_html=True)
+            summary = [overall_text]
 
             # ===== ⑦PDF鑑定書ダウンロード =====
             st.markdown("---")
@@ -234,24 +247,34 @@ def show(tab, user_info):
                 "asc_message": get_asc_message(asc_sign),
                 "sun_sign": sun_sign, "sun_deg": f"{sun_deg:.1f}°",
                 "sun_house": planet_houses["太陽"], "sun_message": get_sun_message(sun_sign),
+                "sun_house_message": get_house_planet_message(planet_houses["太陽"], "太陽"),
                 "moon_sign": moon_sign, "moon_deg": f"{moon_deg:.1f}°",
                 "moon_house": planet_houses["月"], "moon_message": get_moon_message(moon_sign),
+                "moon_house_message": get_house_planet_message(planet_houses["月"], "月"),
                 "mercury_sign": mercury_sign, "mercury_deg": f"{mercury_deg:.1f}°",
                 "mercury_house": planet_houses["水星"], "mercury_message": get_mercury_message(mercury_sign),
+                "mercury_house_message": get_house_planet_message(planet_houses["水星"], "水星"),
                 "venus_sign": venus_sign, "venus_deg": f"{venus_deg:.1f}°",
                 "venus_house": planet_houses["金星"], "venus_message": get_venus_message(venus_sign),
+                "venus_house_message": get_house_planet_message(planet_houses["金星"], "金星"),
                 "mars_sign": mars_sign, "mars_deg": f"{mars_deg:.1f}°",
                 "mars_house": planet_houses["火星"], "mars_message": get_mars_message(mars_sign),
+                "mars_house_message": get_house_planet_message(planet_houses["火星"], "火星"),
                 "jupiter_sign": jupiter_sign, "jupiter_deg": f"{jupiter_deg:.1f}°",
                 "jupiter_house": planet_houses["木星"], "jupiter_message": get_jupiter_message(jupiter_sign),
+                "jupiter_house_message": get_house_planet_message(planet_houses["木星"], "木星"),
                 "saturn_sign": saturn_sign, "saturn_deg": f"{saturn_deg:.1f}°",
                 "saturn_house": planet_houses["土星"], "saturn_message": get_saturn_message(saturn_sign),
+                "saturn_house_message": get_house_planet_message(planet_houses["土星"], "土星"),
                 "uranus_sign": uranus_sign, "uranus_deg": f"{uranus_deg:.1f}°",
                 "uranus_house": planet_houses["天王星"], "uranus_message": get_uranus_message(uranus_sign),
+                "uranus_house_message": get_house_planet_message(planet_houses["天王星"], "天王星"),
                 "neptune_sign": neptune_sign, "neptune_deg": f"{neptune_deg:.1f}°",
                 "neptune_house": planet_houses["海王星"], "neptune_message": get_neptune_message(neptune_sign),
+                "neptune_house_message": get_house_planet_message(planet_houses["海王星"], "海王星"),
                 "pluto_sign": pluto_sign, "pluto_deg": f"{pluto_deg:.1f}°",
                 "pluto_house": planet_houses["冥王星"], "pluto_message": get_pluto_message(pluto_sign),
+                "pluto_house_message": get_house_planet_message(planet_houses["冥王星"], "冥王星"),
                 "aspects": [
                     {"p1": a["p1"], "p2": a["p2"], "type": a["type"],
                      "message": get_aspect_message(a["p1"], a["p2"], a["type"])}

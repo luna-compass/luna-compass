@@ -80,11 +80,13 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
         story.append(HRFlowable(width="100%", thickness=1, color=PURPLE_BORDER, spaceBefore=6, spaceAfter=4))
         story.append(Paragraph(f"◆ {title}", S('sec',12,PURPLE_DARK,True,sb=2,sa=4)))
 
-    def planet_row(symbol, label, sign, deg, house, msg):
+    def planet_row(symbol, label, sign, deg, house, msg, house_msg=""):
         if not sign: return
         story.append(Paragraph(f"{symbol} {label}　{sign} {deg}　{house}ハウス",
             S('p',10,PURPLE_MID,True,sb=4,sa=2)))
-        story.append(Paragraph(msg, S('m',9,TEXT_DARK,sb=0,sa=4)))
+        story.append(Paragraph(msg, S('m',9,TEXT_DARK,sb=0,sa=2)))
+        if house_msg:
+            story.append(Paragraph(f"【ハウス】{house_msg}", S('hm',9,TEXT_GRAY,sb=0,sa=4)))
 
     # ASC
     section("第一印象（ASC）")
@@ -94,27 +96,27 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
 
     # 内惑星
     section("主要天体")
-    for sym, lbl, ks, kd, kh, km in [
-        ("☀","太陽（本質）","sun_sign","sun_deg","sun_house","sun_message"),
-        ("☽","月（感情）","moon_sign","moon_deg","moon_house","moon_message"),
-        ("☿","水星（思考）","mercury_sign","mercury_deg","mercury_house","mercury_message"),
-        ("♀","金星（愛・好み）","venus_sign","venus_deg","venus_house","venus_message"),
-        ("♂","火星（行動）","mars_sign","mars_deg","mars_house","mars_message"),
+    for sym, lbl, ks, kd, kh, km, khm in [
+        ("☀","太陽（本質）","sun_sign","sun_deg","sun_house","sun_message","sun_house_message"),
+        ("☽","月（感情）","moon_sign","moon_deg","moon_house","moon_message","moon_house_message"),
+        ("☿","水星（思考）","mercury_sign","mercury_deg","mercury_house","mercury_message","mercury_house_message"),
+        ("♀","金星（愛・好み）","venus_sign","venus_deg","venus_house","venus_message","venus_house_message"),
+        ("♂","火星（行動）","mars_sign","mars_deg","mars_house","mars_message","mars_house_message"),
     ]:
         planet_row(sym, lbl, user_data.get(ks,""), user_data.get(kd,""),
-                   user_data.get(kh,""), user_data.get(km,""))
+                   user_data.get(kh,""), user_data.get(km,""), user_data.get(khm,""))
 
     # 外惑星
     section("外惑星")
-    for sym, lbl, ks, kd, kh, km in [
-        ("♃","木星（発展）","jupiter_sign","jupiter_deg","jupiter_house","jupiter_message"),
-        ("♄","土星（課題）","saturn_sign","saturn_deg","saturn_house","saturn_message"),
-        ("♅","天王星（覚醒）","uranus_sign","uranus_deg","uranus_house","uranus_message"),
-        ("♆","海王星（夢）","neptune_sign","neptune_deg","neptune_house","neptune_message"),
-        ("♇","冥王星（変容）","pluto_sign","pluto_deg","pluto_house","pluto_message"),
+    for sym, lbl, ks, kd, kh, km, khm in [
+        ("♃","木星（発展）","jupiter_sign","jupiter_deg","jupiter_house","jupiter_message","jupiter_house_message"),
+        ("♄","土星（課題）","saturn_sign","saturn_deg","saturn_house","saturn_message","saturn_house_message"),
+        ("♅","天王星（覚醒）","uranus_sign","uranus_deg","uranus_house","uranus_message","uranus_house_message"),
+        ("♆","海王星（夢）","neptune_sign","neptune_deg","neptune_house","neptune_message","neptune_house_message"),
+        ("♇","冥王星（変容）","pluto_sign","pluto_deg","pluto_house","pluto_message","pluto_house_message"),
     ]:
         planet_row(sym, lbl, user_data.get(ks,""), user_data.get(kd,""),
-                   user_data.get(kh,""), user_data.get(km,""))
+                   user_data.get(kh,""), user_data.get(km,""), user_data.get(khm,""))
 
     # アスペクト
     aspects = user_data.get("aspects", [])

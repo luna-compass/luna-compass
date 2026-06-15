@@ -146,11 +146,13 @@ with st.expander("👤 基本情報を入力する", expanded=True):
         default_date = datetime.date(1968, 5, 27)
         default_hour = 0
         default_min = 0
+        default_city = "北九州"
     else:
         default_name = ""
         default_date = datetime.date(1990, 1, 1)
         default_hour = 12
         default_min = 0
+        default_city = "東京"
 
     col1, col2 = st.columns(2)
     with col1:
@@ -179,7 +181,8 @@ with st.expander("👤 基本情報を入力する", expanded=True):
     tz_offset = 9 if tz_label.startswith("日本") else 0
 
     cities = pd.read_csv("cities.csv")
-    city = st.selectbox("出生地", cities["city"], key="city_common")
+    default_city_index = int(cities[cities["city"] == default_city].index[0]) if default_city in cities["city"].values else 0
+    city = st.selectbox("出生地", cities["city"], index=default_city_index, key="city_common")
     row = cities[cities["city"] == city].iloc[0]
     lat = float(row["lat"])
     lon_city = float(row["lon"])
