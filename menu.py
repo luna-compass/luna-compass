@@ -6,7 +6,25 @@ import streamlit as st
 
 def show():
     """トップメニュー画面を表示する"""
-
+    
+    # ✅ ここに追加！ サイドバー管理画面 ↓
+    with st.sidebar:
+        st.markdown("### 🔧 管理メニュー")
+        admin_mode = st.radio(
+            "表示モード",
+            ["通常利用者", "開発者", "管理者"],
+            key="admin_mode"
+        )
+        
+        if admin_mode == "開発者":
+            st.markdown("#### 🔨 開発画面")
+            st.info("開発情報はここに表示されます")
+            # 開発用コンポーネント
+        elif admin_mode == "管理者":
+            st.markdown("#### 👨‍💼 管理者画面")
+            st.warning("管理情報はここに表示されます")
+            # 管理者用コンポーネント
+            
     st.markdown("""
     <style>
     .menu-hero {
