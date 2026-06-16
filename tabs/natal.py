@@ -12,14 +12,45 @@ from utils.astro import (
     split_sign_degree, get_aspects, get_sign
 )
 from utils.messages import (
-    get_sun_message, get_moon_message, get_mercury_message,
-    get_venus_message, get_mars_message, get_jupiter_message,
-    get_saturn_message, get_uranus_message, get_neptune_message,
-    get_pluto_message, get_aspect_message, get_asc_message,
-    get_house_planet_message
+    get_sun_message as _get_sun_message,
+    get_moon_message as _get_moon_message,
+    get_mercury_message as _get_mercury_message,
+    get_venus_message as _get_venus_message,
+    get_mars_message as _get_mars_message,
+    get_jupiter_message as _get_jupiter_message,
+    get_saturn_message as _get_saturn_message,
+    get_uranus_message as _get_uranus_message,
+    get_neptune_message as _get_neptune_message,
+    get_pluto_message as _get_pluto_message,
+    get_aspect_message as _get_aspect_message,
+    get_asc_message as _get_asc_message,
+    get_house_planet_message as _get_house_planet_message,
+    LIFE_PATH_MESSAGES as _LIFE_PATH_MESSAGES,
 )
 from utils.chart import plot_horoscope
 from utils.pdf_report import create_reading_pdf
+from utils.messages_loader import get_message, get_aspect_message_json
+
+# JSONから読み込む関数（なければmessages.pyにフォールバック）
+def get_sun_message(sign):       return get_message("sun", sign) or _get_sun_message(sign)
+def get_moon_message(sign):      return get_message("moon", sign) or _get_moon_message(sign)
+def get_mercury_message(sign):   return get_message("mercury", sign) or _get_mercury_message(sign)
+def get_venus_message(sign):     return get_message("venus", sign) or _get_venus_message(sign)
+def get_mars_message(sign):      return get_message("mars", sign) or _get_mars_message(sign)
+def get_jupiter_message(sign):   return get_message("jupiter", sign) or _get_jupiter_message(sign)
+def get_saturn_message(sign):    return get_message("saturn", sign) or _get_saturn_message(sign)
+def get_uranus_message(sign):    return get_message("uranus", sign) or _get_uranus_message(sign)
+def get_neptune_message(sign):   return get_message("neptune", sign) or _get_neptune_message(sign)
+def get_pluto_message(sign):     return get_message("pluto", sign) or _get_pluto_message(sign)
+def get_asc_message(sign):       return get_message("asc", sign) or _get_asc_message(sign)
+
+def get_aspect_message(p1, p2, aspect):
+    return get_aspect_message_json(p1, p2, aspect) or _get_aspect_message(p1, p2, aspect)
+
+def get_house_planet_message(house_num, planet):
+    from utils.messages_loader import get_message as _gm
+    msg = _gm("house_planet", f"{house_num}|{planet}")
+    return msg or _get_house_planet_message(house_num, planet)
 
 
 def get_house_num(planet_deg, house_cusps):
@@ -36,9 +67,9 @@ def get_house_num(planet_deg, house_cusps):
     return 1
 
 
-def show(tab, user_info):
-    with tab:
-
+def _render(container, user_info):
+    """鑑定結果を表示する共通処理（タブ・直接表示の両方から呼ばれる）"""
+    with container:
         name         = user_info["name"]
         birthday     = user_info["birthday"]
         birth_hour   = user_info["birth_hour"]
@@ -233,8 +264,7 @@ def show(tab, user_info):
             birthday_num = reduce_num(birthday.day)
             ruler_num = reduce_num(sum(int(d) for d in str(birthday.year)))
 
-            from utils.messages import LIFE_PATH_MESSAGES
-            lp_data = LIFE_PATH_MESSAGES.get(life_path, {})
+            lp_data = _LIFE_PATH_MESSAGES.get(life_path, {})
 
             # user_dataを組み立て
             user_data = {
@@ -295,3 +325,19 @@ def show(tab, user_info):
                 mime="application/pdf",
                 use_container_width=True,
             )
+
+
+def show(tab, user_info):
+    """既存タブ構成からの呼び出し（後方互換）"""
+    _render(tab, user_info)
+
+
+def show_direct(user_info):
+    """メニュー画面から直接呼び出す場合（タブなし）"""
+    import contextlib
+
+    @contextlib.contextmanager
+    def noop():
+        yield st
+
+    _render(noop(), user_info)

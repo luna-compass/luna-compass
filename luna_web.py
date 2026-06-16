@@ -131,91 +131,120 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# ---------- 共通入力フォーム（エクスパンダー） ----------
-with st.expander("👤 基本情報を入力する", expanded=True):
+# ---------- session_state 初期化 ----------
+if "menu_selected" not in st.session_state:
+    st.session_state["menu_selected"] = None
 
-    mode = st.radio(
-        "占う対象",
-        ("自分を占う", "別の人を占う"),
-        key="mode_common",
-        horizontal=True
-    )
+# ---------- メニュー選択前：トップメニュー画面を表示 ----------
+if st.session_state["menu_selected"] is None:
+    from menu import show as show_menu
+    show_menu()
+    st.stop()
 
-    if mode == "自分を占う":
-        default_name = "Luna"
-        default_date = datetime.date(1968, 5, 27)
-        default_hour = 0
-        default_min = 0
-        default_city = "北九州"
-    else:
-        default_name = ""
-        default_date = datetime.date(1990, 1, 1)
-        default_hour = 12
-        default_min = 0
-        default_city = "東京"
-
-    col1, col2 = st.columns(2)
-    with col1:
-        name = st.text_input("お名前", value=default_name, key="name_common", help="ニックネームでもOKです")
-    with col2:
-        birthday = st.date_input(
-            "生年月日",
-            value=default_date,
-            min_value=datetime.date(1800, 1, 1),
-            max_value=datetime.date.today(),
-            key="birthday_common"
-        )
-
-    col_t1, col_t2 = st.columns(2)
-    with col_t1:
-        birth_hour = st.number_input("出生時（時）", min_value=0, max_value=23, value=default_hour, key="hour_common", help="不明な場合は0のままでOK")
-    with col_t2:
-        birth_minute = st.number_input("出生時（分）", min_value=0, max_value=59, value=default_min, key="minute_common")
-
-    tz_label = st.radio(
-        "出生地のタイムゾーン",
-        ("日本（JST = UTC+9）", "世界時で計算（UTC）"),
-        key="tz_common",
-        horizontal=True
-    )
-    tz_offset = 9 if tz_label.startswith("日本") else 0
-
-    cities = pd.read_csv("cities.csv")
-    default_city_index = int(cities[cities["city"] == default_city].index[0]) if default_city in cities["city"].values else 0
-    city = st.selectbox("出生地", cities["city"], index=default_city_index, key="city_common")
-    row = cities[cities["city"] == city].iloc[0]
-    lat = float(row["lat"])
-    lon_city = float(row["lon"])
+# ---------- メニュー選択後：戻るボタン ----------
+if st.button("← メニューに戻る", key="back_to_menu"):
+    st.session_state["menu_selected"] = None
+    st.rerun()
 
 st.markdown("---")
 
-# ---------- タブ構成 ----------
-tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
-    "🌙 ネイタル",
-    "🌍 トランジット",
-    "💕 相性",
-    "🔢 数秘術",
-    "🔮 カード",
-    "📖 詳細説明"
-])
+# ---------- 総合鑑定 ----------
+if st.session_state["menu_selected"] == "general":
 
-# ---------- 各タブ呼び出し ----------
-from tabs import natal, transit, compatibility, numerology, cards, guide
+    st.markdown("### 🌟 総合鑑定")
 
-user_info = {
-    "name": name,
-    "birthday": birthday,
-    "birth_hour": birth_hour,
-    "birth_minute": birth_minute,
-    "tz_offset": tz_offset,
-    "lat": lat,
-    "lon": lon_city,
-    "mode": mode,
-}
+    with st.expander("👤 基本情報を入力する", expanded=True):
+        mode = st.radio(
+            "占う対象",
+            ("自分を占う", "別の人を占う"),
+            key="mode_general",
+            horizontal=True
+        )
 
-natal.show(tab1, user_info)
-transit.show(tab2, user_info)
-compatibility.show(tab3)
-numerology.show(tab4, user_info)
-cards.show(tab5)
-guide.show(tab6)
+        if mode == "自分を占う":
+            default_name = "Luna"
+            default_date = datetime.date(1968, 5, 27)
+            default_hour = 0
+            default_min = 0
+            default_city = "北九州"
+        else:
+            default_name = ""
+            default_date = datetime.date(1990, 1, 1)
+            default_hour = 12
+            default_min = 0
+            default_city = "東京"
+
+        col1, col2 = st.columns(2)
+        with col1:
+            name = st.text_input("お名前", value=default_name, key="name_general", help="ニックネームでもOKです")
+        with col2:
+            birthday = st.date_input(
+                "生年月日",
+                value=default_date,
+                min_value=datetime.date(1800, 1, 1),
+                max_value=datetime.date.today(),
+                key="birthday_general"
+            )
+
+        col_t1, col_t2 = st.columns(2)
+        with col_t1:
+            birth_hour = st.number_input("出生時（時）", min_value=0, max_value=23, value=default_hour, key="hour_general")
+        with col_t2:
+            birth_minute = st.number_input("出生時（分）", min_value=0, max_value=59, value=default_min, key="minute_general")
+
+        tz_label = st.radio(
+            "出生地のタイムゾーン",
+            ("日本（JST = UTC+9）", "世界時で計算（UTC）"),
+            key="tz_general",
+            horizontal=True
+        )
+        tz_offset = 9 if tz_label.startswith("日本") else 0
+
+        cities = pd.read_csv("cities.csv")
+        default_city_index = int(cities[cities["city"] == default_city].index[0]) if default_city in cities["city"].values else 0
+        city = st.selectbox("出生地", cities["city"], index=default_city_index, key="city_general")
+        row = cities[cities["city"] == city].iloc[0]
+        lat = float(row["lat"])
+        lon_city = float(row["lon"])
+
+    user_info = {
+        "name": name,
+        "birthday": birthday,
+        "birth_hour": birth_hour,
+        "birth_minute": birth_minute,
+        "tz_offset": tz_offset,
+        "lat": lat,
+        "lon": lon_city,
+        "mode": mode,
+    }
+
+    from tabs import natal, transit, numerology
+
+    tab1, tab2, tab3 = st.tabs([
+        "🌙 ネイタル",
+        "🌍 トランジット",
+        "🔢 数秘術",
+    ])
+
+    natal.show(tab1, user_info)
+    transit.show(tab2, user_info)
+    numerology.show(tab3, user_info)
+
+# ---------- 相性占い ----------
+elif st.session_state["menu_selected"] == "compat":
+
+    from tabs import compatibility
+    compatibility.show_direct()
+
+# ---------- タロット ----------
+elif st.session_state["menu_selected"] == "tarot":
+
+    from tabs import cards
+
+    tab_tarot1, tab_tarot2 = st.tabs([
+        "🔮 1枚引き",
+        "🔮 3枚引き（過去・現在・未来）",
+    ])
+
+    cards.show_single(tab_tarot1)
+    cards.show_three(tab_tarot2)

@@ -197,3 +197,78 @@ def show(tab):
                 <div class="luna-text">{summary}</div>
             </div>
             """, unsafe_allow_html=True)
+
+
+def show_single(tab):
+    """1枚引きタブ（メニュー画面から呼び出す）"""
+    with tab:
+        st.markdown("### 🔮 1枚カードメッセージ")
+
+        if st.button("カードを1枚引く", key="card_single"):
+            card_name, card_msg, card_img, is_reversed = draw_card()
+            img_path = Path(card_img) if card_img else None
+
+            if img_path and img_path.exists():
+                col1, col2, col3 = st.columns([2, 3, 2])
+                with col2:
+                    img = Image.open(img_path)
+                    if is_reversed:
+                        img = img.rotate(180)
+                    st.image(img, width=350)
+            else:
+                st.caption("（画像がまだ未設定 or 見つかりません）")
+
+            st.markdown(f"### {card_name}")
+            st.markdown(
+                f"<div class='luna-message'>{card_msg}</div>",
+                unsafe_allow_html=True
+            )
+
+
+def show_three(tab):
+    """3枚引きタブ（メニュー画面から呼び出す）"""
+    with tab:
+        st.markdown("### 🔮 3枚引き（過去・現在・未来）")
+
+        theme = st.radio(
+            "🔮 テーマを選んでください",
+            ["総合", "恋愛", "仕事"],
+            horizontal=True,
+            key="tarot_theme"
+        )
+
+        if st.button("3枚引きする", key="three_cards"):
+            cards_3 = draw_three_cards()
+            labels = ["過去", "現在", "未来"]
+            col1, col2, col3 = st.columns(3)
+
+            for i, col in enumerate([col1, col2, col3]):
+                name, msg, img_path, is_reversed = cards_3[i]
+                with col:
+                    try:
+                        img = Image.open(img_path)
+                        if is_reversed:
+                            img = img.rotate(180)
+                        st.image(img, width=200)
+                    except Exception:
+                        st.caption("（画像なし）")
+                    st.markdown(f"**{labels[i]}**")
+                    st.markdown(f"**{name}**")
+                    st.markdown(
+                        f"<div class='luna-message'>{msg}</div>",
+                        unsafe_allow_html=True
+                    )
+
+            future_name, future_msg, _, _ = cards_3[2]
+            if theme == "恋愛":
+                summary = f"恋愛面では「{future_name}」の流れです。{future_msg}"
+            elif theme == "仕事":
+                summary = f"仕事面では「{future_name}」の流れです。{future_msg}"
+            else:
+                summary = f"全体の流れとしては「{future_name}」に向かっています。{future_msg}"
+            summary += " 無理せず整えていきましょう。"
+
+            st.markdown(
+                f"<div class='luna-message'>🔮 総合メッセージ：{summary}</div>",
+                unsafe_allow_html=True
+            )

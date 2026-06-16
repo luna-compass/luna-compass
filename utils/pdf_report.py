@@ -6,6 +6,7 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, Tabl
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 import io
+import datetime
 
 import os
 _BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -172,3 +173,98 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
     return buf
 
 
+def create_compatibility_pdf(
+    name1, birthday1, sun_sign1, moon_sign1, venus_sign1, mars_sign1,
+    name2, birthday2, sun_sign2, moon_sign2, venus_sign2, mars_sign2,
+    overall, compat_note, chart_image_bytes=None
+):
+    """相性鑑定書PDFを生成する"""
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=A4,
+        rightMargin=18*mm, leftMargin=18*mm,
+        topMargin=15*mm, bottomMargin=15*mm)
+
+    story = []
+
+    # タイトル
+    story.append(Paragraph("Luna 占星術", S('t1', 20, PURPLE_DARK, True, 'CENTER', 0, 2)))
+    story.append(Paragraph("相性鑑定書", S('t2', 14, PURPLE_MID, True, 'CENTER', 0, 8)))
+    story.append(HRFlowable(width="100%", thickness=2, color=PURPLE_MID, spaceAfter=8))
+
+    # 鑑定日
+    reading_date = datetime.date.today().strftime("%Y年%m月%d日")
+    story.append(Paragraph(f"鑑定日：{reading_date}", S('rd', 9, TEXT_GRAY, align='RIGHT', sb=0, sa=6)))
+
+    # 2人の基本情報テーブル
+    def fmt_date(d):
+        return f"{d.year}年{d.month}月{d.day}日"
+
+    info = [
+        [Paragraph("", S('h0',10,PURPLE_DARK,True,'CENTER')),
+         Paragraph(name1, S('n1',12,PURPLE_MID,True,'CENTER')),
+         Paragraph(name2, S('n2',12,PURPLE_MID,True,'CENTER'))],
+        [Paragraph("生年月日", S('h1',10,PURPLE_DARK,True)),
+         Paragraph(fmt_date(birthday1), S('v1')),
+         Paragraph(fmt_date(birthday2), S('v2'))],
+        [Paragraph("☀ 太陽", S('h2',10,PURPLE_DARK,True)),
+         Paragraph(sun_sign1, S('v3')),
+         Paragraph(sun_sign2, S('v4'))],
+        [Paragraph("☽ 月", S('h3',10,PURPLE_DARK,True)),
+         Paragraph(moon_sign1, S('v5')),
+         Paragraph(moon_sign2, S('v6'))],
+        [Paragraph("♀ 金星", S('h4',10,PURPLE_DARK,True)),
+         Paragraph(venus_sign1, S('v7')),
+         Paragraph(venus_sign2, S('v8'))],
+        [Paragraph("♂ 火星", S('h5',10,PURPLE_DARK,True)),
+         Paragraph(mars_sign1, S('v9')),
+         Paragraph(mars_sign2, S('v10'))],
+    ]
+    t = Table(info, colWidths=[30*mm, 72*mm, 58*mm])
+    t.setStyle(TableStyle([
+        ('FONTNAME',(0,0),(-1,-1),'JP'),
+        ('FONTSIZE',(0,0),(-1,-1),10),
+        ('BACKGROUND',(0,0),(0,-1),PURPLE_LIGHT),
+        ('BACKGROUND',(0,0),(-1,0),PURPLE_LIGHT),
+        ('BOX',(0,0),(-1,-1),1,PURPLE_BORDER),
+        ('INNERGRID',(0,0),(-1,-1),0.5,PURPLE_BORDER),
+        ('TOPPADDING',(0,0),(-1,-1),5),
+        ('BOTTOMPADDING',(0,0),(-1,-1),5),
+        ('LEFTPADDING',(0,0),(-1,-1),6),
+        ('ALIGN',(1,0),(2,0),'CENTER'),
+    ]))
+    story.append(t)
+    story.append(Spacer(1,10))
+
+    # ホロスコープ画像（重ね表示）
+    if chart_image_bytes:
+        story.append(Paragraph("◆ 合成ホロスコープ", S('si',12,PURPLE_DARK,True,sb=8,sa=4)))
+        img = Image(chart_image_bytes, width=120*mm, height=120*mm)
+        img.hAlign = 'CENTER'
+        story.append(img)
+        story.append(Spacer(1,6))
+
+    # 相性詳細
+    def section(title):
+        story.append(HRFlowable(width="100%", thickness=1, color=PURPLE_BORDER, spaceBefore=6, spaceAfter=4))
+        story.append(Paragraph(f"◆ {title}", S('sec',12,PURPLE_DARK,True,sb=2,sa=4)))
+
+    section("相性鑑定結果")
+    # compat_noteを段落ごとに分けて表示
+    for line in compat_note.split("\n"):
+        if line.strip():
+            bold = line.startswith("【")
+            story.append(Paragraph(line, S(f'cn_{hash(line)}', 9 if not bold else 10,
+                PURPLE_MID if bold else TEXT_DARK, bold, sb=2, sa=2)))
+
+    section("総合相性メッセージ")
+    story.append(Paragraph(overall, S('ov', 11, TEXT_DARK, sb=2, sa=6)))
+
+    # フッター
+    story.append(Spacer(1,8))
+    story.append(HRFlowable(width="100%", thickness=1, color=PURPLE_BORDER))
+    story.append(Paragraph("Luna 占星術　Luna-compass",
+        S('ft',8,TEXT_GRAY,align='CENTER',sb=4,sa=0)))
+
+    doc.build(story)
+    buf.seek(0)
+    return buf

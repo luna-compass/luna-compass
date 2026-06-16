@@ -29,7 +29,6 @@ ELEMENT_COMPAT = {
     ("水", "火"): ("💧🔥 ドラマチックな相性", "情熱と感情が激しくぶつかり合います。魅力的ですが、感情的になりやすい面も。理解し合えれば深い絆になります。"),
     ("風", "地"): ("💨🌍 刺激し合う相性", "自由と安定の組み合わせ。考え方が違いますが、だからこそ学び合えます。"),
     ("地", "風"): ("🌍💨 刺激し合う相性", "自由と安定の組み合わせ。考え方が違いますが、だからこそ学び合えます。"),
-    ("火", "火"): ("🔥🔥 情熱的な組み合わせ", "お互いのエネルギーが共鳴。刺激的な関係ですが、競争心が出やすい面も。"),
     ("地", "地"): ("🌍🌍 安定した組み合わせ", "価値観が似ており、安心感のある関係です。堅実に長期的な絆を育てます。"),
     ("風", "風"): ("💨💨 知的な組み合わせ", "会話が弾み、知的な刺激を与え合います。自由を尊重し合える関係です。"),
     ("水", "水"): ("💧💧 深く共感する組み合わせ", "感情的な共鳴が深く、言葉がなくても通じ合えます。ただし感情的になりすぎる面も。"),
@@ -105,9 +104,10 @@ def get_house_num(planet_deg, house_cusps):
     return 1
 
 
-def show(tab):
-    with tab:
-        st.markdown("### 💕 相性占い")
+def _render(container):
+    """相性占いの共通描画処理"""
+    with container:
+        st.markdown("### 💑 相性占い")
 
         col1, col2 = st.columns(2)
         with col1:
@@ -250,7 +250,6 @@ def show(tab):
             st.markdown("---")
             st.markdown("### 🌙 総合相性メッセージ")
 
-            # アスペクト数でスコアを出す
             good_aspects = ["トライン", "セクスタイル", "コンジャンクション"]
             score = 0
             for asp in [sun_aspect, moon_aspect, vm_aspect1, vm_aspect2]:
@@ -273,7 +272,6 @@ def show(tab):
             st.markdown("### 🌙 ホロスコープ（2人の重ね表示）")
             st.caption(f"● {disp1}のネイタル　▲ {disp2}の天体（青）")
 
-            # person1のハウスを使ってチャートを表示
             dt_utc1 = datetime.datetime(
                 bday1.year, bday1.month, bday1.day,
                 int(hour1), int(min1)
@@ -282,7 +280,6 @@ def show(tab):
                 dt_utc1.year, dt_utc1.month, dt_utc1.day,
                 dt_utc1.hour + dt_utc1.minute / 60.0
             )
-            # デフォルト東京
             house_cusps1, _ = swe.houses(jd1, 35.68, 139.69, b'P')
 
             fig = plot_horoscope(longs1, house_cusps1, longs2)
@@ -300,3 +297,55 @@ def show(tab):
                 file_name="luna_compatibility.png",
                 mime="image/png",
             )
+
+            # ===== ⑧相性鑑定書PDF =====
+            st.markdown("---")
+            st.markdown("### 📄 相性鑑定書PDFをダウンロード")
+
+            chart_buf = io.BytesIO()
+            fig.savefig(chart_buf, format="png", dpi=150, bbox_inches="tight")
+            chart_buf.seek(0)
+
+            compat_note = (
+                f"【エレメント相性】{compat_info[0] if compat_info else '—'}\n"
+                f"{compat_info[1] if compat_info else ''}\n\n"
+                f"【太陽の相性】{disp1}（{sun_sign1}）× {disp2}（{sun_sign2}）\n"
+                f"{sun_msg}\n\n"
+                f"【総合】{overall}"
+            )
+
+            from utils.pdf_report import create_compatibility_pdf
+            pdf_buf = create_compatibility_pdf(
+                name1=disp1, birthday1=bday1,
+                sun_sign1=sun_sign1, moon_sign1=moon_sign1,
+                venus_sign1=venus_sign1, mars_sign1=mars_sign1,
+                name2=disp2, birthday2=bday2,
+                sun_sign2=sun_sign2, moon_sign2=moon_sign2,
+                venus_sign2=venus_sign2, mars_sign2=mars_sign2,
+                overall=overall,
+                compat_note=compat_note,
+                chart_image_bytes=chart_buf,
+            )
+            st.download_button(
+                label="📄 相性鑑定書PDFをダウンロード",
+                data=pdf_buf,
+                file_name=f"luna_compat_{disp1}_{disp2}.pdf",
+                mime="application/pdf",
+                use_container_width=True,
+            )
+
+
+def show(tab):
+    """既存タブ構成からの呼び出し（後方互換）"""
+    _render(tab)
+
+
+def show_direct():
+    """メニュー画面から直接呼び出す場合（タブなし）"""
+    import contextlib
+
+    @contextlib.contextmanager
+    def noop():
+        yield st
+
+    _render(noop())
