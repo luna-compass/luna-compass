@@ -83,11 +83,13 @@ if not data:
     st.stop()
 
 # ---------- タブ構成 ----------
-tab_planets, tab_aspects, tab_house, tab_transit = st.tabs([
+tab_planets, tab_aspects, tab_house, tab_transit, tab_tarot, tab_numerology = st.tabs([
     "🌟 天体・ASCメッセージ",
     "🔷 アスペクトメッセージ",
     "🏠 ハウスメッセージ",
     "🌍 トランジットアスペクト",
+    "🔮 タロットメッセージ",
+    "🔢 数秘術メッセージ",
 ])
 
 # ===== 天体メッセージ =====
@@ -284,6 +286,112 @@ with tab_transit:
         data["transit_aspects"] = edited_transit
         save_data(data)
         st.success("✅ トランジットメッセージを保存しました！")
+        st.rerun()
+
+# ===== タロットメッセージ =====
+with tab_tarot:
+    st.markdown("### 🔮 タロットメッセージの編集")
+    st.caption("各カードの正位置・逆位置メッセージを編集できます。")
+
+    tarot_base = data.get("tarot_base", {})
+    tarot_reverse = data.get("tarot_reverse", {})
+
+    TAROT_NAME_JP = {
+        "fool":"愚者", "magician":"魔術師", "high_priestess":"女教皇",
+        "empress":"女帝", "emperor":"皇帝", "hierophant":"教皇",
+        "lovers":"恋人", "chariot":"戦車", "strength":"力",
+        "hermit":"隠者", "wheel_of_fortune":"運命の輪", "justice":"正義",
+        "hanged_man":"吊るされた男", "death":"死神", "temperance":"節制",
+        "devil":"悪魔", "tower":"塔", "star":"星",
+        "moon":"月", "sun":"太陽", "judgement":"審判", "world":"世界",
+    }
+
+    edited_base = dict(tarot_base)
+    edited_reverse = dict(tarot_reverse)
+
+    for card_key, card_name_jp in TAROT_NAME_JP.items():
+        st.markdown(f"#### 🃏 {card_name_jp}（{card_key}）")
+        col_b, col_r = st.columns(2)
+        with col_b:
+            edited_base[card_key] = st.text_area(
+                "正位置",
+                value=tarot_base.get(card_key, ""),
+                height=80,
+                key=f"tarot_base_{card_key}"
+            )
+        with col_r:
+            edited_reverse[card_key] = st.text_area(
+                "逆位置",
+                value=tarot_reverse.get(card_key, ""),
+                height=80,
+                key=f"tarot_rev_{card_key}"
+            )
+        st.markdown("---")
+
+    if st.button("💾 タロットメッセージを保存", type="primary", use_container_width=True, key="save_tarot"):
+        data["tarot_base"] = edited_base
+        data["tarot_reverse"] = edited_reverse
+        save_data(data)
+        st.success("✅ タロットメッセージを保存しました！")
+        st.rerun()
+
+# ===== 数秘術メッセージ =====
+with tab_numerology:
+    st.markdown("### 🔢 数秘術メッセージの編集")
+
+    num_lp = data.get("numerology_life_path", {})
+    num_bd = data.get("numerology_birthday", {})
+    num_rl = data.get("numerology_ruler", {})
+
+    NUM_KEYS = ["1","2","3","4","5","6","7","8","9","11","22","33"]
+
+    edited_lp = dict(num_lp)
+    edited_bd = dict(num_bd)
+    edited_rl = dict(num_rl)
+
+    st.markdown("#### 🌟 ライフパスナンバー")
+    for k in NUM_KEYS:
+        lp = num_lp.get(k, {})
+        with st.expander(f"ライフパス {k}：{lp.get('title', '')}"):
+            edited_lp[k] = {
+                "title": st.text_input("タイトル", value=lp.get("title",""), key=f"lp_title_{k}"),
+                "message": st.text_area("メッセージ", value=lp.get("message",""), height=100, key=f"lp_msg_{k}"),
+                "talent": st.text_input("才能", value=lp.get("talent",""), key=f"lp_talent_{k}"),
+                "challenge": st.text_input("課題", value=lp.get("challenge",""), key=f"lp_challenge_{k}"),
+                "keywords": st.text_input("キーワード", value=lp.get("keywords",""), key=f"lp_kw_{k}"),
+            }
+
+    st.markdown("---")
+    st.markdown("#### 🎂 バースデーナンバー")
+    cols_bd = st.columns(2)
+    for i, k in enumerate(NUM_KEYS):
+        with cols_bd[i % 2]:
+            edited_bd[k] = st.text_area(
+                f"バースデー {k}",
+                value=num_bd.get(k, ""),
+                height=80,
+                key=f"bd_{k}"
+            )
+
+    st.markdown("---")
+    st.markdown("#### 👑 ルーラーナンバー")
+    cols_rl = st.columns(2)
+    for i, k in enumerate(NUM_KEYS):
+        with cols_rl[i % 2]:
+            edited_rl[k] = st.text_area(
+                f"ルーラー {k}",
+                value=num_rl.get(k, ""),
+                height=80,
+                key=f"rl_{k}"
+            )
+
+    st.markdown("---")
+    if st.button("💾 数秘術メッセージを保存", type="primary", use_container_width=True, key="save_numerology"):
+        data["numerology_life_path"] = edited_lp
+        data["numerology_birthday"] = edited_bd
+        data["numerology_ruler"] = edited_rl
+        save_data(data)
+        st.success("✅ 数秘術メッセージを保存しました！")
         st.rerun()
 
 st.markdown("---")
