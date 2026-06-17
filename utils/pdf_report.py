@@ -6,7 +6,6 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, Tabl
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 import io
-import datetime
 
 import os
 _BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -28,11 +27,11 @@ PURPLE_BORDER= colors.HexColor("#a78bfa")
 TEXT_DARK    = colors.HexColor("#1f1437")
 TEXT_GRAY    = colors.HexColor("#6b7280")
 
-def S(name, size=10, color=TEXT_DARK, bold=False, align='LEFT', sb=4, sa=4):
+def S(name, size=10, color=TEXT_DARK, bold=False, align='LEFT', sb=6, sa=6):
     return ParagraphStyle(name, fontName='JPB' if bold else 'JP',
         fontSize=size, textColor=color,
         alignment={'LEFT':0,'CENTER':1,'RIGHT':2}.get(align,0),
-        spaceBefore=sb, spaceAfter=sa, leading=size*1.7)
+        spaceBefore=sb, spaceAfter=sa, leading=size*2.0)
 
 def create_reading_pdf(user_data, chart_image_bytes=None):
     buf = io.BytesIO()
@@ -85,15 +84,34 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
         if not sign: return
         story.append(Paragraph(f"{symbol} {label}　{sign} {deg}　{house}ハウス",
             S('p',10,PURPLE_MID,True,sb=4,sa=2)))
-        story.append(Paragraph(msg, S('m',9,TEXT_DARK,sb=0,sa=2)))
+        # 改行を段落に分けて表示
+        if msg:
+            lines = msg.split("\n")
+            for line in lines:
+                line = line.strip()
+                if not line:
+                    story.append(Spacer(1, 3))
+                elif line.startswith("【"):
+                    story.append(Paragraph(line, S('mh',9,PURPLE_MID,True,sb=4,sa=1)))
+                else:
+                    story.append(Paragraph(line, S('m',9,TEXT_DARK,sb=0,sa=2)))
         if house_msg:
-            story.append(Paragraph(f"【ハウス】{house_msg}", S('hm',9,TEXT_GRAY,sb=0,sa=4)))
+            story.append(Paragraph(f"【ハウス】{house_msg}", S('hm',9,TEXT_GRAY,sb=4,sa=4)))
 
     # ASC
     section("第一印象（ASC）")
     story.append(Paragraph(f"☺ アセンダント　{user_data.get('asc_sign','')} {user_data.get('asc_deg','')}",
         S('p',10,PURPLE_MID,True,sb=4,sa=2)))
-    story.append(Paragraph(user_data.get("asc_message",""), S('m',9,sb=0,sa=4)))
+    asc_msg = user_data.get("asc_message","")
+    if asc_msg:
+        for line in asc_msg.split("\n"):
+            line = line.strip()
+            if not line:
+                story.append(Spacer(1, 3))
+            elif line.startswith("【"):
+                story.append(Paragraph(line, S('asch',9,PURPLE_MID,True,sb=4,sa=1)))
+            else:
+                story.append(Paragraph(line, S('ascm',9,TEXT_DARK,sb=0,sa=2)))
 
     # 内惑星
     section("主要天体")
@@ -131,13 +149,15 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
 
     # 数秘術
     section("数秘術")
+
+    # 3つの数字を大きく表示
     nd = [
         [Paragraph("ライフパス",S('nh',10,PURPLE_DARK,True,'CENTER')),
-         Paragraph(str(user_data.get("life_path","")),S('nv',16,PURPLE_MID,True,'CENTER')),
+         Paragraph(str(user_data.get("life_path","")),S('nv',20,PURPLE_MID,True,'CENTER')),
          Paragraph("バースデー",S('nh2',10,PURPLE_DARK,True,'CENTER')),
-         Paragraph(str(user_data.get("birthday_num","")),S('nv2',16,PURPLE_MID,True,'CENTER')),
+         Paragraph(str(user_data.get("birthday_num","")),S('nv2',20,PURPLE_MID,True,'CENTER')),
          Paragraph("ルーラー",S('nh3',10,PURPLE_DARK,True,'CENTER')),
-         Paragraph(str(user_data.get("ruler_num","")),S('nv3',16,PURPLE_MID,True,'CENTER'))],
+         Paragraph(str(user_data.get("ruler_num","")),S('nv3',20,PURPLE_MID,True,'CENTER'))],
     ]
     nt = Table(nd, colWidths=[28*mm,18*mm,28*mm,18*mm,25*mm,18*mm])
     nt.setStyle(TableStyle([
@@ -147,20 +167,74 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
         ('BACKGROUND',(0,0),(-1,-1),PURPLE_LIGHT),
         ('BOX',(0,0),(-1,-1),1,PURPLE_BORDER),
         ('INNERGRID',(0,0),(-1,-1),0.5,PURPLE_BORDER),
-        ('TOPPADDING',(0,0),(-1,-1),6),
-        ('BOTTOMPADDING',(0,0),(-1,-1),6),
+        ('TOPPADDING',(0,0),(-1,-1),10),
+        ('BOTTOMPADDING',(0,0),(-1,-1),10),
     ]))
     story.append(nt)
-    lp_msg = user_data.get("life_path_message","")
-    if lp_msg:
-        story.append(Paragraph(f"ライフパス{user_data.get('life_path','')}：{lp_msg}",
-            S('lpm',9,TEXT_DARK,sb=4,sa=4)))
+    story.append(Spacer(1, 8))
 
-    # 総合メッセージ
+    # ライフパスメッセージ（充実版）
+    lp_data = user_data.get("life_path_data", {})
+    lp_num = user_data.get("life_path","")
+    lp_msg = user_data.get("life_path_message","")
+
+    story.append(Paragraph(f"◇ ライフパスナンバー {lp_num}　～人生のテーマ・使命～",
+        S('lpth',11,PURPLE_DARK,True,sb=8,sa=4)))
+
+    if lp_msg:
+        for line in lp_msg.split("\n"):
+            line = line.strip()
+            if not line:
+                story.append(Spacer(1,4))
+            elif line.startswith("【"):
+                story.append(Paragraph(line, S('lph',10,PURPLE_MID,True,sb=6,sa=2)))
+            else:
+                story.append(Paragraph(line, S('lpm',9,TEXT_DARK,sb=0,sa=3)))
+
+    story.append(Spacer(1, 6))
+
+    # バースデーナンバー
+    bd_num = user_data.get("birthday_num","")
+    bd_msg = user_data.get("birthday_message","")
+    if bd_msg:
+        story.append(Paragraph(f"◇ バースデーナンバー {bd_num}　～生まれ持った才能～",
+            S('bdth',11,PURPLE_DARK,True,sb=8,sa=4)))
+        story.append(Paragraph(bd_msg, S('bdm',9,TEXT_DARK,sb=0,sa=4)))
+
+    story.append(Spacer(1, 6))
+
+    # ルーラーナンバー
+    rl_num = user_data.get("ruler_num","")
+    rl_msg = user_data.get("ruler_message","")
+    if rl_msg:
+        story.append(Paragraph(f"◇ ルーラーナンバー {rl_num}　～生まれた年の使命～",
+            S('rlth',11,PURPLE_DARK,True,sb=8,sa=4)))
+        story.append(Paragraph(rl_msg, S('rlm',9,TEXT_DARK,sb=0,sa=4)))
+
+    # 総合メッセージ（短くまとめる）
     overall = user_data.get("overall_message","")
     if overall:
         section("総合メッセージ")
-        story.append(Paragraph(overall, S('ov',10,TEXT_DARK,sb=2,sa=6)))
+        # 改行で分割して各行を段落として表示
+        for line in overall.split("\n"):
+            line = line.strip()
+            if not line:
+                story.append(Spacer(1, 3))
+            elif line.startswith("【"):
+                story.append(Paragraph(line, S('ovh',10,PURPLE_MID,True,sb=4,sa=1)))
+            else:
+                story.append(Paragraph(line, S('ov',10,TEXT_DARK,sb=0,sa=3)))
+
+    # 占い師からのメッセージ
+    astrologer_msg = user_data.get("astrologer_message","")
+    if astrologer_msg and astrologer_msg.strip():
+        section("占い師からのメッセージ")
+        for line in astrologer_msg.split("\n"):
+            line = line.strip()
+            if not line:
+                story.append(Spacer(1, 4))
+            else:
+                story.append(Paragraph(line, S('am',10,TEXT_DARK,sb=0,sa=3)))
 
     # フッター
     story.append(Spacer(1,8))
@@ -173,98 +247,3 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
     return buf
 
 
-def create_compatibility_pdf(
-    name1, birthday1, sun_sign1, moon_sign1, venus_sign1, mars_sign1,
-    name2, birthday2, sun_sign2, moon_sign2, venus_sign2, mars_sign2,
-    overall, compat_note, chart_image_bytes=None
-):
-    """相性鑑定書PDFを生成する"""
-    buf = io.BytesIO()
-    doc = SimpleDocTemplate(buf, pagesize=A4,
-        rightMargin=18*mm, leftMargin=18*mm,
-        topMargin=15*mm, bottomMargin=15*mm)
-
-    story = []
-
-    # タイトル
-    story.append(Paragraph("Luna 占星術", S('t1', 20, PURPLE_DARK, True, 'CENTER', 0, 2)))
-    story.append(Paragraph("相性鑑定書", S('t2', 14, PURPLE_MID, True, 'CENTER', 0, 8)))
-    story.append(HRFlowable(width="100%", thickness=2, color=PURPLE_MID, spaceAfter=8))
-
-    # 鑑定日
-    reading_date = datetime.date.today().strftime("%Y年%m月%d日")
-    story.append(Paragraph(f"鑑定日：{reading_date}", S('rd', 9, TEXT_GRAY, align='RIGHT', sb=0, sa=6)))
-
-    # 2人の基本情報テーブル
-    def fmt_date(d):
-        return f"{d.year}年{d.month}月{d.day}日"
-
-    info = [
-        [Paragraph("", S('h0',10,PURPLE_DARK,True,'CENTER')),
-         Paragraph(name1, S('n1',12,PURPLE_MID,True,'CENTER')),
-         Paragraph(name2, S('n2',12,PURPLE_MID,True,'CENTER'))],
-        [Paragraph("生年月日", S('h1',10,PURPLE_DARK,True)),
-         Paragraph(fmt_date(birthday1), S('v1')),
-         Paragraph(fmt_date(birthday2), S('v2'))],
-        [Paragraph("☀ 太陽", S('h2',10,PURPLE_DARK,True)),
-         Paragraph(sun_sign1, S('v3')),
-         Paragraph(sun_sign2, S('v4'))],
-        [Paragraph("☽ 月", S('h3',10,PURPLE_DARK,True)),
-         Paragraph(moon_sign1, S('v5')),
-         Paragraph(moon_sign2, S('v6'))],
-        [Paragraph("♀ 金星", S('h4',10,PURPLE_DARK,True)),
-         Paragraph(venus_sign1, S('v7')),
-         Paragraph(venus_sign2, S('v8'))],
-        [Paragraph("♂ 火星", S('h5',10,PURPLE_DARK,True)),
-         Paragraph(mars_sign1, S('v9')),
-         Paragraph(mars_sign2, S('v10'))],
-    ]
-    t = Table(info, colWidths=[30*mm, 72*mm, 58*mm])
-    t.setStyle(TableStyle([
-        ('FONTNAME',(0,0),(-1,-1),'JP'),
-        ('FONTSIZE',(0,0),(-1,-1),10),
-        ('BACKGROUND',(0,0),(0,-1),PURPLE_LIGHT),
-        ('BACKGROUND',(0,0),(-1,0),PURPLE_LIGHT),
-        ('BOX',(0,0),(-1,-1),1,PURPLE_BORDER),
-        ('INNERGRID',(0,0),(-1,-1),0.5,PURPLE_BORDER),
-        ('TOPPADDING',(0,0),(-1,-1),5),
-        ('BOTTOMPADDING',(0,0),(-1,-1),5),
-        ('LEFTPADDING',(0,0),(-1,-1),6),
-        ('ALIGN',(1,0),(2,0),'CENTER'),
-    ]))
-    story.append(t)
-    story.append(Spacer(1,10))
-
-    # ホロスコープ画像（重ね表示）
-    if chart_image_bytes:
-        story.append(Paragraph("◆ 合成ホロスコープ", S('si',12,PURPLE_DARK,True,sb=8,sa=4)))
-        img = Image(chart_image_bytes, width=120*mm, height=120*mm)
-        img.hAlign = 'CENTER'
-        story.append(img)
-        story.append(Spacer(1,6))
-
-    # 相性詳細
-    def section(title):
-        story.append(HRFlowable(width="100%", thickness=1, color=PURPLE_BORDER, spaceBefore=6, spaceAfter=4))
-        story.append(Paragraph(f"◆ {title}", S('sec',12,PURPLE_DARK,True,sb=2,sa=4)))
-
-    section("相性鑑定結果")
-    # compat_noteを段落ごとに分けて表示
-    for line in compat_note.split("\n"):
-        if line.strip():
-            bold = line.startswith("【")
-            story.append(Paragraph(line, S(f'cn_{hash(line)}', 9 if not bold else 10,
-                PURPLE_MID if bold else TEXT_DARK, bold, sb=2, sa=2)))
-
-    section("総合相性メッセージ")
-    story.append(Paragraph(overall, S('ov', 11, TEXT_DARK, sb=2, sa=6)))
-
-    # フッター
-    story.append(Spacer(1,8))
-    story.append(HRFlowable(width="100%", thickness=1, color=PURPLE_BORDER))
-    story.append(Paragraph("Luna 占星術　Luna-compass",
-        S('ft',8,TEXT_GRAY,align='CENTER',sb=4,sa=0)))
-
-    doc.build(story)
-    buf.seek(0)
-    return buf

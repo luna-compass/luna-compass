@@ -79,6 +79,17 @@ def _render(container, user_info):
         lon          = user_info["lon"]
         mode         = user_info["mode"]
 
+        st.markdown("---")
+        st.markdown("### 🔮 占い師からのメッセージ（任意）")
+        st.caption("PDFに載せる一言メッセージをあらかじめ入力してからボタンを押してください。")
+        astrologer_message = st.text_area(
+            "占い師からの一言",
+            placeholder=f"{user_info.get('name') or 'お客様'}へ\n\n鑑定を通じて感じたことをここに記入してください。\n\n例：今回の鑑定で特に印象的だったのは…",
+            height=150,
+            key="astrologer_message"
+        )
+        st.markdown("---")
+
         btn_natal = st.button("🌙 ネイタルを見る", use_container_width=True, type="primary", key="btn_natal")
 
         if btn_natal:
@@ -231,17 +242,28 @@ def _render(container, user_info):
             # ===== ⑥総合メッセージ =====
             st.markdown("---")
             st.markdown("### 🌟 総合メッセージ")
-            asc_part = f"あなたは{asc_sign}のASCを持ち、{get_asc_message(asc_sign)}"
-            sun_part = f"太陽は{sun_sign}の{planet_houses['太陽']}ハウスに位置し、{get_sun_message(sun_sign)}"
-            moon_part = f"月は{moon_sign}の{planet_houses['月']}ハウスにあり、{get_moon_message(moon_sign)}"
-            aspect_part = ""
+
+            # 自動生成メッセージ（短くまとめる）
+            from utils.messages import get_sun_message as _sun_short
+            from utils.messages import get_moon_message as _moon_short
+
+            asc_short = get_asc_message(asc_sign).split("\n")[0]
+            sun_short = get_sun_message(sun_sign).split("\n")[0]
+            moon_short = get_moon_message(moon_sign).split("\n")[0]
+
+            overall_text = (
+                f"{name or 'あなた'}は{asc_sign}のASCを持ち、{asc_short}\n\n"
+                f"太陽は{sun_sign}の{planet_houses['太陽']}ハウスに位置し、{sun_short}\n\n"
+                f"月は{moon_sign}の{planet_houses['月']}ハウスにあり、{moon_short}"
+            )
             if aspects:
                 a0 = aspects[0]
-                aspect_part = f"また、{a0['p1']}と{a0['p2']}の{a0['type']}が示すように、{get_aspect_message(a0['p1'], a0['p2'], a0['type'])}"
-            overall_text = f"{asc_part} {sun_part} {moon_part}"
-            if aspect_part:
-                overall_text += f" {aspect_part}"
-            st.markdown(f"<div class='luna-message'>{overall_text}</div>", unsafe_allow_html=True)
+                asp_short = get_aspect_message(a0['p1'], a0['p2'], a0['type']).split("\n")[0]
+                overall_text += f"\n\nまた、{a0['p1']}と{a0['p2']}の{a0['type']}が示すように、{asp_short}"
+
+            st.markdown("**⭐ 星が示すあなたのストーリー**")
+            st.markdown(f"<div class='luna-message'>{overall_text.replace(chr(10), '<br>')}</div>", unsafe_allow_html=True)
+
             summary = [overall_text]
 
             # ===== ⑦PDF鑑定書ダウンロード =====
@@ -264,7 +286,25 @@ def _render(container, user_info):
             birthday_num = reduce_num(birthday.day)
             ruler_num = reduce_num(sum(int(d) for d in str(birthday.year)))
 
+            from utils.messages_loader import get_message as _gm
+
             lp_data = _LIFE_PATH_MESSAGES.get(life_path, {})
+
+            # JSONから数秘術メッセージを取得
+            lp_json = _gm("numerology_life_path", str(life_path))
+            bd_json = _gm("numerology_birthday", str(birthday_num))
+            rl_json = _gm("numerology_ruler", str(ruler_num))
+
+            # ライフパスの詳細メッセージを組み立て
+            if lp_json and isinstance(lp_json, dict):
+                title = lp_json.get('title','')
+                message = lp_json.get('message','')
+                talent = lp_json.get('talent','')
+                challenge = lp_json.get('challenge','')
+                keywords = lp_json.get('keywords','')
+                lp_full = title + "\n\n" + message + "\n\n【才能】\n" + talent + "\n\n【課題】\n" + challenge + "\n\n【キーワード】\n" + keywords
+            else:
+                lp_full = lp_data.get("message", "")
 
             # user_dataを組み立て
             user_data = {
@@ -313,8 +353,11 @@ def _render(container, user_info):
                 "life_path": life_path,
                 "birthday_num": birthday_num,
                 "ruler_num": ruler_num,
-                "life_path_message": lp_data.get("message", ""),
+                "life_path_message": lp_full,
+                "birthday_message": bd_json if isinstance(bd_json, str) else "",
+                "ruler_message": rl_json if isinstance(rl_json, str) else "",
                 "overall_message": "　".join(summary),
+                "astrologer_message": astrologer_message,
             }
 
             pdf_buf = create_reading_pdf(user_data, chart_buf)
