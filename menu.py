@@ -11,7 +11,7 @@ def show():
     <style>
     .menu-hero {
         text-align: center;
-        padding: 10px 0 24px 0;
+        padding: 10px 0 20px 0;
     }
     .menu-hero-title {
         font-size: 28px;
@@ -30,42 +30,36 @@ def show():
         flex-direction: column;
         gap: 16px;
         max-width: 480px;
-        margin: 20px auto 0 auto;
+        margin: 16px auto 0 auto;
     }
     .menu-card {
         background: rgba(255, 255, 255, 0.97);
         border-radius: 20px;
         border: 2px solid #d8b4fe;
         box-shadow: 0 6px 20px rgba(15, 23, 42, 0.12);
-        padding: 20px 24px;
+        padding: 20px 20px 16px 20px;
+        text-align: left;
+    }
+    .menu-card-top {
         display: flex;
         align-items: center;
-        gap: 18px;
-        text-align: left;
-        transition: transform 0.15s, box-shadow 0.15s;
-        cursor: pointer;
-    }
-    .menu-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 12px 28px rgba(15, 23, 42, 0.2);
+        gap: 14px;
+        margin-bottom: 10px;
     }
     .menu-card-icon {
-        font-size: 44px;
+        font-size: 40px;
         flex-shrink: 0;
     }
-    .menu-card-body {
-        flex: 1;
-    }
     .menu-card-title {
-        font-size: 17px;
+        font-size: 18px;
         font-weight: 700;
         color: #2b1b4b;
-        margin-bottom: 4px;
     }
     .menu-card-desc {
         font-size: 12px;
         color: #6b7280;
         line-height: 1.6;
+        margin-bottom: 12px;
     }
     .menu-badge {
         display: inline-block;
@@ -74,7 +68,7 @@ def show():
         font-size: 10px;
         border-radius: 999px;
         padding: 2px 10px;
-        margin-top: 6px;
+        margin-bottom: 10px;
         font-weight: 600;
     }
     .menu-badge-coming {
@@ -104,41 +98,20 @@ def show():
     </div>
     """, unsafe_allow_html=True)
 
-    st.markdown("どの鑑定をご希望ですか？")
-
-    # メニューカード（HTMLで見た目を出し、ボタンで選択）
+    # ===== 総合鑑定カード =====
     st.markdown("""
     <div class='menu-grid'>
         <div class='menu-card'>
-            <div class='menu-card-icon'>🌟</div>
-            <div class='menu-card-body'>
+            <div class='menu-card-top'>
+                <div class='menu-card-icon'>🌟</div>
                 <div class='menu-card-title'>総合鑑定</div>
-                <div class='menu-card-desc'>ネイタルチャート（出生図）をもとに、あなたの本質・感情・思考・愛情・行動を多角的に鑑定します。数秘術も含めた総合鑑定書PDFをお届けします。</div>
-                <div class='menu-badge'>✨ 鑑定書PDF付き</div>
             </div>
-        </div>
-        <div class='menu-card'>
-            <div class='menu-card-icon'>💑</div>
-            <div class='menu-card-body'>
-                <div class='menu-card-title'>相性占い</div>
-                <div class='menu-card-desc'>2人のホロスコープを重ねて、エレメント・太陽・月・金星×火星の相性を鑑定します。深い絆のヒントをお届けします。</div>
-                <div class='menu-badge'>✨ 鑑定書PDF付き</div>
-            </div>
-        </div>
-        <div class='menu-card'>
-            <div class='menu-card-icon'>🔮</div>
-            <div class='menu-card-body'>
-                <div class='menu-card-title'>タロット</div>
-                <div class='menu-card-desc'>1枚引き・3枚引き（過去・現在・未来）でメッセージをお届けします。今のあなたへのヒントが見つかります。</div>
-                <div class='menu-badge'>✨ 今すぐ引ける</div>
-            </div>
+            <div class='menu-card-desc'>ネイタルチャート（出生図）をもとに、あなたの本質・感情・思考・愛情・行動を多角的に鑑定します。数秘術も含めた総合鑑定書PDFをお届けします。</div>
+            <div class='menu-badge'>✨ 鑑定書PDF付き</div>
         </div>
     </div>
     """, unsafe_allow_html=True)
 
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    # 実際の選択ボタン（Streamlitのボタン）
     col_l, col_c, col_r = st.columns([1, 4, 1])
     with col_c:
         btn_general = st.button(
@@ -147,12 +120,46 @@ def show():
             type="primary",
             key="menu_btn_general"
         )
+
+    # ===== 相性占いカード =====
+    st.markdown("""
+    <div class='menu-grid'>
+        <div class='menu-card'>
+            <div class='menu-card-top'>
+                <div class='menu-card-icon'>💑</div>
+                <div class='menu-card-title'>相性占い</div>
+            </div>
+            <div class='menu-card-desc'>2人のホロスコープを重ねて、エレメント・太陽・月・金星×火星の相性を鑑定します。深い絆のヒントをお届けします。</div>
+            <div class='menu-badge'>✨ 鑑定書PDF付き</div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    col_l2, col_c2, col_r2 = st.columns([1, 4, 1])
+    with col_c2:
         btn_compat = st.button(
             "💑 相性占いを始める",
             use_container_width=True,
             type="primary",
             key="menu_btn_compat"
         )
+
+    # ===== タロットカード =====
+    st.markdown("""
+    <div class='menu-grid'>
+        <div class='menu-card'>
+            <div class='menu-card-top'>
+                <div class='menu-card-icon'>🔮</div>
+                <div class='menu-card-title'>タロット</div>
+            </div>
+            <div class='menu-card-desc'>1枚引き・3枚引き（過去・現在・未来）でメッセージをお届けします。今のあなたへのヒントが見つかります。</div>
+            <div class='menu-badge'>✨ 今すぐ引ける</div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    col_l3, col_c3, col_r3 = st.columns([1, 4, 1])
+    with col_c3:
         btn_tarot = st.button(
             "🔮 タロットを引く",
             use_container_width=True,
