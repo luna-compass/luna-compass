@@ -11,55 +11,55 @@ def show():
     <style>
     .menu-hero {
         text-align: center;
-        padding: 10px 0 20px 0;
+        padding: 6px 0 12px 0;
     }
     .menu-hero-title {
-        font-size: 28px;
+        font-size: 24px;
         font-weight: 700;
         letter-spacing: 0.2em;
         color: #2b1b4b;
     }
     .menu-hero-sub {
-        font-size: 13px;
+        font-size: 12px;
         color: #7a6a9a;
-        margin-top: 6px;
+        margin-top: 4px;
         font-style: italic;
     }
     .menu-grid {
         display: flex;
         flex-direction: column;
-        gap: 16px;
+        gap: 4px;
         max-width: 480px;
-        margin: 16px auto 0 auto;
+        margin: 12px auto 0 auto;
     }
     .menu-card {
         background: rgba(255, 255, 255, 0.97);
-        border-radius: 20px;
+        border-radius: 16px;
         border: 2px solid #d8b4fe;
-        box-shadow: 0 6px 20px rgba(15, 23, 42, 0.12);
-        padding: 20px 20px 16px 20px;
+        box-shadow: 0 4px 14px rgba(15, 23, 42, 0.10);
+        padding: 12px 16px 10px 16px;
         text-align: left;
     }
     .menu-card-top {
         display: flex;
         align-items: center;
-        gap: 14px;
-        margin-bottom: 10px;
+        gap: 12px;
+        margin-bottom: 6px;
     }
     .menu-card-icon {
-        font-size: 40px;
+        font-size: 32px;
         flex-shrink: 0;
     }
     .menu-card-title {
-        font-size: 18px;
+        font-size: 16px;
         font-weight: 700;
         color: #2b1b4b;
     }
     .menu-card-desc {
         font-size: 12px;
         color: #6b7280;
-        line-height: 1.6;
-        margin-bottom: 12px;
+        line-height: 1.5;
+        margin-bottom: 6px;
     }
     .menu-badge {
         display: inline-block;
@@ -68,7 +68,7 @@ def show():
         font-size: 10px;
         border-radius: 999px;
         padding: 2px 10px;
-        margin-bottom: 10px;
+        margin-bottom: 6px;
         font-weight: 600;
     }
     .menu-badge-coming {
@@ -112,6 +112,7 @@ def show():
     </div>
     """, unsafe_allow_html=True)
 
+    st.markdown("<div style='margin-bottom:8px'></div>", unsafe_allow_html=True)
     col_l, col_c, col_r = st.columns([1, 4, 1])
     with col_c:
         btn_general = st.button(
@@ -135,6 +136,7 @@ def show():
     </div>
     """, unsafe_allow_html=True)
 
+    st.markdown("<div style='margin-bottom:8px'></div>", unsafe_allow_html=True)
     col_l2, col_c2, col_r2 = st.columns([1, 4, 1])
     with col_c2:
         btn_compat = st.button(
@@ -158,6 +160,7 @@ def show():
     </div>
     """, unsafe_allow_html=True)
 
+    st.markdown("<div style='margin-bottom:8px'></div>", unsafe_allow_html=True)
     col_l3, col_c3, col_r3 = st.columns([1, 4, 1])
     with col_c3:
         btn_tarot = st.button(
