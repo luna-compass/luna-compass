@@ -184,6 +184,7 @@ def show():
     </div>
     """, unsafe_allow_html=True)
 
+    st.markdown("<div style='margin-bottom:8px'></div>", unsafe_allow_html=True)
     col_l4, col_c4, col_r4 = st.columns([1, 4, 1])
     with col_c4:
         btn_iching = st.button(
