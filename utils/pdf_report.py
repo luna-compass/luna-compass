@@ -68,6 +68,21 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
     story.append(t)
     story.append(Spacer(1,8))
 
+    # ===== 総合メッセージ（最初に表示）=====
+    overall_first = user_data.get("overall_message","")
+    if overall_first:
+        story.append(HRFlowable(width="100%", thickness=2, color=PURPLE_MID, spaceAfter=4))
+        story.append(Paragraph("◆ あなたへの総合メッセージ", S('ov_title',13,PURPLE_DARK,True,align='CENTER',sb=4,sa=6)))
+        for line in overall_first.split("\n"):
+            line = line.strip()
+            if not line:
+                story.append(Spacer(1, 3))
+            elif line.startswith("【"):
+                story.append(Paragraph(line, S('ovh2',10,PURPLE_MID,True,sb=4,sa=1)))
+            else:
+                story.append(Paragraph(line, S('ov2',10,TEXT_DARK,sb=0,sa=3)))
+        story.append(Spacer(1,8))
+
     # ホロスコープ画像
     if chart_image_bytes:
         story.append(Paragraph("◆ 円形ホロスコープ", S('s1',12,PURPLE_DARK,True,sb=8,sa=4)))
@@ -211,19 +226,45 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
             S('rlth',11,PURPLE_DARK,True,sb=8,sa=4)))
         story.append(Paragraph(rl_msg, S('rlm',9,TEXT_DARK,sb=0,sa=4)))
 
-    # 総合メッセージ（短くまとめる）
-    overall = user_data.get("overall_message","")
-    if overall:
-        section("総合メッセージ")
-        # 改行で分割して各行を段落として表示
-        for line in overall.split("\n"):
-            line = line.strip()
-            if not line:
-                story.append(Spacer(1, 3))
-            elif line.startswith("【"):
-                story.append(Paragraph(line, S('ovh',10,PURPLE_MID,True,sb=4,sa=1)))
-            else:
-                story.append(Paragraph(line, S('ov',10,TEXT_DARK,sb=0,sa=3)))
+    # 総合メッセージは冒頭に移動したため、ここでは省略
+
+    # タロットメッセージ（画像付き）
+    tarot_data = user_data.get("tarot_message", {})
+    if tarot_data and isinstance(tarot_data, dict):
+        section("今日のあなたへのメッセージ 🔮")
+
+        import os
+        from PIL import Image as PILImage
+        import io as _io
+
+        card_img_path = tarot_data.get("image", "")
+        card_name = tarot_data.get("name", "")
+        card_position = tarot_data.get("position", "")
+        card_msg = tarot_data.get("message", "")
+        is_reversed = tarot_data.get("is_reversed", False)
+
+        # カード画像を表示
+        if card_img_path and os.path.exists(card_img_path):
+            try:
+                pil_img = PILImage.open(card_img_path).convert("RGB")
+                if is_reversed:
+                    pil_img = pil_img.rotate(180)
+                img_buf = _io.BytesIO()
+                pil_img.save(img_buf, format="PNG")
+                img_buf.seek(0)
+                card_image = Image(img_buf, width=40*mm, height=65*mm)
+                card_image.hAlign = 'CENTER'
+                story.append(card_image)
+                story.append(Spacer(1, 6))
+            except Exception:
+                pass
+
+        story.append(Paragraph(
+            f"{card_name}（{card_position}）",
+            S('tm', 12, PURPLE_MID, True, align='CENTER', sb=4, sa=4)
+        ))
+        if card_msg:
+            story.append(Paragraph(card_msg, S('tmm', 10, TEXT_DARK, align='CENTER', sb=0, sa=6)))
 
     # 占い師からのメッセージ
     astrologer_msg = user_data.get("astrologer_message","")
