@@ -13,16 +13,18 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-.stApp { background: #f5f3ff; }
+.stApp {
+    background: radial-gradient(circle at top, #fdf4ff 0%, #f5f3ff 20%, #8a2be2 100%);
+}
 header[data-testid="stHeader"] { display: none !important; }
 .admin-title {
-    color: #4c1d95;
+    color: #2b1b4b;
     font-size: 22px;
     font-weight: 700;
     margin-bottom: 4px;
 }
 .admin-caption {
-    color: #6b7280;
+    color: #4b5563;
     font-size: 12px;
     margin-bottom: 20px;
 }

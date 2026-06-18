@@ -248,3 +248,9 @@ elif st.session_state["menu_selected"] == "tarot":
 
     cards.show_single(tab_tarot1)
     cards.show_three(tab_tarot2)
+
+# ---------- 易占い ----------
+elif st.session_state["menu_selected"] == "iching":
+
+    from tabs import iching
+    iching.show_direct()

@@ -170,6 +170,29 @@ def show():
             key="menu_btn_tarot"
         )
 
+    # ===== 易占いカード =====
+    st.markdown("""
+    <div class='menu-grid'>
+        <div class='menu-card'>
+            <div class='menu-card-top'>
+                <div class='menu-card-icon'>🔯</div>
+                <div class='menu-card-title'>易占い</div>
+            </div>
+            <div class='menu-card-desc'>六十四卦からメッセージをお届けします。総合・恋愛・仕事のテーマで卦を立ててみましょう。</div>
+            <div class='menu-badge'>✨ 今すぐ引ける</div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    col_l4, col_c4, col_r4 = st.columns([1, 4, 1])
+    with col_c4:
+        btn_iching = st.button(
+            "🔯 易占いをする",
+            use_container_width=True,
+            type="primary",
+            key="menu_btn_iching"
+        )
+
     if btn_general:
         st.session_state["menu_selected"] = "general"
         st.rerun()
@@ -182,6 +205,10 @@ def show():
         st.session_state["menu_selected"] = "tarot"
         st.rerun()
 
+    if btn_iching:
+        st.session_state["menu_selected"] = "iching"
+        st.rerun()
+
     # 将来追加予定メニュー（予告）
     st.markdown("""
     <div style='text-align:center; margin-top:28px;'>
@@ -189,6 +216,8 @@ def show():
         <span class='menu-badge-coming'>🔢 数秘術単独鑑定</span>
         <span style='margin:0 4px'></span>
         <span class='menu-badge-coming'>📅 今日の運勢</span>
+        <span style='margin:0 4px'></span>
+        <span class='menu-badge-coming'>🏮 四柱推命</span>
     </div>
     """, unsafe_allow_html=True)
 
