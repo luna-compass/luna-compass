@@ -31,6 +31,13 @@ def get_aspect_message_json(p1, p2, aspect):
     key2 = f"{p2}|{p1}|{aspect}"
     return aspects.get(key1) or aspects.get(key2) or ""
 
+def get_tarot_message(card_name, position):
+    """タロットメッセージをJSONから取得（正位置・逆位置対応）"""
+    data = _load()
+    tarot = data.get("tarot", {})
+    card = tarot.get(card_name, {})
+    return card.get(position, {})
+
 def reload():
     """キャッシュをリセットして再読み込み"""
     global _cache

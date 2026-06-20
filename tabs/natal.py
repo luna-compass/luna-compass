@@ -54,35 +54,52 @@ def get_house_planet_message(house_num, planet):
 
 
 def _get_tarot_for_pdf():
-    """PDF用にランダムでタロット1枚を引く"""
+    """PDF用にランダムでタロット1枚を引く（JSONからメッセージ取得）"""
     import random
+    from utils.messages_loader import get_tarot_message as _get_tarot_msg
+
     cards = [
-        ("愚者", "新しい始まり。自由な発想で進みましょう。", "assets/tarot/00_fool.png"),
-        ("魔術師", "現実を動かす力。行動が結果を引き寄せます。", "assets/tarot/01_magician.png"),
-        ("女教皇", "直感が鍵。静かに内面を見つめましょう。", "assets/tarot/02_high_priestess.png"),
-        ("女帝", "豊かさと愛。安心できる環境が整います。", "assets/tarot/03_empress.png"),
-        ("皇帝", "安定と支配。自分の軸を持ちましょう。", "assets/tarot/04_emperor.png"),
-        ("教皇", "伝統と学び。基本に立ち返る時です。", "assets/tarot/05_hierophant.png"),
-        ("恋人", "選択と調和。心の声に従いましょう。", "assets/tarot/06_lovers.png"),
-        ("戦車", "前進と勝利。迷わず進む力があります。", "assets/tarot/07_chariot.png"),
-        ("力", "内なる強さ。優しさが力になります。", "assets/tarot/08_strength.png"),
-        ("隠者", "内省の時間。答えは自分の中にあります。", "assets/tarot/09_hermit.png"),
-        ("運命の輪", "運命の転換期。流れに乗りましょう。", "assets/tarot/10_wheel_of_fortune.png"),
-        ("正義", "公平と判断。冷静な決断が必要です。", "assets/tarot/11_justice.png"),
-        ("吊るされた男", "視点の転換。今は待つことも大切。", "assets/tarot/12_hanged_man.png"),
-        ("死神", "終わりと再生。新しいステージへ。", "assets/tarot/13_death.png"),
-        ("節制", "調和とバランス。整えることが大事。", "assets/tarot/14_temperance.png"),
-        ("悪魔", "執着と誘惑。冷静に見極めましょう。", "assets/tarot/15_devil.png"),
-        ("塔", "崩壊と覚醒。大きな変化が訪れます。", "assets/tarot/16_tower.png"),
-        ("星", "希望と癒し。未来は明るいです。", "assets/tarot/17_star.png"),
-        ("月", "不安と幻想。見えない部分に注意。", "assets/tarot/18_moon.png"),
-        ("太陽", "成功と喜び。エネルギーが満ちています。", "assets/tarot/19_sun.png"),
-        ("審判", "目覚めと再起。過去を超える時。", "assets/tarot/20_judgement.png"),
-        ("世界", "完成と達成。大きな区切りです。", "assets/tarot/21_world.png"),
+        ("愚者",       "fool",              "assets/tarot/00_fool.png"),
+        ("魔術師",     "magician",          "assets/tarot/01_magician.png"),
+        ("女教皇",     "high_priestess",    "assets/tarot/02_high_priestess.png"),
+        ("女帝",       "empress",           "assets/tarot/03_empress.png"),
+        ("皇帝",       "emperor",           "assets/tarot/04_emperor.png"),
+        ("教皇",       "hierophant",        "assets/tarot/05_hierophant.png"),
+        ("恋人",       "lovers",            "assets/tarot/06_lovers.png"),
+        ("戦車",       "chariot",           "assets/tarot/07_chariot.png"),
+        ("力",         "strength",          "assets/tarot/08_strength.png"),
+        ("隠者",       "hermit",            "assets/tarot/09_hermit.png"),
+        ("運命の輪",   "wheel_of_fortune",  "assets/tarot/10_wheel_of_fortune.png"),
+        ("正義",       "justice",           "assets/tarot/11_justice.png"),
+        ("吊るされた男","hanged_man",        "assets/tarot/12_hanged_man.png"),
+        ("死神",       "death",             "assets/tarot/13_death.png"),
+        ("節制",       "temperance",        "assets/tarot/14_temperance.png"),
+        ("悪魔",       "devil",             "assets/tarot/15_devil.png"),
+        ("塔",         "tower",             "assets/tarot/16_tower.png"),
+        ("星",         "star",              "assets/tarot/17_star.png"),
+        ("月",         "moon",              "assets/tarot/18_moon.png"),
+        ("太陽",       "sun",               "assets/tarot/19_sun.png"),
+        ("審判",       "judgement",         "assets/tarot/20_judgement.png"),
+        ("世界",       "world",             "assets/tarot/21_world.png"),
     ]
     is_reversed = random.choice([True, False])
-    card_name, card_msg, card_img = random.choice(cards)
+    card_name, card_key, card_img = random.choice(cards)
     position = "逆位置" if is_reversed else "正位置"
+
+    # JSONのtarotセクションから取得（正位置・逆位置対応）
+    pos_key = "逆位置" if is_reversed else "正位置"
+    tarot_data = _get_tarot_msg(card_name, pos_key)
+
+    if tarot_data and isinstance(tarot_data, dict):
+        card_msg = tarot_data.get("message", "")
+    else:
+        # フォールバック
+        fallback = {
+            "正位置": "新しい流れが訪れています。直感を信じて進んでください。",
+            "逆位置": "内省と見直しのタイミングです。立ち止まって考えてみましょう。",
+        }
+        card_msg = fallback[pos_key]
+
     return {
         "name": card_name,
         "position": position,

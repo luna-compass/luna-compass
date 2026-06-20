@@ -126,17 +126,26 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
         if house_msg and not time_unknown:
             content.append(Paragraph(f"【ハウス】{house_msg}", STYLE_NOTE))
 
-        card = Table([[content]], colWidths=[165*mm])
-        card.setStyle(TableStyle([
+        # 各行を別セルにしてページまたぎ対応
+        rows = [[item] for item in content]
+        card = Table(rows, colWidths=[165*mm])
+        card_style = [
             ('BACKGROUND', (0,0), (-1,-1), PURPLE_LIGHT),
-            ('BOX', (0,0), (-1,-1), 0.5, PURPLE_MID),
+            ('LINEBEFORE', (0,0), (0,-1), 0.5, PURPLE_MID),
+            ('LINEAFTER', (0,0), (0,-1), 0.5, PURPLE_MID),
+            ('LINEABOVE', (0,0), (-1,0), 0.5, PURPLE_MID),
+            ('LINEBELOW', (0,-1), (-1,-1), 0.5, PURPLE_MID),
             ('LEFTPADDING', (0,0), (-1,-1), 14),
             ('RIGHTPADDING', (0,0), (-1,-1), 14),
-            ('TOPPADDING', (0,0), (-1,-1), 12),
-            ('BOTTOMPADDING', (0,0), (-1,-1), 12),
-        ]))
+            ('TOPPADDING', (0,0), (0,0), 12),
+            ('BOTTOMPADDING', (0,-1), (-1,-1), 12),
+            ('TOPPADDING', (0,1), (-1,-1), 2),
+            ('BOTTOMPADDING', (0,0), (-1,-2), 2),
+        ]
+        card.setStyle(TableStyle(card_style))
+        card.repeatRows = 0
 
-        story.append(KeepTogether(card))
+        story.append(card)
         story.append(Spacer(1, 20))
 
     # --------------------------------------------------------
@@ -402,7 +411,14 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
             f"◇ バースデーナンバー {bd_num}　～生まれ持った才能～",
             STYLE_H2,
         ))
-        story.append(Paragraph(bd_msg, STYLE_BODY))
+        for line in bd_msg.split("\n"):
+            line = line.strip()
+            if not line:
+                story.append(Spacer(1, 4))
+            elif line.startswith("【"):
+                story.append(Paragraph(line, STYLE_H3))
+            else:
+                story.append(Paragraph(line, STYLE_BODY))
         story.append(Spacer(1, 14))
 
     # ルーラーナンバー
@@ -413,7 +429,14 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
             f"◇ ルーラーナンバー {rl_num}　～生まれた年の使命～",
             STYLE_H2,
         ))
-        story.append(Paragraph(rl_msg, STYLE_BODY))
+        for line in rl_msg.split("\n"):
+            line = line.strip()
+            if not line:
+                story.append(Spacer(1, 4))
+            elif line.startswith("【"):
+                story.append(Paragraph(line, STYLE_H3))
+            else:
+                story.append(Paragraph(line, STYLE_BODY))
 
     story.append(PageBreak())
 
@@ -456,10 +479,14 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
         ))
 
         if card_msg:
-            story.append(Paragraph(
-                card_msg,
-                S('tmm', 10, TEXT_DARK, align='CENTER', sb=0, sa=6)
-            ))
+            for line in card_msg.split("\n"):
+                line = line.strip()
+                if not line:
+                    story.append(Spacer(1, 4))
+                elif line.startswith("【"):
+                    story.append(Paragraph(line, S('tmh', 10, PURPLE_MID, True, align='LEFT', sb=4, sa=2)))
+                else:
+                    story.append(Paragraph(line, S('tmm', 10, TEXT_DARK, align='LEFT', sb=0, sa=3)))
 
     # --------------------------------------------------------
     # ★ フッター
