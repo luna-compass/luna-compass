@@ -123,9 +123,9 @@ def _render(container, user_info):
         st.caption("PDFに載せる一言メッセージをあらかじめ入力してからボタンを押してください。")
         astrologer_message = st.text_area(
             "占い師からの一言",
-            placeholder=f"{user_info.get('name') or 'お客様'}へ\n\n鑑定を通じて感じたことをここに記入してください。\n\n例：今回の鑑定で特に印象的だったのは…",
-            height=150,
-            key="astrologer_message"
+            placeholder=f"{user_info.get('name') or 'お客様'}へ\n\n今回の鑑定で特に印象的だったのは…\n\nあなたの〇〇座の太陽と〇〇座の月の組み合わせが示すように…\n\nこれからの流れとして…\n\nぜひ〇〇を大切に歩んでください。",
+            height=250,
+            key="astrologer_message_main"
         )
         st.markdown("---")
 
@@ -282,23 +282,29 @@ def _render(container, user_info):
             st.markdown("---")
             st.markdown("### 🌟 総合メッセージ")
 
-            # 自動生成メッセージ（短くまとめる）
-            from utils.messages import get_sun_message as _sun_short
-            from utils.messages import get_moon_message as _moon_short
+            # ① 自動生成メッセージ（充実版）
+            asc_full = get_asc_message(asc_sign).split("\n")[0]
+            sun_full = get_sun_message(sun_sign).split("\n")[0]
+            moon_full = get_moon_message(moon_sign).split("\n")[0]
+            mercury_full = get_mercury_message(mercury_sign).split("\n")[0]
+            venus_full = get_venus_message(venus_sign).split("\n")[0]
+            mars_full = get_mars_message(mars_sign).split("\n")[0]
 
-            asc_short = get_asc_message(asc_sign).split("\n")[0]
-            sun_short = get_sun_message(sun_sign).split("\n")[0]
-            moon_short = get_moon_message(moon_sign).split("\n")[0]
-
-            overall_text = (
-                f"{name or 'あなた'}は{asc_sign}のASCを持ち、{asc_short}\n\n"
-                f"太陽は{sun_sign}の{planet_houses['太陽']}ハウスに位置し、{sun_short}\n\n"
-                f"月は{moon_sign}の{planet_houses['月']}ハウスにあり、{moon_short}"
-            )
+            # シンプルな総合メッセージ
+            overall_parts = [
+                f"{name or 'あなた'}は{asc_sign}のASCを持ち、{asc_full}",
+                f"太陽は{sun_sign}の{planet_houses['太陽']}ハウスに位置し、{sun_full}",
+                f"月は{moon_sign}の{planet_houses['月']}ハウスにあり、{moon_full}",
+                f"水星は{mercury_sign}にあり、{mercury_full}",
+                f"金星は{venus_sign}にあり、{venus_full}",
+                f"火星は{mars_sign}にあり、{mars_full}",
+            ]
             if aspects:
                 a0 = aspects[0]
                 asp_short = get_aspect_message(a0['p1'], a0['p2'], a0['type']).split("\n")[0]
-                overall_text += f"\n\nまた、{a0['p1']}と{a0['p2']}の{a0['type']}が示すように、{asp_short}"
+                overall_parts.append(f"また、{a0['p1']}と{a0['p2']}の{a0['type']}が示すように、{asp_short}")
+
+            overall_text = "\n".join(overall_parts)
 
             st.markdown("**⭐ 星が示すあなたのストーリー**")
             st.markdown(f"<div class='luna-message'>{overall_text.replace(chr(10), '<br>')}</div>", unsafe_allow_html=True)
@@ -397,6 +403,7 @@ def _render(container, user_info):
                 "ruler_message": rl_json if isinstance(rl_json, str) else "",
                 "overall_message": "　".join(summary),
                 "astrologer_message": astrologer_message,
+                "time_unknown": time_unknown if 'time_unknown' in dir() else False,
                 "tarot_message": _get_tarot_for_pdf(),
             }
 
