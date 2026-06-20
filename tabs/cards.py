@@ -214,3 +214,293 @@ def show_three(tab):
                 summary = f"全体の流れとしては「{future_name}」に向かっています。{future_msg}"
             summary += " 無理せず整えていきましょう。"
             st.markdown(f"<div class='luna-message'>🔮 総合メッセージ：{summary}</div>", unsafe_allow_html=True)
+
+
+# ============================================================
+# ケルト十字（10枚展開）
+# ============================================================
+
+CELTIC_POSITIONS = [
+    ("1", "現在の状況",   "今のあなたの状況を示します。"),
+    ("2", "障害・課題",   "あなたの前に立ちはだかるものを示します。"),
+    ("3", "遠い過去・根底", "問題の根底にあるものを示します。"),
+    ("4", "近い過去",     "最近の出来事や影響を示します。"),
+    ("5", "可能性・目標", "目指している方向性を示します。"),
+    ("6", "近い未来",     "近いうちに起こりうることを示します。"),
+    ("7", "あなた自身",   "今のあなたの内面・姿勢を示します。"),
+    ("8", "周囲の環境",   "周りの人や状況の影響を示します。"),
+    ("9", "希望と恐れ",   "あなたの深い望みと恐れを示します。"),
+    ("10", "最終結果",    "この流れが向かう先を示します。"),
+]
+
+def draw_celtic_cross():
+    """ケルト十字用に10枚引く"""
+    selected = random.sample(cards, 10)
+    result = []
+    for card_key, filename in selected:
+        is_reversed = random.choice([True, False])
+        card_name = TAROT_NAME_JP[card_key]
+        position_label = "逆位置" if is_reversed else "正位置"
+        if is_reversed:
+            card_msg = _get_reverse_msg(card_key)
+        else:
+            card_msg = _get_base_msg(card_key)
+        card_img = f"assets/tarot/{filename}"
+        result.append({
+            "key": card_key,
+            "name": card_name,
+            "position": position_label,
+            "msg": card_msg,
+            "img": card_img,
+            "is_reversed": is_reversed,
+        })
+    return result
+
+
+def show_celtic(tab):
+    with tab:
+        st.markdown("### 🔮 ケルト十字（10枚展開）")
+        st.caption("10枚のカードを1枚ずつ引いて、現在・過去・未来・環境・結果を読み解きます。")
+
+        theme = st.radio(
+            "テーマを選んでください",
+            ["総合", "恋愛", "仕事", "お金"],
+            horizontal=True,
+            key="celtic_theme"
+        )
+
+        # ===== ケルト十字の配置図 =====
+        st.markdown("""
+        <div style='background:#f5f3ff;border-radius:12px;padding:12px;margin:8px 0;font-size:12px;color:#4c1d95;line-height:2;'>
+        <b>📍 ケルト十字の配置</b><br>
+        　　　　　⑤可能性<br>
+        　④過去　①現在　⑥近い未来　｜　⑦自分<br>
+        　　　　　②障害　　　　　　　｜　⑧環境<br>
+        　　　　　③根底　　　　　　　｜　⑨希望と恐れ<br>
+        　　　　　　　　　　　　　　　｜　⑩最終結果
+        </div>
+        """, unsafe_allow_html=True)
+
+        # ===== session_state初期化 =====
+        if "celtic_drawn" not in st.session_state:
+            st.session_state["celtic_drawn"] = None
+            st.session_state["celtic_step"] = 0
+
+        # ===== リセット・スタートボタン =====
+        col_start, col_reset = st.columns(2)
+        with col_start:
+            if st.button("🔮 カードを準備する", use_container_width=True, type="primary", key="btn_celtic_start"):
+                st.session_state["celtic_drawn"] = draw_celtic_cross()
+                st.session_state["celtic_step"] = 0
+                st.rerun()
+        with col_reset:
+            if st.button("🔄 リセット", use_container_width=True, key="btn_celtic_reset"):
+                st.session_state["celtic_drawn"] = None
+                st.session_state["celtic_step"] = 0
+                st.rerun()
+
+        drawn = st.session_state.get("celtic_drawn")
+        step  = st.session_state.get("celtic_step", 0)
+
+        if drawn is None:
+            st.info("「カードを準備する」を押してください。")
+            return
+
+        st.markdown("---")
+
+        # ===== 引いたカードを順番に表示 =====
+        for i in range(min(step, 10)):
+            card = drawn[i]
+            pos_num, pos_name, pos_desc = CELTIC_POSITIONS[i]
+
+            # スタッフ（7〜10）は別セクション
+            if i == 6:
+                st.markdown("#### 📍 スタッフ（7〜10番）")
+
+            col_img, col_txt = st.columns([1, 2])
+            with col_img:
+                try:
+                    img = Image.open(card["img"])
+                    if card["is_reversed"]:
+                        img = img.rotate(180)
+                    st.image(img, width=120)
+                except Exception:
+                    st.caption("（画像なし）")
+            with col_txt:
+                st.markdown(f"**{pos_num}. {pos_name}**")
+                st.caption(pos_desc)
+                st.markdown(f"🃏 **{card['name']}（{card['position']}）**")
+                st.markdown(f"<div class='luna-message'>{card['msg']}</div>", unsafe_allow_html=True)
+            st.markdown("---")
+
+        # ===== 次のカードを引くボタン =====
+        if step < 10:
+            next_pos = CELTIC_POSITIONS[step]
+            if st.button(
+                f"🃏 {next_pos[0]}枚目を引く：{next_pos[1]}",
+                use_container_width=True,
+                type="primary",
+                key=f"btn_celtic_{step}"
+            ):
+                st.session_state["celtic_step"] += 1
+                st.rerun()
+
+        # ===== 全部引いたら総合メッセージ =====
+        if step >= 10:
+            st.markdown("### 🌙 総合メッセージ")
+            final_card  = drawn[9]
+            near_future = drawn[5]["name"]
+            outcome     = drawn[9]["name"]
+
+            if theme == "恋愛":
+                summary = f"恋愛面では「{near_future}」の流れを経て、最終的に「{outcome}」へと向かっています。"
+            elif theme == "仕事":
+                summary = f"仕事面では「{near_future}」の動きがあり、「{outcome}」という結果に向かっています。"
+            elif theme == "お金":
+                summary = f"金運は「{near_future}」の流れを経て、「{outcome}」へと展開していきます。"
+            else:
+                summary = f"近い未来に「{near_future}」の流れがあり、最終的には「{outcome}」へと向かっています。"
+
+            summary += f" {final_card['msg']}"
+            st.markdown(f"<div class='luna-message'>{summary}</div>", unsafe_allow_html=True)
+
+
+# ============================================================
+# ホロスコープスプレッド（12枚展開）
+# ============================================================
+
+HOROSCOPE_POSITIONS = [
+    ("1", "第1ハウス", "自分自身・外見・第一印象", "あなた自身の今の状態を示します。"),
+    ("2", "第2ハウス", "お金・価値観・所有", "財運や大切にしているものを示します。"),
+    ("3", "第3ハウス", "コミュニケーション・学び", "言葉や情報のやりとりを示します。"),
+    ("4", "第4ハウス", "家庭・ルーツ・安心", "家族や心の拠り所を示します。"),
+    ("5", "第5ハウス", "恋愛・創造・楽しみ", "恋愛運や創造性を示します。"),
+    ("6", "第6ハウス", "仕事・健康・日常", "日々の仕事や体調を示します。"),
+    ("7", "第7ハウス", "パートナーシップ・対人", "重要な他者との関係を示します。"),
+    ("8", "第8ハウス", "変容・深い絆・再生", "深い変化や共有を示します。"),
+    ("9", "第9ハウス", "学び・哲学・精神", "精神的な成長や広い視野を示します。"),
+    ("10", "第10ハウス", "社会・キャリア・使命", "社会での役割や目標を示します。"),
+    ("11", "第11ハウス", "友人・希望・未来", "仲間や未来への展望を示します。"),
+    ("12", "第12ハウス", "潜在意識・隠れたもの", "見えない部分や深層心理を示します。"),
+]
+
+def draw_horoscope_spread():
+    """ホロスコープスプレッド用に12枚引く"""
+    selected = random.sample(cards, 12)
+    result = []
+    for card_key, filename in selected:
+        is_reversed = random.choice([True, False])
+        card_name = TAROT_NAME_JP[card_key]
+        position_label = "逆位置" if is_reversed else "正位置"
+        if is_reversed:
+            card_msg = _get_reverse_msg(card_key)
+        else:
+            card_msg = _get_base_msg(card_key)
+        card_img = f"assets/tarot/{filename}"
+        result.append({
+            "key": card_key,
+            "name": card_name,
+            "position": position_label,
+            "msg": card_msg,
+            "img": card_img,
+            "is_reversed": is_reversed,
+        })
+    return result
+
+
+def show_horoscope_spread(tab):
+    with tab:
+        st.markdown("### 🌙 ホロスコープスプレッド（12枚展開）")
+        st.caption("12枚のカードを1枚ずつ引いて、12ハウスの各テーマを読み解きます。")
+
+        # ===== 配置図 =====
+        st.markdown("""
+        <div style='background:#f5f3ff;border-radius:12px;padding:12px;margin:8px 0;font-size:12px;color:#4c1d95;line-height:2;'>
+        <b>🏠 12ハウスの対応</b><br>
+        ①自分 ②お金 ③コミュニケーション ④家庭 ⑤恋愛・創造 ⑥仕事・健康<br>
+        ⑦パートナー ⑧変容 ⑨学び・精神 ⑩キャリア ⑪友人・未来 ⑫潜在意識
+        </div>
+        """, unsafe_allow_html=True)
+
+        # ===== session_state初期化 =====
+        if "horoscope_drawn" not in st.session_state:
+            st.session_state["horoscope_drawn"] = None
+            st.session_state["horoscope_step"] = 0
+
+        # ===== リセット・スタートボタン =====
+        col_start, col_reset = st.columns(2)
+        with col_start:
+            if st.button("🌙 カードを準備する", use_container_width=True, type="primary", key="btn_horoscope_start"):
+                st.session_state["horoscope_drawn"] = draw_horoscope_spread()
+                st.session_state["horoscope_step"] = 0
+                st.rerun()
+        with col_reset:
+            if st.button("🔄 リセット", use_container_width=True, key="btn_horoscope_reset"):
+                st.session_state["horoscope_drawn"] = None
+                st.session_state["horoscope_step"] = 0
+                st.rerun()
+
+        drawn = st.session_state.get("horoscope_drawn")
+        step  = st.session_state.get("horoscope_step", 0)
+
+        if drawn is None:
+            st.info("「カードを準備する」を押してください。")
+            return
+
+        st.markdown("---")
+
+        # ===== 引いたカードを順番に表示 =====
+        for i in range(min(step, 12)):
+            card = drawn[i]
+            pos_num, pos_house, pos_theme, pos_desc = HOROSCOPE_POSITIONS[i]
+
+            col_img, col_txt = st.columns([1, 2])
+            with col_img:
+                try:
+                    img = Image.open(card["img"])
+                    if card["is_reversed"]:
+                        img = img.rotate(180)
+                    st.image(img, width=120)
+                except Exception:
+                    st.caption("（画像なし）")
+            with col_txt:
+                st.markdown(f"**{pos_house}（{pos_theme}）**")
+                st.caption(pos_desc)
+                st.markdown(f"🃏 **{card['name']}（{card['position']}）**")
+                st.markdown(f"<div class='luna-message'>{card['msg']}</div>", unsafe_allow_html=True)
+            st.markdown("---")
+
+        # ===== 次のカードを引くボタン =====
+        if step < 12:
+            next_pos = HOROSCOPE_POSITIONS[step]
+            if st.button(
+                f"🃏 {next_pos[0]}枚目を引く：{next_pos[1]}（{next_pos[2]}）",
+                use_container_width=True,
+                type="primary",
+                key=f"btn_horoscope_{step}"
+            ):
+                st.session_state["horoscope_step"] += 1
+                st.rerun()
+
+        # ===== 全部引いたら総合メッセージ =====
+        if step >= 12:
+            st.markdown("### ✨ 注目のハウス")
+            positive_cards = [(i, drawn[i]) for i in range(12) if not drawn[i]["is_reversed"]]
+            if positive_cards:
+                highlight_idx, highlight_card = positive_cards[0]
+                pos_num, pos_house, pos_theme, pos_desc = HOROSCOPE_POSITIONS[highlight_idx]
+                st.markdown(f"**{pos_house}（{pos_theme}）**が今特に輝いています。")
+                st.markdown(f"🃏 **{highlight_card['name']}** が示すのは：")
+                st.markdown(f"<div class='luna-message'>{highlight_card['msg']}</div>", unsafe_allow_html=True)
+
+            st.markdown("---")
+            st.markdown("### 🌙 総合メッセージ")
+            card_1  = drawn[0]
+            card_7  = drawn[6]
+            card_10 = drawn[9]
+            summary = (
+                f"今のあなた（第1ハウス）は「{card_1['name']}」。{card_1['msg']} "
+                f"対人・パートナーシップ（第7ハウス）では「{card_7['name']}」の流れがあります。"
+                f"社会・キャリア（第10ハウス）は「{card_10['name']}」が示す方向へ向かっています。"
+            )
+            st.markdown(f"<div class='luna-message'>{summary}</div>", unsafe_allow_html=True)

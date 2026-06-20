@@ -186,17 +186,11 @@ if st.session_state["menu_selected"] == "general":
                 key="birthday_general"
             )
 
-        time_unknown = st.checkbox("出生時刻が不明（正午12:00で計算）", key="time_unknown_general")
-
-        if not time_unknown:
-            col_t1, col_t2 = st.columns(2)
-            with col_t1:
-                birth_hour = st.number_input("出生時（時）", min_value=0, max_value=23, value=default_hour, key="hour_general")
-            with col_t2:
-                birth_minute = st.number_input("出生時（分）", min_value=0, max_value=59, value=default_min, key="minute_general")
-        else:
-            birth_hour = 12
-            birth_minute = 0
+        col_t1, col_t2 = st.columns(2)
+        with col_t1:
+            birth_hour = st.number_input("出生時（時）", min_value=0, max_value=23, value=default_hour, key="hour_general")
+        with col_t2:
+            birth_minute = st.number_input("出生時（分）", min_value=0, max_value=59, value=default_min, key="minute_general")
 
         tz_label = st.radio(
             "出生地のタイムゾーン",
@@ -222,7 +216,6 @@ if st.session_state["menu_selected"] == "general":
         "lat": lat,
         "lon": lon_city,
         "mode": mode,
-        "time_unknown": time_unknown,
     }
 
     from tabs import natal, transit, numerology
@@ -248,13 +241,17 @@ elif st.session_state["menu_selected"] == "tarot":
 
     from tabs import cards
 
-    tab_tarot1, tab_tarot2 = st.tabs([
+    tab_tarot1, tab_tarot2, tab_tarot3, tab_tarot4 = st.tabs([
         "🔮 1枚引き",
         "🔮 3枚引き（過去・現在・未来）",
+        "🔮 ケルト十字（10枚）",
+        "🌙 ホロスコープ（12枚）",
     ])
 
     cards.show_single(tab_tarot1)
     cards.show_three(tab_tarot2)
+    cards.show_celtic(tab_tarot3)
+    cards.show_horoscope_spread(tab_tarot4)
 
 # ---------- 易占い ----------
 elif st.session_state["menu_selected"] == "iching":

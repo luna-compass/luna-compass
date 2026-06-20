@@ -386,20 +386,16 @@ def show(tab, user_info):
                 "flow_body": flow.get("body", ""),
             }
 
-            try:
-                pdf_buf = create_transit_pdf(
-                    natal_data_pdf, transit_data_pdf,
-                    aspects_with_msg, outer_list, chart_buf
-                )
-                st.download_button(
-                    label="📄 トランジット鑑定書をダウンロード",
-                    data=pdf_buf,
-                    file_name=f"luna_transit_{user_info.get('name', '')}_{transit_date}.pdf",
-                    mime="application/pdf",
-                    use_container_width=True,
-                    key="dl_transit_pdf"
-                )
-            except Exception as e:
-                st.error(f"PDF生成エラー: {e}")
-                import traceback
-                st.code(traceback.format_exc())
+            pdf_buf = create_transit_pdf(
+                natal_data_pdf, transit_data_pdf,
+                aspects_with_msg, outer_list, chart_buf
+            )
+
+            st.download_button(
+                label="📄 トランジット鑑定書をダウンロード",
+                data=pdf_buf,
+                file_name=f"luna_transit_{user_info.get('name', '')}_{transit_date}.pdf",
+                mime="application/pdf",
+                use_container_width=True,
+                key="dl_transit_pdf"
+            )

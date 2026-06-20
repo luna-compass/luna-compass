@@ -457,14 +457,16 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
         card_msg = tarot_data.get("message", "")
         is_reversed = tarot_data.get("is_reversed", False)
 
-        # カード画像
+        # カード画像（PDF用にリサイズして軽量化）
         if card_img_path and os.path.exists(card_img_path):
             try:
                 pil_img = PILImage.open(card_img_path).convert("RGB")
                 if is_reversed:
                     pil_img = pil_img.rotate(180)
+                # PDF埋め込み用に最大300×500pxにリサイズ
+                pil_img.thumbnail((300, 500), PILImage.LANCZOS)
                 img_buf = _io.BytesIO()
-                pil_img.save(img_buf, format="PNG")
+                pil_img.save(img_buf, format="JPEG", quality=75, optimize=True)
                 img_buf.seek(0)
                 card_image = Image(img_buf, width=40 * mm, height=65 * mm)
                 card_image.hAlign = 'CENTER'
@@ -501,6 +503,361 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
     # --------------------------------------------------------
     # ★ PDF 出力
     # --------------------------------------------------------
+    doc.build(story)
+    buf.seek(0)
+    return buf
+
+
+# ============================================================
+# トランジット鑑定書PDF生成
+# ============================================================
+def create_transit_pdf(natal_data, transit_data, aspects, outer_planets, chart_image_bytes=None):
+    """
+    natal_data: dict（name, birthday, birth_time, asc_sign など）
+    transit_data: dict（transit_date, sun_sign, moon_sign, flow_title, flow_body）
+    aspects: list of dict（transit, natal, type, orb）
+    outer_planets: list of dict（name, sign, deg, message）
+    chart_image_bytes: BytesIO（2重円チャート）
+    """
+    import io as _io
+
+    buf = _io.BytesIO()
+    doc = SimpleDocTemplate(
+        buf,
+        pagesize=A4,
+        rightMargin=20 * mm,
+        leftMargin=20 * mm,
+        topMargin=18 * mm,
+        bottomMargin=18 * mm,
+    )
+    story = []
+
+    name = natal_data.get("name", "")
+    reading_date = transit_data.get("transit_date", "")
+
+    # --------------------------------------------------------
+    # ★ タイトル
+    # --------------------------------------------------------
+    story.append(Paragraph("Luna 占星術", S('t1', 20, PURPLE_DARK, True, 'CENTER')))
+    story.append(Paragraph("トランジット鑑定書", S('t2', 13, PURPLE_MID, False, 'CENTER', sb=4, sa=10)))
+    story.append(HRFlowable(width="100%", thickness=1.5, color=PURPLE_BORDER, spaceAfter=8))
+
+    # --------------------------------------------------------
+    # ★ 基本情報テーブル
+    # --------------------------------------------------------
+    info = [
+        [
+            Paragraph("お名前", S('h', 10, PURPLE_DARK, True)),
+            Paragraph(name, S('v')),
+            Paragraph("鑑定日", S('h', 10, PURPLE_DARK, True)),
+            Paragraph(reading_date, S('v')),
+        ],
+        [
+            Paragraph("生年月日", S('h', 10, PURPLE_DARK, True)),
+            Paragraph(natal_data.get("birthday", ""), S('v')),
+            Paragraph("出生時刻", S('h', 10, PURPLE_DARK, True)),
+            Paragraph(
+                "不明（正午で計算）" if natal_data.get("time_unknown") else natal_data.get("birth_time", ""),
+                S('v', color=TEXT_GRAY) if natal_data.get("time_unknown") else S('v')
+            ),
+        ],
+    ]
+    t = Table(info, colWidths=[28 * mm, 62 * mm, 25 * mm, 45 * mm])
+    t.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (0, -1), PURPLE_LIGHT),
+        ('BACKGROUND', (2, 0), (2, -1), PURPLE_LIGHT),
+        ('BOX', (0, 0), (-1, -1), 0.5, PURPLE_BORDER),
+        ('INNERGRID', (0, 0), (-1, -1), 0.3, PURPLE_BORDER),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('TOPPADDING', (0, 0), (-1, -1), 5),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+    ]))
+    story.append(t)
+    story.append(Spacer(1, 12))
+
+    # --------------------------------------------------------
+    # ★ チャート（2重円）
+    # --------------------------------------------------------
+    if chart_image_bytes:
+        img = Image(chart_image_bytes, width=120 * mm, height=120 * mm)
+        img.hAlign = 'CENTER'
+        story.append(Paragraph("◆ ホロスコープ（ネイタル＋トランジット）", STYLE_H1))
+        story.append(Spacer(1, 4))
+        story.append(img)
+        story.append(Spacer(1, 8))
+        story.append(PageBreak())
+
+    # --------------------------------------------------------
+    # ★ section関数をローカル定義
+    # --------------------------------------------------------
+    def section(title):
+        story.append(HRFlowable(
+            width="100%", thickness=1, color=PURPLE_BORDER,
+            spaceBefore=6, spaceAfter=6
+        ))
+        story.append(Paragraph(f"◆ {title}", STYLE_H1))
+        story.append(Spacer(1, 12))
+
+    # --------------------------------------------------------
+    # ★ 今日の流れ
+    # --------------------------------------------------------
+    section("今日の流れ")
+    flow_title = transit_data.get("flow_title", "")
+    flow_body  = transit_data.get("flow_body", "")
+    t_sun  = transit_data.get("sun_sign", "")
+    t_moon = transit_data.get("moon_sign", "")
+    t_sun_deg  = transit_data.get("sun_deg", "")
+    t_moon_deg = transit_data.get("moon_deg", "")
+
+    story.append(Paragraph(f"☀ トランジット太陽：{t_sun} {t_sun_deg}", S('p', 10, PURPLE_MID, True, sb=2, sa=4)))
+    story.append(Paragraph(f"☽ トランジット月：{t_moon} {t_moon_deg}", S('p', 10, PURPLE_MID, True, sb=2, sa=8)))
+
+    if flow_title:
+        story.append(Paragraph(flow_title, STYLE_H3))
+    if flow_body:
+        for line in flow_body.split("\n"):
+            line = line.strip()
+            if line:
+                story.append(Paragraph(line, STYLE_BODY))
+    story.append(Spacer(1, 10))
+
+    # --------------------------------------------------------
+    # ★ トランジットアスペクト
+    # --------------------------------------------------------
+    section("トランジット × ネイタル アスペクト")
+    story.append(Paragraph("今この星があなたに与えている影響を示します。", STYLE_NOTE))
+    story.append(Spacer(1, 6))
+
+    asp_icons = {
+        "コンジャンクション": "●",
+        "トライン": "△",
+        "スクエア": "□",
+        "セクスタイル": "✦",
+        "オポジション": "○",
+    }
+
+    if aspects:
+        for a in aspects:
+            icon = asp_icons.get(a["type"], "◇")
+            header = f"{icon} トランジット{a['transit']} × ネイタル{a['natal']}：{a['type']}"
+            msg = a.get("message", "")
+            rows = [[Paragraph(header, S('p', 10, PURPLE_MID, True, sb=4, sa=4))]]
+            if msg:
+                for line in msg.split("\n"):
+                    line = line.strip()
+                    if not line:
+                        rows.append([Spacer(1, 3)])
+                    else:
+                        rows.append([Paragraph(line, STYLE_BODY)])
+            card = Table(rows, colWidths=[165 * mm])
+            card.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, -1), PURPLE_LIGHT),
+                ('LINEBEFORE', (0, 0), (0, -1), 0.5, PURPLE_MID),
+                ('LINEAFTER', (0, 0), (0, -1), 0.5, PURPLE_MID),
+                ('LINEABOVE', (0, 0), (-1, 0), 0.5, PURPLE_MID),
+                ('LINEBELOW', (0, -1), (-1, -1), 0.5, PURPLE_MID),
+                ('LEFTPADDING', (0, 0), (-1, -1), 14),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 14),
+                ('TOPPADDING', (0, 0), (0, 0), 10),
+                ('BOTTOMPADDING', (0, -1), (-1, -1), 10),
+                ('TOPPADDING', (0, 1), (-1, -1), 2),
+                ('BOTTOMPADDING', (0, 0), (-1, -2), 2),
+            ]))
+            story.append(card)
+            story.append(Spacer(1, 10))
+    else:
+        story.append(Paragraph("現在、主要なアスペクトはありません。", STYLE_BODY))
+
+    story.append(PageBreak())
+
+    # --------------------------------------------------------
+    # ★ 外惑星の動き
+    # --------------------------------------------------------
+    section("外惑星の動き")
+    story.append(Paragraph("ゆっくり動く惑星は長期的な流れを示します。", STYLE_NOTE))
+    story.append(Spacer(1, 6))
+
+    for op in outer_planets:
+        p_name = op.get("name", "")
+        p_sign = op.get("sign", "")
+        p_deg  = op.get("deg", "")
+        p_msg  = op.get("message", "")
+
+        rows = [[Paragraph(f"♃ {p_name}：{p_sign} {p_deg}", S('p', 10, PURPLE_MID, True, sb=4, sa=4))]]
+        if p_msg:
+            for line in p_msg.split("\n"):
+                line = line.strip()
+                if not line:
+                    rows.append([Spacer(1, 3)])
+                else:
+                    rows.append([Paragraph(line, STYLE_BODY)])
+        card = Table(rows, colWidths=[165 * mm])
+        card.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, -1), PURPLE_LIGHT),
+            ('LINEBEFORE', (0, 0), (0, -1), 0.5, PURPLE_MID),
+            ('LINEAFTER', (0, 0), (0, -1), 0.5, PURPLE_MID),
+            ('LINEABOVE', (0, 0), (-1, 0), 0.5, PURPLE_MID),
+            ('LINEBELOW', (0, -1), (-1, -1), 0.5, PURPLE_MID),
+            ('LEFTPADDING', (0, 0), (-1, -1), 14),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 14),
+            ('TOPPADDING', (0, 0), (0, 0), 10),
+            ('BOTTOMPADDING', (0, -1), (-1, -1), 10),
+            ('TOPPADDING', (0, 1), (-1, -1), 2),
+            ('BOTTOMPADDING', (0, 0), (-1, -2), 2),
+        ]))
+        story.append(card)
+        story.append(Spacer(1, 10))
+
+    # --------------------------------------------------------
+    # ★ フッター
+    # --------------------------------------------------------
+    story.append(Spacer(1, 8))
+    story.append(HRFlowable(width="100%", thickness=1, color=PURPLE_BORDER))
+    story.append(Paragraph(
+        "Luna 占星術　Luna-compass",
+        S('ft', 8, TEXT_GRAY, align='CENTER', sb=4, sa=0),
+    ))
+
+    doc.build(story)
+    buf.seek(0)
+    return buf
+
+
+# ============================================================
+# 相性鑑定書PDF生成
+# ============================================================
+def create_compatibility_pdf(
+    name1, birthday1, sun_sign1, moon_sign1, venus_sign1, mars_sign1,
+    name2, birthday2, sun_sign2, moon_sign2, venus_sign2, mars_sign2,
+    overall, compat_note, chart_image_bytes=None
+):
+    import io as _io
+
+    buf = _io.BytesIO()
+    doc = SimpleDocTemplate(
+        buf,
+        pagesize=A4,
+        rightMargin=20 * mm,
+        leftMargin=20 * mm,
+        topMargin=18 * mm,
+        bottomMargin=18 * mm,
+    )
+    story = []
+
+    def section(title):
+        story.append(HRFlowable(
+            width="100%", thickness=1, color=PURPLE_BORDER,
+            spaceBefore=6, spaceAfter=6
+        ))
+        story.append(Paragraph(f"◆ {title}", STYLE_H1))
+        story.append(Spacer(1, 12))
+
+    # --------------------------------------------------------
+    # ★ タイトル
+    # --------------------------------------------------------
+    story.append(Paragraph("Luna 占星術", S('t1', 20, PURPLE_DARK, True, 'CENTER')))
+    story.append(Paragraph("相性鑑定書", S('t2', 13, PURPLE_MID, False, 'CENTER', sb=4, sa=10)))
+    story.append(HRFlowable(width="100%", thickness=1.5, color=PURPLE_BORDER, spaceAfter=8))
+
+    # --------------------------------------------------------
+    # ★ 基本情報テーブル
+    # --------------------------------------------------------
+    info = [
+        [
+            Paragraph("お相手1", S('h', 10, PURPLE_DARK, True)),
+            Paragraph(name1, S('v')),
+            Paragraph("お相手2", S('h', 10, PURPLE_DARK, True)),
+            Paragraph(name2, S('v')),
+        ],
+        [
+            Paragraph("生年月日", S('h', 10, PURPLE_DARK, True)),
+            Paragraph(f"{birthday1.year}年{birthday1.month}月{birthday1.day}日", S('v')),
+            Paragraph("生年月日", S('h', 10, PURPLE_DARK, True)),
+            Paragraph(f"{birthday2.year}年{birthday2.month}月{birthday2.day}日", S('v')),
+        ],
+    ]
+    t = Table(info, colWidths=[25 * mm, 65 * mm, 25 * mm, 45 * mm])
+    t.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (0, -1), PURPLE_LIGHT),
+        ('BACKGROUND', (2, 0), (2, -1), PURPLE_LIGHT),
+        ('BOX', (0, 0), (-1, -1), 0.5, PURPLE_BORDER),
+        ('INNERGRID', (0, 0), (-1, -1), 0.3, PURPLE_BORDER),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('TOPPADDING', (0, 0), (-1, -1), 5),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+    ]))
+    story.append(t)
+    story.append(Spacer(1, 12))
+
+    # --------------------------------------------------------
+    # ★ チャート
+    # --------------------------------------------------------
+    if chart_image_bytes:
+        img = Image(chart_image_bytes, width=120 * mm, height=120 * mm)
+        img.hAlign = 'CENTER'
+        story.append(Paragraph("◆ ホロスコープ（2人の重ね表示）", STYLE_H1))
+        story.append(Spacer(1, 4))
+        story.append(img)
+        story.append(Spacer(1, 8))
+        story.append(PageBreak())
+
+    # --------------------------------------------------------
+    # ★ 天体情報
+    # --------------------------------------------------------
+    section("2人の天体")
+    planet_rows = [
+        [
+            Paragraph("天体", S('h', 10, PURPLE_DARK, True)),
+            Paragraph(name1, S('h', 10, PURPLE_DARK, True)),
+            Paragraph(name2, S('h', 10, PURPLE_DARK, True)),
+        ],
+        [Paragraph("☀ 太陽", STYLE_BODY), Paragraph(sun_sign1, STYLE_BODY), Paragraph(sun_sign2, STYLE_BODY)],
+        [Paragraph("☽ 月", STYLE_BODY), Paragraph(moon_sign1, STYLE_BODY), Paragraph(moon_sign2, STYLE_BODY)],
+        [Paragraph("♀ 金星", STYLE_BODY), Paragraph(venus_sign1, STYLE_BODY), Paragraph(venus_sign2, STYLE_BODY)],
+        [Paragraph("♂ 火星", STYLE_BODY), Paragraph(mars_sign1, STYLE_BODY), Paragraph(mars_sign2, STYLE_BODY)],
+    ]
+    pt = Table(planet_rows, colWidths=[40 * mm, 62 * mm, 62 * mm])
+    pt.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), PURPLE_LIGHT),
+        ('BOX', (0, 0), (-1, -1), 0.5, PURPLE_BORDER),
+        ('INNERGRID', (0, 0), (-1, -1), 0.3, PURPLE_BORDER),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('TOPPADDING', (0, 0), (-1, -1), 5),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+    ]))
+    story.append(pt)
+    story.append(Spacer(1, 16))
+
+    # --------------------------------------------------------
+    # ★ 相性メッセージ
+    # --------------------------------------------------------
+    section("相性鑑定")
+    for line in compat_note.split("\n"):
+        line = line.strip()
+        if not line:
+            story.append(Spacer(1, 4))
+        elif line.startswith("【"):
+            story.append(Paragraph(line, STYLE_H3))
+        else:
+            story.append(Paragraph(line, STYLE_BODY))
+    story.append(Spacer(1, 12))
+
+    # --------------------------------------------------------
+    # ★ 総合メッセージ
+    # --------------------------------------------------------
+    section("総合相性メッセージ")
+    story.append(Paragraph(overall, STYLE_BODY))
+
+    # --------------------------------------------------------
+    # ★ フッター
+    # --------------------------------------------------------
+    story.append(Spacer(1, 8))
+    story.append(HRFlowable(width="100%", thickness=1, color=PURPLE_BORDER))
+    story.append(Paragraph(
+        "Luna 占星術　Luna-compass",
+        S('ft', 8, TEXT_GRAY, align='CENTER', sb=4, sa=0),
+    ))
+
     doc.build(story)
     buf.seek(0)
     return buf

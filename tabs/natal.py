@@ -327,6 +327,7 @@ def _render(container, user_info):
                 asp_short = get_aspect_message(a0['p1'], a0['p2'], a0['type']).split("\n")[0]
                 overall_parts.append(f"また、{a0['p1']}と{a0['p2']}の{a0['type']}が示すように、{asp_short}")
 
+
             overall_text = "\n".join(overall_parts)
 
             st.markdown("**⭐ 星が示すあなたのストーリー**")
