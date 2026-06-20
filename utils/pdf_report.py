@@ -359,7 +359,7 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
 
     nt.hAlign = 'CENTER'
     story.append(nt)
-    story.append(Spacer(1, 8))
+    story.append(Spacer(1, 20))
 
     # ライフパス
     lp_num = user_data.get("life_path", "")
@@ -380,7 +380,7 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
             else:
                 story.append(Paragraph(line, STYLE_BODY))
 
-    story.append(Spacer(1, 6))
+    story.append(Spacer(1, 14))
 
     # バースデーナンバー
     bd_num = user_data.get("birthday_num", "")
@@ -391,7 +391,7 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
             STYLE_H2,
         ))
         story.append(Paragraph(bd_msg, STYLE_BODY))
-        story.append(Spacer(1, 6))
+        story.append(Spacer(1, 14))
 
     # ルーラーナンバー
     rl_num = user_data.get("ruler_num", "")
