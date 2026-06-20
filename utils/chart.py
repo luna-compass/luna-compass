@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from utils.astro import split_sign_degree
 
-def plot_horoscope(natal_longitudes, houses, transit_longitudes=None):
+def plot_horoscope(natal_longitudes, houses, transit_longitudes=None, time_unknown=False):
 
     SIGN_LABELS = [
         "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
@@ -36,7 +36,13 @@ def plot_horoscope(natal_longitudes, houses, transit_longitudes=None):
         "オポジション":       {"color": "#9333ea", "lw": 1.0, "ls": "--"},
     }
 
-    asc = houses[0]
+    # ソーラーチャート：出生時刻不明のとき太陽を1ハウスに固定
+    if time_unknown and "太陽" in natal_longitudes:
+        sun_lon = natal_longitudes["太陽"]
+        asc = sun_lon
+        houses = [(sun_lon + i * 30) % 360 for i in range(12)]
+    else:
+        asc = houses[0]
 
     def lon_to_xy(lon, r):
         math_deg = 180.0 + ((lon - asc) % 360)

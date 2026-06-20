@@ -186,11 +186,17 @@ if st.session_state["menu_selected"] == "general":
                 key="birthday_general"
             )
 
-        col_t1, col_t2 = st.columns(2)
-        with col_t1:
-            birth_hour = st.number_input("出生時（時）", min_value=0, max_value=23, value=default_hour, key="hour_general")
-        with col_t2:
-            birth_minute = st.number_input("出生時（分）", min_value=0, max_value=59, value=default_min, key="minute_general")
+        time_unknown = st.checkbox("出生時刻が不明（正午12:00で計算）", key="time_unknown_general")
+
+        if not time_unknown:
+            col_t1, col_t2 = st.columns(2)
+            with col_t1:
+                birth_hour = st.number_input("出生時（時）", min_value=0, max_value=23, value=default_hour, key="hour_general")
+            with col_t2:
+                birth_minute = st.number_input("出生時（分）", min_value=0, max_value=59, value=default_min, key="minute_general")
+        else:
+            birth_hour = 12
+            birth_minute = 0
 
         tz_label = st.radio(
             "出生地のタイムゾーン",
@@ -216,6 +222,7 @@ if st.session_state["menu_selected"] == "general":
         "lat": lat,
         "lon": lon_city,
         "mode": mode,
+        "time_unknown": time_unknown,
     }
 
     from tabs import natal, transit, numerology

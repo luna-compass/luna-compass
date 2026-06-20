@@ -96,13 +96,19 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
     # --------------------------------------------------------
     # ★ 惑星カード（ここで定義）
     # --------------------------------------------------------
+    time_unknown = user_data.get("time_unknown", False)
+
     def planet_row(symbol, label, sign, deg, house, msg, house_msg=""):
         if not sign:
             return
 
         content = []
+        # ハウス表示：time_unknownのとき非表示
+        header = f"{symbol} {label}　{sign} {deg}"
+        if house and not time_unknown:
+            header += f"　{house}ハウス"
         content.append(Paragraph(
-            f"{symbol} {label}　{sign} {deg}　{house}ハウス",
+            header,
             S('p', 11, PURPLE_MID, True, sb=6, sa=10)
         ))
 
@@ -116,7 +122,8 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
                 else:
                     content.append(Paragraph(line, STYLE_BODY))
 
-        if house_msg:
+        # ハウスメッセージ：time_unknownのとき非表示
+        if house_msg and not time_unknown:
             content.append(Paragraph(f"【ハウス】{house_msg}", STYLE_NOTE))
 
         card = Table([[content]], colWidths=[165*mm])
@@ -153,7 +160,10 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
             Paragraph("生年月日", S('h', 10, PURPLE_DARK, True)),
             Paragraph(user_data.get("birthday", ""), S('v')),
             Paragraph("出生時刻", S('h', 10, PURPLE_DARK, True)),
-            Paragraph(user_data.get("birth_time", ""), S('v')),
+            Paragraph(
+                "不明（正午で計算）" if user_data.get("time_unknown") else user_data.get("birth_time", ""),
+                S('v', color=TEXT_GRAY) if user_data.get("time_unknown") else S('v')
+            ),
         ],
     ]
     t = Table(info, colWidths=[28 * mm, 62 * mm, 25 * mm, 45 * mm])
@@ -213,57 +223,59 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
     if chart_image_bytes:
         img = Image(chart_image_bytes, width=120 * mm, height=120 * mm)
         img.hAlign = 'CENTER'
-        story.append(KeepTogether([
-            Paragraph("◆ 円形ホロスコープ", STYLE_H1),
+        chart_title = "◆ 円形ホロスコープ（ソーラーチャート）" if user_data.get("time_unknown") else "◆ 円形ホロスコープ"
+        chart_block = [
+            Paragraph(chart_title, STYLE_H1),
             Spacer(1, 4),
             img,
             Spacer(1, 6),
-        ]))
+        ]
+        if user_data.get("time_unknown"):
+            chart_block.insert(1, Paragraph(
+                "※ 出生時刻不明のため、太陽星座を第1ハウスとするソーラーチャートで表示しています。",
+                STYLE_NOTE,
+            ))
+        story.append(KeepTogether(chart_block))
 
         story.append(PageBreak())
 
     # --------------------------------------------------------
-    # ★ ASC（第一印象）
+    # ★ ASC（第一印象）：出生時刻不明の場合は非表示
     # --------------------------------------------------------
-    section("第一印象（ASC）")
+    if not user_data.get("time_unknown"):
+        section("第一印象（ASC）")
 
-    if user_data.get("time_unknown"):
-        story.append(Paragraph(
-            "※ 出生時刻不明のため正午で計算。ASCは参考値です。",
-            STYLE_NOTE,
+        asc_title = f"☺ アセンダント　{user_data.get('asc_sign', '')} {user_data.get('asc_deg', '')}"
+        asc_msg = user_data.get("asc_message", "")
+
+        asc_content = []
+        asc_content.append(Paragraph(
+            asc_title,
+            S('asc_header', 11, PURPLE_MID, True, sb=6, sa=6)
         ))
 
-    asc_title = f"☺ アセンダント　{user_data.get('asc_sign', '')} {user_data.get('asc_deg', '')}"
-    asc_msg = user_data.get("asc_message", "")
+        if asc_msg:
+            for line in asc_msg.split("\n"):
+                line = line.strip()
+                if not line:
+                    asc_content.append(Spacer(1, 4))
+                elif line.startswith("【"):
+                    asc_content.append(Paragraph(line, STYLE_H3))
+                else:
+                    asc_content.append(Paragraph(line, STYLE_BODY))
 
-    asc_content = []
-    asc_content.append(Paragraph(
-        asc_title,
-        S('asc_header', 11, PURPLE_MID, True, sb=6, sa=6)
-    ))
+        asc_card = Table([[asc_content]], colWidths=[165*mm])
+        asc_card.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,-1), PURPLE_LIGHT),
+            ('BOX', (0,0), (-1,-1), 0.5, PURPLE_MID),
+            ('LEFTPADDING', (0,0), (-1,-1), 12),
+            ('RIGHTPADDING', (0,0), (-1,-1), 12),
+            ('TOPPADDING', (0,0), (-1,-1), 10),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 10),
+        ]))
 
-    if asc_msg:
-        for line in asc_msg.split("\n"):
-            line = line.strip()
-            if not line:
-                asc_content.append(Spacer(1, 4))
-            elif line.startswith("【"):
-                asc_content.append(Paragraph(line, STYLE_H3))
-            else:
-                asc_content.append(Paragraph(line, STYLE_BODY))
-
-    asc_card = Table([[asc_content]], colWidths=[165*mm])
-    asc_card.setStyle(TableStyle([
-        ('BACKGROUND', (0,0), (-1,-1), PURPLE_LIGHT),
-        ('BOX', (0,0), (-1,-1), 0.5, PURPLE_MID),
-        ('LEFTPADDING', (0,0), (-1,-1), 12),
-        ('RIGHTPADDING', (0,0), (-1,-1), 12),
-        ('TOPPADDING', (0,0), (-1,-1), 10),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 10),
-    ]))
-
-    story.append(asc_card)
-    story.append(PageBreak())
+        story.append(asc_card)
+        story.append(PageBreak())
 
     # --------------------------------------------------------
     # ★ 主要天体
