@@ -9,7 +9,8 @@ import swisseph as swe
 from utils.astro import (
     make_ts_from_local, get_sun_info, get_moon_info,
     get_planet_signs_ts, get_body_longitudes_ts,
-    split_sign_degree, get_aspects, get_sign
+    split_sign_degree, get_aspects, get_sign,
+    simple_compare_message, format_degree
 )
 from utils.messages import (
     get_sun_message as _get_sun_message,
@@ -207,8 +208,8 @@ def _render(container, user_info):
             neptune_sign, neptune_deg = split_sign_degree(natal_longs["海王星"])
             pluto_sign,   pluto_deg   = split_sign_degree(natal_longs["冥王星"])
 
-            sun_text  = f"{sun_sign} {sun_deg:.2f}°"
-            moon_text = f"{moon_sign} {moon_deg:.2f}°"
+            sun_text  = f"{sun_sign} {format_degree(sun_deg)}"
+            moon_text = f"{moon_sign} {format_degree(moon_deg)}"
 
             # ===== ハウス計算（Placidus） =====
             dt_utc = datetime.datetime(
@@ -269,7 +270,7 @@ def _render(container, user_info):
             # ===== ②ASC =====
             st.markdown("---")
             st.markdown("### ☺ 第一印象（ASC）")
-            st.markdown(f"**{asc_sign} {asc_deg_val:.2f}°**")
+            st.markdown(f"**{asc_sign} {format_degree(asc_deg_val)}**")
             st.markdown(f"<div class='luna-message'>{get_asc_message(asc_sign)}</div>", unsafe_allow_html=True)
 
             # ===== ③内惑星（太陽・月・水星・金星・火星） =====
@@ -277,9 +278,9 @@ def _render(container, user_info):
             planets_inner = [
                 ("☀ 太陽（本質）", sun_sign, sun_deg, sun_text, get_sun_message, "太陽"),
                 ("☽ 月（感情）", moon_sign, moon_deg, moon_text, get_moon_message, "月"),
-                ("☿ 水星（思考）", mercury_sign, mercury_deg, f"{mercury_sign} {mercury_deg:.2f}°", get_mercury_message, "水星"),
-                ("♀ 金星（愛・好み）", venus_sign, venus_deg, f"{venus_sign} {venus_deg:.2f}°", get_venus_message, "金星"),
-                ("♂ 火星（行動）", mars_sign, mars_deg, f"{mars_sign} {mars_deg:.2f}°", get_mars_message, "火星"),
+                ("☿ 水星（思考）", mercury_sign, mercury_deg, f"{mercury_sign} {format_degree(mercury_deg)}", get_mercury_message, "水星"),
+                ("♀ 金星（愛・好み）", venus_sign, venus_deg, f"{venus_sign} {format_degree(venus_deg)}", get_venus_message, "金星"),
+                ("♂ 火星（行動）", mars_sign, mars_deg, f"{mars_sign} {format_degree(mars_deg)}", get_mars_message, "火星"),
             ]
 
             for title, sign, deg, text, msg_func, pname in planets_inner:
@@ -303,7 +304,7 @@ def _render(container, user_info):
             for title, sign, deg, msg_func, pname in planets_outer:
                 house_num = planet_houses[pname]
                 st.markdown(f"### {title}")
-                st.markdown(f"**{sign} {deg:.2f}°　{house_num}ハウス**")
+                st.markdown(f"**{sign} {format_degree(deg)}　{house_num}ハウス**")
                 st.markdown(f"<div class='luna-message'>{msg_func(sign)}</div>", unsafe_allow_html=True)
                 house_msg = get_house_planet_message(house_num, pname)
                 st.markdown(f"<div class='luna-message'>🏠 {house_msg}</div>", unsafe_allow_html=True)
@@ -449,36 +450,36 @@ def _render(container, user_info):
                 "birth_time": f"{int(birth_hour):02d}:{int(birth_minute):02d}",
                 "reading_date": datetime.date.today().strftime("%Y年%m月%d日"),
                 "asc_sign": asc_sign,
-                "asc_deg": f"{asc_deg_val:.1f}°",
+                "asc_deg": format_degree(asc_deg_val),
                 "asc_message": get_asc_message(asc_sign),
-                "sun_sign": sun_sign, "sun_deg": f"{sun_deg:.1f}°",
+                "sun_sign": sun_sign, "sun_deg": format_degree(sun_deg),
                 "sun_house": _house("太陽"), "sun_message": get_sun_message(sun_sign),
                 "sun_house_message": _house_msg("太陽", "太陽"),
-                "moon_sign": moon_sign, "moon_deg": f"{moon_deg:.1f}°",
+                "moon_sign": moon_sign, "moon_deg": format_degree(moon_deg),
                 "moon_house": _house("月"), "moon_message": get_moon_message(moon_sign),
                 "moon_house_message": _house_msg("月", "月"),
-                "mercury_sign": mercury_sign, "mercury_deg": f"{mercury_deg:.1f}°",
+                "mercury_sign": mercury_sign, "mercury_deg": format_degree(mercury_deg),
                 "mercury_house": _house("水星"), "mercury_message": get_mercury_message(mercury_sign),
                 "mercury_house_message": _house_msg("水星", "水星"),
-                "venus_sign": venus_sign, "venus_deg": f"{venus_deg:.1f}°",
+                "venus_sign": venus_sign, "venus_deg": format_degree(venus_deg),
                 "venus_house": _house("金星"), "venus_message": get_venus_message(venus_sign),
                 "venus_house_message": _house_msg("金星", "金星"),
-                "mars_sign": mars_sign, "mars_deg": f"{mars_deg:.1f}°",
+                "mars_sign": mars_sign, "mars_deg": format_degree(mars_deg),
                 "mars_house": _house("火星"), "mars_message": get_mars_message(mars_sign),
                 "mars_house_message": _house_msg("火星", "火星"),
-                "jupiter_sign": jupiter_sign, "jupiter_deg": f"{jupiter_deg:.1f}°",
+                "jupiter_sign": jupiter_sign, "jupiter_deg": format_degree(jupiter_deg),
                 "jupiter_house": _house("木星"), "jupiter_message": get_jupiter_message(jupiter_sign),
                 "jupiter_house_message": _house_msg("木星", "木星"),
-                "saturn_sign": saturn_sign, "saturn_deg": f"{saturn_deg:.1f}°",
+                "saturn_sign": saturn_sign, "saturn_deg": format_degree(saturn_deg),
                 "saturn_house": _house("土星"), "saturn_message": get_saturn_message(saturn_sign),
                 "saturn_house_message": _house_msg("土星", "土星"),
-                "uranus_sign": uranus_sign, "uranus_deg": f"{uranus_deg:.1f}°",
+                "uranus_sign": uranus_sign, "uranus_deg": format_degree(uranus_deg),
                 "uranus_house": _house("天王星"), "uranus_message": get_uranus_message(uranus_sign),
                 "uranus_house_message": _house_msg("天王星", "天王星"),
-                "neptune_sign": neptune_sign, "neptune_deg": f"{neptune_deg:.1f}°",
+                "neptune_sign": neptune_sign, "neptune_deg": format_degree(neptune_deg),
                 "neptune_house": _house("海王星"), "neptune_message": get_neptune_message(neptune_sign),
                 "neptune_house_message": _house_msg("海王星", "海王星"),
-                "pluto_sign": pluto_sign, "pluto_deg": f"{pluto_deg:.1f}°",
+                "pluto_sign": pluto_sign, "pluto_deg": format_degree(pluto_deg),
                 "pluto_house": _house("冥王星"), "pluto_message": get_pluto_message(pluto_sign),
                 "pluto_house_message": _house_msg("冥王星", "冥王星"),
                 "aspects": [

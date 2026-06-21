@@ -30,8 +30,16 @@ except:
 def split_sign_degree(lon_deg: float):
     lon_norm = lon_deg % 360.0
     index = int(lon_norm // 30)
-    degree = lon_norm % 30
-    return SIGNS[index], degree
+    degree_float = lon_norm % 30
+    degree_int = int(degree_float)
+    minute_int = int((degree_float - degree_int) * 60)
+    return SIGNS[index], degree_float
+
+def format_degree(degree_float: float) -> str:
+    """度数を 05°24' 形式にフォーマット（小数部分を60倍して分に変換）"""
+    degree_int = int(degree_float)
+    minute_int = int((degree_float - degree_int) * 60)
+    return f"{degree_int:02d}°{minute_int:02d}'"
 
 def get_sign(deg):
     return SIGNS[int((deg % 360) / 30)]
