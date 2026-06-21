@@ -191,6 +191,49 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
     story.append(Spacer(1, 8))
 
     # --------------------------------------------------------
+    # ★ キーワードサマリー
+    # --------------------------------------------------------
+    kw_asc     = user_data.get("kw_asc", "")
+    kw_sun     = user_data.get("kw_sun", "")
+    kw_moon    = user_data.get("kw_moon", "")
+    kw_mercury = user_data.get("kw_mercury", "")
+    kw_venus   = user_data.get("kw_venus", "")
+    kw_mars    = user_data.get("kw_mars", "")
+    name       = user_data.get("name", "あなた")
+
+    if kw_sun or kw_moon:
+        story.append(HRFlowable(width="100%", thickness=2, color=PURPLE_MID, spaceAfter=4))
+        story.append(Paragraph("◆ あなたのキーワード", STYLE_H1))
+        story.append(Spacer(1, 6))
+
+        kw_lines = []
+        if kw_asc and not user_data.get("time_unknown"):
+            kw_lines.append(f"第一印象　：{kw_asc}")
+        if kw_sun:
+            kw_lines.append(f"人生のテーマ：{kw_sun}")
+        if kw_moon:
+            kw_lines.append(f"心が求めるもの：{kw_moon}")
+        if kw_mercury:
+            kw_lines.append(f"思考スタイル：{kw_mercury}")
+        if kw_venus:
+            kw_lines.append(f"愛のスタイル：{kw_venus}")
+        if kw_mars:
+            kw_lines.append(f"行動スタイル：{kw_mars}")
+
+        kw_rows = [[Paragraph(line, S('v', 10, PURPLE_DARK))] for line in kw_lines]
+        kw_table = Table(kw_rows, colWidths=[165 * mm])
+        kw_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, -1), PURPLE_LIGHT),
+            ('BOX', (0, 0), (-1, -1), 0.5, PURPLE_MID),
+            ('LEFTPADDING', (0, 0), (-1, -1), 16),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 16),
+            ('TOPPADDING', (0, 0), (-1, -1), 6),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ]))
+        story.append(kw_table)
+        story.append(Spacer(1, 12))
+
+    # --------------------------------------------------------
     # ★ 総合メッセージ
     # --------------------------------------------------------
     overall_first = user_data.get("overall_message", "")

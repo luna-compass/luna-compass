@@ -29,7 +29,7 @@ from utils.messages import (
 )
 from utils.chart import plot_horoscope
 from utils.pdf_report import create_reading_pdf
-from utils.messages_loader import get_message, get_aspect_message_json
+from utils.messages_loader import get_message, get_aspect_message_json, get_summary_keyword as _gkw
 
 # JSONから読み込む関数（なければmessages.pyにフォールバック）
 def get_sun_message(sign):       return get_message("sun", sign) or _get_sun_message(sign)
@@ -327,7 +327,6 @@ def _render(container, user_info):
                 asp_short = get_aspect_message(a0['p1'], a0['p2'], a0['type']).split("\n")[0]
                 overall_parts.append(f"また、{a0['p1']}と{a0['p2']}の{a0['type']}が示すように、{asp_short}")
 
-
             overall_text = "\n".join(overall_parts)
 
             st.markdown("**⭐ 星が示すあなたのストーリー**")
@@ -336,6 +335,36 @@ def _render(container, user_info):
             summary = [overall_text]
 
             # ===== ⑦PDF鑑定書ダウンロード =====
+            # ===== キーワードサマリー表示 =====
+            st.markdown("---")
+            st.markdown("### ✨ あなたのキーワード")
+            kw_asc_val     = _gkw("asc", asc_sign) if not time_unknown else ""
+            kw_sun_val     = _gkw("sun", sun_sign)
+            kw_moon_val    = _gkw("moon", moon_sign)
+            kw_mercury_val = _gkw("mercury", mercury_sign)
+            kw_venus_val   = _gkw("venus", venus_sign)
+            kw_mars_val    = _gkw("mars", mars_sign)
+
+            kw_items_disp = []
+            if kw_asc_val:
+                kw_items_disp.append(("第一印象", kw_asc_val))
+            if kw_sun_val:
+                kw_items_disp.append(("人生のテーマ", kw_sun_val))
+            if kw_moon_val:
+                kw_items_disp.append(("心が求めるもの", kw_moon_val))
+            if kw_mercury_val:
+                kw_items_disp.append(("思考スタイル", kw_mercury_val))
+            if kw_venus_val:
+                kw_items_disp.append(("愛のスタイル", kw_venus_val))
+            if kw_mars_val:
+                kw_items_disp.append(("行動スタイル", kw_mars_val))
+
+            kw_html = "<div class='luna-message'>"
+            for label, kw in kw_items_disp:
+                kw_html += f"<div style='margin-bottom:6px;'><span style='color:#7c3aed;font-weight:bold;'>{label}：</span>{kw}</div>"
+            kw_html += "</div>"
+            st.markdown(kw_html, unsafe_allow_html=True)
+
             st.markdown("---")
             st.markdown("### 📄 鑑定書PDFをダウンロード")
 
@@ -434,6 +463,13 @@ def _render(container, user_info):
                 "astrologer_message": astrologer_message,
                 "time_unknown": user_info.get("time_unknown", False),
                 "tarot_message": _get_tarot_for_pdf(),
+                # キーワードサマリー
+                "kw_asc":     _gkw("asc", asc_sign),
+                "kw_sun":     _gkw("sun", sun_sign),
+                "kw_moon":    _gkw("moon", moon_sign),
+                "kw_mercury": _gkw("mercury", mercury_sign),
+                "kw_venus":   _gkw("venus", venus_sign),
+                "kw_mars":    _gkw("mars", mars_sign),
             }
 
             pdf_buf = create_reading_pdf(user_data, chart_buf)

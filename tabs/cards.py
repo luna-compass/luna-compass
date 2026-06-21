@@ -10,6 +10,17 @@ from utils.messages_loader import get_message
 # ---------- カードデータ ----------
 ASSET_DIR = Path("assets/tarot")
 
+@st.cache_data
+def load_card_image(img_path, is_reversed):
+    """カード画像をキャッシュして読み込む"""
+    try:
+        img = Image.open(img_path)
+        if is_reversed:
+            img = img.rotate(180)
+        return img
+    except Exception:
+        return None
+
 cards = [
     ("fool", "00_fool.png"), ("magician", "01_magician.png"),
     ("high_priestess", "02_high_priestess.png"), ("empress", "03_empress.png"),
@@ -126,10 +137,9 @@ def show(tab):
             if img_path and img_path.exists():
                 col1, col2, col3 = st.columns([2, 3, 2])
                 with col2:
-                    img = Image.open(img_path)
-                    if is_reversed:
-                        img = img.rotate(180)
-                    st.image(img, width=350)
+                    img = load_card_image(img_path, is_reversed)
+                    if img:
+                        st.image(img, width=350)
                     st.markdown(f"### {card_name}")
                     st.write(card_msg)
             else:
@@ -147,10 +157,11 @@ def show(tab):
                 name, msg, img_path, is_reversed = cards_3[i]
                 with col:
                     try:
-                        img = Image.open(img_path)
-                        if is_reversed:
-                            img = img.rotate(180)
-                        st.image(img, width=200)
+                        img = load_card_image(img_path, is_reversed)
+                        if img:
+                            st.image(img, width=200)
+                        else:
+                            st.caption("（画像なし）")
                     except Exception:
                         st.caption("（画像なし）")
                     st.markdown(f"### {labels[i]}")
@@ -175,10 +186,9 @@ def show_single(tab):
             if img_path and img_path.exists():
                 col1, col2, col3 = st.columns([2, 3, 2])
                 with col2:
-                    img = Image.open(img_path)
-                    if is_reversed:
-                        img = img.rotate(180)
-                    st.image(img, width=350)
+                    img = load_card_image(img_path, is_reversed)
+                    if img:
+                        st.image(img, width=350)
             else:
                 st.caption("（画像がまだ未設定 or 見つかりません）")
             st.markdown(f"### {card_name}")
@@ -196,10 +206,11 @@ def show_three(tab):
                 name, msg, img_path, is_reversed = cards_3[i]
                 with col:
                     try:
-                        img = Image.open(img_path)
-                        if is_reversed:
-                            img = img.rotate(180)
-                        st.image(img, width=200)
+                        img = load_card_image(img_path, is_reversed)
+                        if img:
+                            st.image(img, width=200)
+                        else:
+                            st.caption("（画像なし）")
                     except Exception:
                         st.caption("（画像なし）")
                     st.markdown(f"**{labels[i]}**")
@@ -319,12 +330,10 @@ def show_celtic(tab):
 
             col_img, col_txt = st.columns([1, 2])
             with col_img:
-                try:
-                    img = Image.open(card["img"])
-                    if card["is_reversed"]:
-                        img = img.rotate(180)
+                img = load_card_image(card["img"], card["is_reversed"])
+                if img:
                     st.image(img, width=120)
-                except Exception:
+                else:
                     st.caption("（画像なし）")
             with col_txt:
                 st.markdown(f"**{pos_num}. {pos_name}**")
@@ -456,12 +465,10 @@ def show_horoscope_spread(tab):
 
             col_img, col_txt = st.columns([1, 2])
             with col_img:
-                try:
-                    img = Image.open(card["img"])
-                    if card["is_reversed"]:
-                        img = img.rotate(180)
+                img = load_card_image(card["img"], card["is_reversed"])
+                if img:
                     st.image(img, width=120)
-                except Exception:
+                else:
                     st.caption("（画像なし）")
             with col_txt:
                 st.markdown(f"**{pos_house}（{pos_theme}）**")
