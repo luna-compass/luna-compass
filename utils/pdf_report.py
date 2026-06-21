@@ -450,36 +450,38 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
     bd_num = user_data.get("birthday_num", "")
     bd_msg = user_data.get("birthday_message", "")
     if bd_msg:
-        story.append(Paragraph(
+        bd_block = [Paragraph(
             f"◇ バースデーナンバー {bd_num}　～生まれ持った才能～",
             STYLE_H2,
-        ))
+        )]
         for line in bd_msg.split("\n"):
             line = line.strip()
             if not line:
-                story.append(Spacer(1, 4))
+                bd_block.append(Spacer(1, 4))
             elif line.startswith("【"):
-                story.append(Paragraph(line, STYLE_H3))
+                bd_block.append(Paragraph(line, STYLE_H3))
             else:
-                story.append(Paragraph(line, STYLE_BODY))
-        story.append(Spacer(1, 14))
+                bd_block.append(Paragraph(line, STYLE_BODY))
+        bd_block.append(Spacer(1, 14))
+        story.append(KeepTogether(bd_block))
 
     # ルーラーナンバー
     rl_num = user_data.get("ruler_num", "")
     rl_msg = user_data.get("ruler_message", "")
     if rl_msg:
-        story.append(Paragraph(
+        rl_block = [Paragraph(
             f"◇ ルーラーナンバー {rl_num}　～生まれた年の使命～",
             STYLE_H2,
-        ))
+        )]
         for line in rl_msg.split("\n"):
             line = line.strip()
             if not line:
-                story.append(Spacer(1, 4))
+                rl_block.append(Spacer(1, 4))
             elif line.startswith("【"):
-                story.append(Paragraph(line, STYLE_H3))
+                rl_block.append(Paragraph(line, STYLE_H3))
             else:
-                story.append(Paragraph(line, STYLE_BODY))
+                rl_block.append(Paragraph(line, STYLE_BODY))
+        story.append(KeepTogether(rl_block))
 
     story.append(PageBreak())
 
