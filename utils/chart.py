@@ -6,8 +6,8 @@ from utils.astro import split_sign_degree
 def plot_horoscope(natal_longitudes, houses, transit_longitudes=None, time_unknown=False):
 
     SIGN_LABELS = [
-        "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
-        "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"
+        "♈", "♉", "♊", "♋", "♌", "♍",
+        "♎", "♏", "♐", "♑", "♒", "♓"
     ]
 
     SIGN_SHORT = {
@@ -57,7 +57,7 @@ def plot_horoscope(natal_longitudes, houses, transit_longitudes=None, time_unkno
     ax.set_aspect("equal")
     ax.axis("off")
     ax.set_xlim(-1.05, 1.05)
-    ax.set_ylim(-1.30, 1.05)
+    ax.set_ylim(-1.45, 1.05)
     fig.patch.set_facecolor("#f5f3ff")
     ax.set_facecolor("#f5f3ff")
 
@@ -202,5 +202,12 @@ def plot_horoscope(natal_longitudes, houses, transit_longitudes=None, time_unkno
             fontsize=13, color="#1a202c", fontweight="bold",
             bbox=dict(boxstyle="round,pad=0.5", facecolor="white",
                       edgecolor="#7c3aed", linewidth=2.0))
+
+    # 星座記号凡例
+    legend_text = "♈Ari ♉Tau ♊Gem ♋Can ♌Leo ♍Vir  ♎Lib ♏Sco ♐Sag ♑Cap ♒Aqu ♓Pis"
+    ax.text(0, -1.38, legend_text, ha="center", va="center",
+            fontsize=10, color="#4c1d95",
+            bbox=dict(boxstyle="round,pad=0.4", facecolor="#f5f3ff",
+                      edgecolor="#a78bfa", linewidth=1.0))
 
     return fig

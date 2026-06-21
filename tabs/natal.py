@@ -29,7 +29,41 @@ from utils.messages import (
 )
 from utils.chart import plot_horoscope
 from utils.pdf_report import create_reading_pdf
-from utils.messages_loader import get_message, get_aspect_message_json, get_summary_keyword as _gkw
+from utils.messages_loader import get_message, get_aspect_message_json, get_summary_keyword as _gkw, get_summary_keyword as _gkw
+
+# ===== キャッシュ付き天文計算関数 =====
+@st.cache_data(show_spinner=False)
+def _cached_calc(birthday_str, birth_hour, birth_minute, tz_offset, lat, lon):
+    """天文計算をキャッシュして高速化"""
+    import datetime, swisseph as _swe
+    birthday = datetime.date.fromisoformat(birthday_str)
+    t = make_ts_from_local(birthday, birth_hour, birth_minute, tz_offset)
+    natal_longs = get_body_longitudes_ts(t)
+    sun_sign, sun_deg, sun_lon = get_sun_info(t)
+    moon_sign, moon_deg, moon_lon = get_moon_info(t)
+    # ハウス計算
+    import datetime as _dt
+    dt = _dt.datetime(birthday.year, birthday.month, birthday.day, birth_hour, birth_minute)
+    jd = _swe.julday(dt.year, dt.month, dt.day, dt.hour + dt.minute/60.0 - tz_offset)
+    house_cusps, ascmc = _swe.houses(jd, lat, lon, b'P')
+    houses = house_cusps
+    aspects = get_aspects(natal_longs)
+    return t, natal_longs, sun_sign, sun_deg, sun_lon, moon_sign, moon_deg, moon_lon, houses, aspects
+
+@st.cache_data(show_spinner=False)
+def _cached_chart(natal_longs_key, houses_key, time_unknown):
+    """チャート画像をキャッシュ"""
+    import io, json
+    natal_longs = json.loads(natal_longs_key)
+    houses = json.loads(houses_key)
+    from utils.chart import plot_horoscope
+    fig = plot_horoscope(natal_longs, houses, time_unknown=time_unknown)
+    buf = io.BytesIO()
+    fig.savefig(buf, format="png", dpi=150, bbox_inches="tight")
+    import matplotlib.pyplot as plt
+    plt.close(fig)
+    buf.seek(0)
+    return buf.getvalue()
 
 # JSONから読み込む関数（なければmessages.pyにフォールバック）
 def get_sun_message(sign):       return get_message("sun", sign) or _get_sun_message(sign)
@@ -149,13 +183,12 @@ def _render(container, user_info):
         btn_natal = st.button("🌙 ネイタルを見る", use_container_width=True, type="primary", key="btn_natal")
 
         if btn_natal:
-            # ===== 天文計算 =====
+            # ===== 天文計算（キャッシュ利用）=====
             time_unknown = user_info.get("time_unknown", False)
-            t_natal = make_ts_from_local(birthday, int(birth_hour), int(birth_minute), tz_offset)
-            natal_longs = get_body_longitudes_ts(t_natal)
-
-            sun_sign, sun_deg, sun_lon   = get_sun_info(t_natal)
-            moon_sign, moon_deg, moon_lon = get_moon_info(t_natal)
+            import json as _json
+            t_natal, natal_longs, sun_sign, sun_deg, sun_lon, moon_sign, moon_deg, moon_lon, _houses_raw, _aspects_raw = _cached_calc(
+                birthday.isoformat(), int(birth_hour), int(birth_minute), tz_offset, lat, lon
+            )
 
             sun     = natal_longs.get("太陽", sun_lon)
             moon    = natal_longs.get("月", moon_lon)
