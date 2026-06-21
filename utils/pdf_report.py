@@ -273,7 +273,7 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
     # ★ ホロスコープ画像
     # --------------------------------------------------------
     if chart_image_bytes:
-        img = Image(chart_image_bytes, width=120 * mm, height=120 * mm)
+        img = Image(chart_image_bytes, width=165 * mm, height=165 * mm)
         img.hAlign = 'CENTER'
         chart_title = "◆ 円形ホロスコープ（ソーラーチャート）" if user_data.get("time_unknown") else "◆ 円形ホロスコープ"
         chart_block = [
@@ -624,7 +624,7 @@ def create_transit_pdf(natal_data, transit_data, aspects, outer_planets, chart_i
     # ★ チャート（2重円）
     # --------------------------------------------------------
     if chart_image_bytes:
-        img = Image(chart_image_bytes, width=120 * mm, height=120 * mm)
+        img = Image(chart_image_bytes, width=165 * mm, height=165 * mm)
         img.hAlign = 'CENTER'
         story.append(Paragraph("◆ ホロスコープ（ネイタル＋トランジット）", STYLE_H1))
         story.append(Spacer(1, 4))
@@ -838,7 +838,7 @@ def create_compatibility_pdf(
     # ★ チャート
     # --------------------------------------------------------
     if chart_image_bytes:
-        img = Image(chart_image_bytes, width=120 * mm, height=120 * mm)
+        img = Image(chart_image_bytes, width=165 * mm, height=165 * mm)
         img.hAlign = 'CENTER'
         story.append(Paragraph("◆ ホロスコープ（2人の重ね表示）", STYLE_H1))
         story.append(Spacer(1, 4))

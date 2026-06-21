@@ -53,11 +53,11 @@ def plot_horoscope(natal_longitudes, houses, transit_longitudes=None, time_unkno
         math_deg = 180.0 + ((lon - asc) % 360)
         return np.deg2rad(math_deg)
 
-    fig, ax = plt.subplots(figsize=(10, 11))
+    fig, ax = plt.subplots(figsize=(11, 11))
     ax.set_aspect("equal")
     ax.axis("off")
-    ax.set_xlim(-1.05, 1.05)
-    ax.set_ylim(-1.45, 1.05)
+    ax.set_xlim(-1.10, 1.10)
+    ax.set_ylim(-1.35, 1.10)
     fig.patch.set_facecolor("#f5f3ff")
     ax.set_facecolor("#f5f3ff")
 
