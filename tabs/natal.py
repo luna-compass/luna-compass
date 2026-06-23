@@ -506,6 +506,7 @@ def _render(container, user_info):
                 "kw_mars":    _gkw("mars", mars_sign),
             }
 
+            # ===== 通常PDF =====
             pdf_buf = create_reading_pdf(user_data, chart_buf)
             st.download_button(
                 label="📄 鑑定書PDFをダウンロード",
@@ -514,6 +515,107 @@ def _render(container, user_info):
                 mime="application/pdf",
                 use_container_width=True,
             )
+
+            # ===== AI鑑定文生成 =====
+            st.markdown("---")
+            st.markdown("### 🤖 AI鑑定文生成")
+            st.caption("※ APIキーが設定されている場合のみ動作します。生成後に編集できます。")
+
+            if st.button("🤖 AI鑑定文を生成する", use_container_width=True, key="btn_ai_reading"):
+                import os, json as _json
+                api_key = os.environ.get("ANTHROPIC_API_KEY", "")
+                if not api_key:
+                    st.warning("APIキーが設定されていません。`.env` ファイルに `ANTHROPIC_API_KEY=sk-ant-...` を設定してください。")
+                else:
+                    with st.spinner("AI鑑定文を生成中..."):
+                        import requests as _req
+                        # プロンプト組み立て
+                        asc_info = f"ASC：{asc_sign} {format_degree(asc_deg_val)}" if not time_unknown else ""
+                        house_info = ""
+                        if not time_unknown:
+                            house_info = f"""
+ハウス配置：
+- 太陽：{planet_houses['太陽']}ハウス
+- 月：{planet_houses['月']}ハウス
+- 水星：{planet_houses['水星']}ハウス
+- 金星：{planet_houses['金星']}ハウス
+- 火星：{planet_houses['火星']}ハウス"""
+
+                        aspect_text = "、".join([f"{a['p1']}×{a['p2']} {a['type']}" for a in aspects[:6]])
+
+                        prompt = f"""あなたはプロの西洋占星術師です。
+以下のホロスコープデータをもとに、温かく個人的な日本語の鑑定文を書いてください。
+
+【鑑定対象】
+お名前：{name or 'あなた'}
+生年月日：{birthday.year}年{birthday.month}月{birthday.day}日
+{asc_info}
+
+【天体配置】
+太陽：{sun_sign} {format_degree(sun_deg)}
+月：{moon_sign} {format_degree(moon_deg)}
+水星：{mercury_sign} {format_degree(mercury_deg)}
+金星：{venus_sign} {format_degree(venus_deg)}
+火星：{mars_sign} {format_degree(mars_deg)}
+木星：{jupiter_sign}
+土星：{saturn_sign}
+{house_info}
+
+【主なアスペクト】
+{aspect_text}
+
+【数秘術】
+ライフパス：{life_path}
+
+【鑑定文の条件】
+- 温かく親しみやすい文体で
+- 本人の強みと可能性に焦点を当てて
+- 具体的なアドバイスを含めて
+- 400〜600文字程度で
+- 「あなた」と呼びかける形で書いてください"""
+
+                        try:
+                            resp = _req.post(
+                                "https://api.anthropic.com/v1/messages",
+                                headers={
+                                    "x-api-key": api_key,
+                                    "anthropic-version": "2023-06-01",
+                                    "content-type": "application/json",
+                                },
+                                json={
+                                    "model": "claude-sonnet-4-6",
+                                    "max_tokens": 1024,
+                                    "messages": [{"role": "user", "content": prompt}]
+                                },
+                                timeout=30
+                            )
+                            result = resp.json()
+                            ai_text = result["content"][0]["text"]
+                            st.session_state["ai_reading_text"] = ai_text
+                        except Exception as e:
+                            st.error(f"生成エラー：{e}")
+
+            # AI鑑定文の表示・編集・PDF出力
+            if "ai_reading_text" in st.session_state and st.session_state["ai_reading_text"]:
+                st.markdown("#### ✏️ 生成された鑑定文（編集可能）")
+                edited_text = st.text_area(
+                    "編集してからPDFに出力できます",
+                    value=st.session_state["ai_reading_text"],
+                    height=300,
+                    key="ai_reading_edit"
+                )
+                # AI鑑定文をPDFに入れてダウンロード
+                ai_user_data = dict(user_data)
+                ai_user_data["astrologer_message"] = edited_text
+                ai_pdf_buf = create_reading_pdf(ai_user_data, chart_buf)
+                st.download_button(
+                    label="📄 AI鑑定文入りPDFをダウンロード",
+                    data=ai_pdf_buf,
+                    file_name=f"luna_reading_AI_{name or 'guest'}.pdf",
+                    mime="application/pdf",
+                    use_container_width=True,
+                    key="dl_ai_pdf"
+                )
 
 
 def show(tab, user_info):
