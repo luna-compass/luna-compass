@@ -409,13 +409,14 @@ def _render(container, user_info):
                 elem = gt["element"]
                 planets_str = "・".join(gt["planets"])
                 signs_str = "・".join(gt["signs"])
-                elem_msg = {
+                elem_base = {
                     "火": "情熱・行動力・創造性が大きく調和しています。自然なエネルギーの流れで、才能が開花しやすい配置です。",
                     "地": "現実的な安定・忍耐・実行力が深く調和しています。着実に目標を実現する強い力を持っています。",
                     "風": "知性・コミュニケーション・自由な発想が調和しています。アイデアが自然に広がる才能があります。",
                     "水": "感情・共感・直感が深く調和しています。人の心を感じ取る繊細な感受性が大きな力になります。",
                     "混合": "異なるエネルギーが大きく調和した、ユニークなグランドトラインです。",
                 }.get(elem, "")
+                elem_msg = f"{planets_str}が{elem}のエレメントで大きな三角形を形成しています。{elem_base}"
                 st.markdown(f"""
 <div class='luna-message'>
 🔺 <b>グランドトライン（{elem}のエレメント）</b><br>
@@ -429,12 +430,13 @@ def _render(container, user_info):
                 mode = gc["mode"]
                 planets_str = "・".join(gc["planets"])
                 signs_str = "・".join(gc["signs"])
-                mode_msg = {
+                mode_base = {
                     "活動": "変化と行動のエネルギーが四方向から働いています。多くの課題に同時に向き合いながら、大きな成長を遂げる配置です。",
                     "固定": "強い意志と粘り強さが四方向から働いています。困難を乗り越えて、揺るぎない力を築く配置です。",
                     "柔軟": "適応力と変化への対応力が四方向から働いています。多様な状況に対処しながら、深い智慧を育てる配置です。",
                     "不定": "強烈なエネルギーが四方向から交差するグランドクロスです。大きな試練と同時に、大きな成長の機会があります。",
                 }.get(mode, "")
+                mode_msg = f"{planets_str}が{mode}モードで大きな十字を形成しています。{mode_base}"
                 st.markdown(f"""
 <div class='luna-message'>
 ✚ <b>グランドクロス（{mode}モード）</b><br>
@@ -456,8 +458,9 @@ def _render(container, user_info):
             mars_full = get_mars_message(mars_sign).split("\n")[0]
 
             overall_parts = []
+            name_display = (name + "さん") if name else "あなた"
             if not time_unknown:
-                overall_parts.append(f"{name or 'あなた'}は{asc_sign}のASCを持ち、{asc_full}")
+                overall_parts.append(f"{name_display}は{asc_sign}のASCを持ち、{asc_full}")
                 overall_parts.append(f"太陽は{sun_sign}の{planet_houses['太陽']}ハウスに位置し、{sun_full}")
                 overall_parts.append(f"月は{moon_sign}の{planet_houses['月']}ハウスにあり、{moon_full}")
             else:

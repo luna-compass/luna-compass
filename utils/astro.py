@@ -229,9 +229,11 @@ def detect_grand_trine(planets: dict, orb: float = 8.0) -> list:
     """
     グランドトライン（大三角）を検出する
     同じエレメントの3天体がそれぞれ120°を形成
+    同じエレメントが複数ある場合は最初の1つだけ返す
     返り値：[{"planets": [p1,p2,p3], "element": "火", "signs": [s1,s2,s3]}]
     """
     results = []
+    found_elements = {}  # 同じエレメントの重複を防ぐ（dict：エレメント→最優先候補）
     planet_list = list(planets.items())
 
     for i in range(len(planet_list)):
@@ -241,7 +243,6 @@ def detect_grand_trine(planets: dict, orb: float = 8.0) -> list:
                 p2, d2 = planet_list[j]
                 p3, d3 = planet_list[k]
 
-                # 3つの間のアスペクト差を確認
                 def diff(a, b):
                     d = abs(a - b) % 360
                     return d if d <= 180 else 360 - d
@@ -258,16 +259,30 @@ def detect_grand_trine(planets: dict, orb: float = 8.0) -> list:
                     s2 = _get_sign_from_lon(d2)
                     s3 = _get_sign_from_lon(d3)
 
-                    # エレメント確認
                     elems = set([ELEMENTS.get(s1), ELEMENTS.get(s2), ELEMENTS.get(s3)])
                     elem = elems.pop() if len(elems) == 1 else "混合"
 
-                    results.append({
-                        "planets": [p1, p2, p3],
-                        "element": elem,
-                        "signs": [s1, s2, s3],
-                    })
+                    personal = {"太陽", "月", "水星", "金星", "火星"}
+                    personal_count = sum(1 for p in [p1, p2, p3] if p in personal or p.replace("T_","") in personal)
 
+                    if elem not in found_elements:
+                        found_elements[elem] = {
+                            "planets": [p1, p2, p3],
+                            "element": elem,
+                            "signs": [s1, s2, s3],
+                            "personal_count": personal_count,
+                        }
+                    else:
+                        # 同じエレメントで個人天体が多い方を優先
+                        if personal_count > found_elements[elem]["personal_count"]:
+                            found_elements[elem] = {
+                                "planets": [p1, p2, p3],
+                                "element": elem,
+                                "signs": [s1, s2, s3],
+                                "personal_count": personal_count,
+                            }
+
+    results = list(found_elements.values())
     return results
 
 

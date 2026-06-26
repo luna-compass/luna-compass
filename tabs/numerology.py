@@ -126,8 +126,15 @@ def show(tab, user_info):
             st.write(f"ルーラー：{birthday.year} = {ruler_total} → {ruler_num}")
 
         st.markdown("---")
-        st.markdown(f"### 🌟 ライフパスナンバー：{life_path}")
-        st.caption("人生全体のテーマ・使命・歩むべき道")
+        st.markdown(f"""
+<div style='background: linear-gradient(135deg, #7c3aed, #a855f7); 
+     border-radius: 14px; padding: 14px 20px; margin: 10px 0;'>
+<span style='color: white; font-size: 20px; font-weight: 700;'>
+🌟 ライフパスナンバー：{life_path}
+</span><br>
+<span style='color: #e9d5ff; font-size: 12px;'>人生全体のテーマ・使命・歩むべき道</span>
+</div>
+""", unsafe_allow_html=True)
         lp = _get_lp_data(life_path)
         if lp:
             st.markdown(f"**{lp.get('title','')}**")
@@ -137,15 +144,29 @@ def show(tab, user_info):
             st.markdown(f"**🔑 キーワード：** {lp.get('keywords','')}")
 
         st.markdown("---")
-        st.markdown(f"### 🎂 バースデーナンバー：{birthday_num}")
-        st.caption("生まれ持った才能・自然に発揮できる力")
+        st.markdown(f"""
+<div style='background: linear-gradient(135deg, #7c3aed, #a855f7); 
+     border-radius: 14px; padding: 14px 20px; margin: 10px 0;'>
+<span style='color: white; font-size: 20px; font-weight: 700;'>
+🎂 バースデーナンバー：{birthday_num}
+</span><br>
+<span style='color: #e9d5ff; font-size: 12px;'>生まれ持った才能・自然に発揮できる力</span>
+</div>
+""", unsafe_allow_html=True)
         bd_msg = _get_birthday_msg(birthday_num)
         if bd_msg:
             st.markdown(f"<div class='luna-message'>{bd_msg}</div>", unsafe_allow_html=True)
 
         st.markdown("---")
-        st.markdown(f"### 👑 ルーラーナンバー：{ruler_num}")
-        st.caption("生まれた年が示す使命・人生のテーマ")
+        st.markdown(f"""
+<div style='background: linear-gradient(135deg, #7c3aed, #a855f7); 
+     border-radius: 14px; padding: 14px 20px; margin: 10px 0;'>
+<span style='color: white; font-size: 20px; font-weight: 700;'>
+👑 ルーラーナンバー：{ruler_num}
+</span><br>
+<span style='color: #e9d5ff; font-size: 12px;'>生まれた年が示す使命・人生のテーマ</span>
+</div>
+""", unsafe_allow_html=True)
         ruler_msg = _get_ruler_msg(ruler_num)
         if ruler_msg:
             st.markdown(f"<div class='luna-message'>{ruler_msg}</div>", unsafe_allow_html=True)
@@ -153,7 +174,8 @@ def show(tab, user_info):
         st.markdown("---")
         st.markdown("### 🌙 総合メッセージ")
         lp_data = _get_lp_data(life_path)
-        summary = f"{name or 'あなた'}の数字は ライフパス{life_path}・バースデー{birthday_num}・ルーラー{ruler_num} です。\n\n"
+        name_display = (name + "さん") if name else "あなた"
+        summary = f"{name_display}の数字は ライフパス{life_path}・バースデー{birthday_num}・ルーラー{ruler_num} です。\n\n"
         if lp_data:
             summary += f"人生のテーマは「{lp_data.get('keywords','')}」。{lp_data.get('message','')}"
         st.markdown(f"<div class='luna-message'>{summary}</div>", unsafe_allow_html=True)
