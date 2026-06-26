@@ -8,7 +8,8 @@ import swisseph as swe
 
 from utils.astro import (
     make_ts_from_local, get_sun_info, get_moon_info,
-    get_body_longitudes_ts, split_sign_degree, get_sign, ELEMENTS
+    get_body_longitudes_ts, split_sign_degree, get_sign, ELEMENTS,
+    detect_special_patterns
 )
 from utils.chart import plot_horoscope
 
@@ -375,6 +376,79 @@ def _render(container):
                 mime="image/png",
             )
 
+            # ===== 星座・惑星記号の見方（ホロスコープとセット） =====
+            with st.expander("🔍 ホロスコープの記号の見方"):
+                st.markdown("""
+**【星座記号の見方】**
+
+| 記号 | 星座 | 記号 | 星座 |
+|:---:|:---:|:---:|:---:|
+| ♈ | 牡羊座 | ♎ | 天秤座 |
+| ♉ | 牡牛座 | ♏ | 蠍座 |
+| ♊ | 双子座 | ♐ | 射手座 |
+| ♋ | 蟹座   | ♑ | 山羊座 |
+| ♌ | 獅子座 | ♒ | 水瓶座 |
+| ♍ | 乙女座 | ♓ | 魚座   |
+
+**【惑星略称の見方】**
+
+| 略称 | 惑星 | 略称 | 惑星 |
+|:---:|:---:|:---:|:---:|
+| Sun | 太陽 | Jup | 木星 |
+| Moon | 月 | Sat | 土星 |
+| Me | 水星 | Ur | 天王星 |
+| Ve | 金星 | Ne | 海王星 |
+| Ma | 火星 | Pl | 冥王星 |
+
+**【度数の見方】**
+例：`Sun:Gem5°` → 太陽が双子座5度にあります
+""")
+
+            # ===== グランドトライン・グランドクロス判定（2人合わせて） =====
+            combined_longs = {**longs1, **{f"B_{k}": v for k, v in longs2.items()}}
+            patterns = detect_special_patterns(longs1, longs2)
+            gt_combined = patterns["transit_grand_trine"]
+            gc_combined = patterns["transit_grand_cross"]
+
+            if gt_combined or gc_combined:
+                st.markdown("---")
+                st.markdown("### ✨ 2人の特別なパターン")
+
+            for gt in gt_combined:
+                elem = gt["element"]
+                planets_str = "・".join([p.replace("T_", f"{disp2}の") if p.startswith("T_") else f"{disp1}の{p}" for p in gt["planets"]])
+                elem_msg = {
+                    "火": "2人のエネルギーが火のエレメントで大きく調和しています。情熱・行動力・創造性が共鳴する素晴らしい組み合わせです。",
+                    "地": "2人のエネルギーが地のエレメントで大きく調和しています。安定・信頼・現実的な力が深く共鳴します。",
+                    "風": "2人のエネルギーが風のエレメントで大きく調和しています。知性・コミュニケーション・自由が共鳴する関係です。",
+                    "水": "2人のエネルギーが水のエレメントで大きく調和しています。感情・共感・直感が深く共鳴する魂の絆です。",
+                    "混合": "2人の天体が大きなグランドトラインを形成しています。",
+                }.get(elem, "")
+                st.markdown(f"""
+<div class='luna-message'>
+🔺 <b>2人のグランドトライン（{elem}のエレメント）</b><br>
+天体：{planets_str}<br><br>
+{elem_msg}
+</div>
+""", unsafe_allow_html=True)
+
+            for gc in gc_combined:
+                mode = gc["mode"]
+                planets_str = "・".join([p.replace("T_", f"{disp2}の") if p.startswith("T_") else f"{disp1}の{p}" for p in gc["planets"]])
+                mode_msg = {
+                    "活動": "2人の天体が活動サインで大きな十字を形成しています。お互いの課題が刺激し合い、大きな成長をもたらす関係です。",
+                    "固定": "2人の天体が固定サインで大きな十字を形成しています。強い意志を持つ者同士が向き合う、深い絆の関係です。",
+                    "柔軟": "2人の天体が柔軟サインで大きな十字を形成しています。お互いの適応力が試される、成長し合える関係です。",
+                    "不定": "2人の天体が大きなグランドクロスを形成しています。",
+                }.get(mode, "")
+                st.markdown(f"""
+<div class='luna-message'>
+✚ <b>2人のグランドクロス（{mode}モード）</b><br>
+天体：{planets_str}<br><br>
+{mode_msg}
+</div>
+""", unsafe_allow_html=True)
+
             # ===== ⑧相性鑑定書PDF =====
             st.markdown("---")
             st.markdown("### 📄 相性鑑定書PDFをダウンロード")
@@ -402,6 +476,10 @@ def _render(container):
                 overall=overall,
                 compat_note=compat_note,
                 chart_image_bytes=chart_buf,
+                overall_data={
+                    "grand_trines": gt_combined,
+                    "grand_crosses": gc_combined,
+                },
             )
             st.download_button(
                 label="📄 相性鑑定書PDFをダウンロード",

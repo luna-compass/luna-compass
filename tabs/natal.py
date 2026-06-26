@@ -10,7 +10,8 @@ from utils.astro import (
     make_ts_from_local, get_sun_info, get_moon_info,
     get_planet_signs_ts, get_body_longitudes_ts,
     split_sign_degree, get_aspects, get_sign,
-    simple_compare_message, format_degree
+    simple_compare_message, format_degree,
+    detect_special_patterns
 )
 from utils.messages import (
     get_sun_message as _get_sun_message,
@@ -267,6 +268,64 @@ def _render(container, user_info):
                 mime="image/png",
             )
 
+            # ===== 星座・惑星記号の見方 =====
+            with st.expander("🔍 ホロスコープの記号の見方"):
+                st.markdown("""
+**【星座記号の見方】**
+
+| 記号 | 星座 | 記号 | 星座 |
+|:---:|:---:|:---:|:---:|
+| ♈ | 牡羊座 | ♎ | 天秤座 |
+| ♉ | 牡牛座 | ♏ | 蠍座 |
+| ♊ | 双子座 | ♐ | 射手座 |
+| ♋ | 蟹座   | ♑ | 山羊座 |
+| ♌ | 獅子座 | ♒ | 水瓶座 |
+| ♍ | 乙女座 | ♓ | 魚座   |
+
+**【惑星略称の見方】**
+
+| 略称 | 惑星 | 略称 | 惑星 |
+|:---:|:---:|:---:|:---:|
+| Sun | 太陽 | Jup | 木星 |
+| Moon | 月 | Sat | 土星 |
+| Me | 水星 | Ur | 天王星 |
+| Ve | 金星 | Ne | 海王星 |
+| Ma | 火星 | Pl | 冥王星 |
+
+**【度数の見方】**
+例：`Sun:Gem5°` → 太陽が双子座5度にあります
+""")
+
+            # ===== ✨ キーワードサマリー =====
+            st.markdown("---")
+            st.markdown("### ✨ あなたのキーワード")
+            kw_asc_val     = _gkw("asc", asc_sign) if not time_unknown else ""
+            kw_sun_val     = _gkw("sun", sun_sign)
+            kw_moon_val    = _gkw("moon", moon_sign)
+            kw_mercury_val = _gkw("mercury", mercury_sign)
+            kw_venus_val   = _gkw("venus", venus_sign)
+            kw_mars_val    = _gkw("mars", mars_sign)
+
+            kw_items_disp = []
+            if kw_asc_val:
+                kw_items_disp.append(("第一印象", kw_asc_val))
+            if kw_sun_val:
+                kw_items_disp.append(("人生のテーマ", kw_sun_val))
+            if kw_moon_val:
+                kw_items_disp.append(("心が求めるもの", kw_moon_val))
+            if kw_mercury_val:
+                kw_items_disp.append(("思考スタイル", kw_mercury_val))
+            if kw_venus_val:
+                kw_items_disp.append(("愛のスタイル", kw_venus_val))
+            if kw_mars_val:
+                kw_items_disp.append(("行動スタイル", kw_mars_val))
+
+            kw_html = "<div class='luna-message'>"
+            for label, kw in kw_items_disp:
+                kw_html += f"<div style='margin-bottom:6px;'><span style='color:#7c3aed;font-weight:bold;'>{label}：</span>{kw}</div>"
+            kw_html += "</div>"
+            st.markdown(kw_html, unsafe_allow_html=True)
+
             # ===== ②ASC =====
             st.markdown("---")
             st.markdown("### ☺ 第一印象（ASC）")
@@ -330,11 +389,58 @@ def _render(container, user_info):
             else:
                 st.write("主要アスペクトはありません。")
 
-            # ===== ⑥総合メッセージ =====
+            # ===== グランドトライン・グランドクロス判定 =====
+            patterns = detect_special_patterns(natal_longs)
+            gt_natal = patterns["natal_grand_trine"]
+            gc_natal = patterns["natal_grand_cross"]
+
+            if gt_natal or gc_natal:
+                st.markdown("---")
+                st.markdown("### ✨ 特別なパターン（ネイタル）")
+
+            for gt in gt_natal:
+                elem = gt["element"]
+                planets_str = "・".join(gt["planets"])
+                signs_str = "・".join(gt["signs"])
+                elem_msg = {
+                    "火": "情熱・行動力・創造性が大きく調和しています。自然なエネルギーの流れで、才能が開花しやすい配置です。",
+                    "地": "現実的な安定・忍耐・実行力が深く調和しています。着実に目標を実現する強い力を持っています。",
+                    "風": "知性・コミュニケーション・自由な発想が調和しています。アイデアが自然に広がる才能があります。",
+                    "水": "感情・共感・直感が深く調和しています。人の心を感じ取る繊細な感受性が大きな力になります。",
+                    "混合": "異なるエネルギーが大きく調和した、ユニークなグランドトラインです。",
+                }.get(elem, "")
+                st.markdown(f"""
+<div class='luna-message'>
+🔺 <b>グランドトライン（{elem}のエレメント）</b><br>
+天体：{planets_str}<br>
+星座：{signs_str}<br><br>
+{elem_msg}
+</div>
+""", unsafe_allow_html=True)
+
+            for gc in gc_natal:
+                mode = gc["mode"]
+                planets_str = "・".join(gc["planets"])
+                signs_str = "・".join(gc["signs"])
+                mode_msg = {
+                    "活動": "変化と行動のエネルギーが四方向から働いています。多くの課題に同時に向き合いながら、大きな成長を遂げる配置です。",
+                    "固定": "強い意志と粘り強さが四方向から働いています。困難を乗り越えて、揺るぎない力を築く配置です。",
+                    "柔軟": "適応力と変化への対応力が四方向から働いています。多様な状況に対処しながら、深い智慧を育てる配置です。",
+                    "不定": "強烈なエネルギーが四方向から交差するグランドクロスです。大きな試練と同時に、大きな成長の機会があります。",
+                }.get(mode, "")
+                st.markdown(f"""
+<div class='luna-message'>
+✚ <b>グランドクロス（{mode}モード）</b><br>
+天体：{planets_str}<br>
+星座：{signs_str}<br><br>
+{mode_msg}
+</div>
+""", unsafe_allow_html=True)
+
+            # ===== 🌟 総合メッセージ =====
             st.markdown("---")
             st.markdown("### 🌟 総合メッセージ")
 
-            # ① 自動生成メッセージ（充実版）
             asc_full = get_asc_message(asc_sign).split("\n")[0]
             sun_full = get_sun_message(sun_sign).split("\n")[0]
             moon_full = get_moon_message(moon_sign).split("\n")[0]
@@ -342,7 +448,6 @@ def _render(container, user_info):
             venus_full = get_venus_message(venus_sign).split("\n")[0]
             mars_full = get_mars_message(mars_sign).split("\n")[0]
 
-            # シンプルな総合メッセージ
             overall_parts = []
             if not time_unknown:
                 overall_parts.append(f"{name or 'あなた'}は{asc_sign}のASCを持ち、{asc_full}")
@@ -362,42 +467,10 @@ def _render(container, user_info):
                 overall_parts.append(f"また、{a0['p1']}と{a0['p2']}の{a0['type']}が示すように、{asp_short}")
 
             overall_text = "\n".join(overall_parts)
+            summary = [overall_text]
 
             st.markdown("**⭐ 星が示すあなたのストーリー**")
             st.markdown(f"<div class='luna-message'>{overall_text.replace(chr(10), '<br>')}</div>", unsafe_allow_html=True)
-
-            summary = [overall_text]
-
-            # ===== ⑦PDF鑑定書ダウンロード =====
-            # ===== キーワードサマリー表示 =====
-            st.markdown("---")
-            st.markdown("### ✨ あなたのキーワード")
-            kw_asc_val     = _gkw("asc", asc_sign) if not time_unknown else ""
-            kw_sun_val     = _gkw("sun", sun_sign)
-            kw_moon_val    = _gkw("moon", moon_sign)
-            kw_mercury_val = _gkw("mercury", mercury_sign)
-            kw_venus_val   = _gkw("venus", venus_sign)
-            kw_mars_val    = _gkw("mars", mars_sign)
-
-            kw_items_disp = []
-            if kw_asc_val:
-                kw_items_disp.append(("第一印象", kw_asc_val))
-            if kw_sun_val:
-                kw_items_disp.append(("人生のテーマ", kw_sun_val))
-            if kw_moon_val:
-                kw_items_disp.append(("心が求めるもの", kw_moon_val))
-            if kw_mercury_val:
-                kw_items_disp.append(("思考スタイル", kw_mercury_val))
-            if kw_venus_val:
-                kw_items_disp.append(("愛のスタイル", kw_venus_val))
-            if kw_mars_val:
-                kw_items_disp.append(("行動スタイル", kw_mars_val))
-
-            kw_html = "<div class='luna-message'>"
-            for label, kw in kw_items_disp:
-                kw_html += f"<div style='margin-bottom:6px;'><span style='color:#7c3aed;font-weight:bold;'>{label}：</span>{kw}</div>"
-            kw_html += "</div>"
-            st.markdown(kw_html, unsafe_allow_html=True)
 
             st.markdown("---")
             st.markdown("### 📄 鑑定書PDFをダウンロード")
@@ -504,6 +577,8 @@ def _render(container, user_info):
                 "kw_mercury": _gkw("mercury", mercury_sign),
                 "kw_venus":   _gkw("venus", venus_sign),
                 "kw_mars":    _gkw("mars", mars_sign),
+                "grand_trines": detect_special_patterns(natal_longs)["natal_grand_trine"],
+                "grand_crosses": detect_special_patterns(natal_longs)["natal_grand_cross"],
             }
 
             # ===== 通常PDF =====

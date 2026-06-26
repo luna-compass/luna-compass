@@ -213,3 +213,131 @@ def simple_compare_message(natal_text, transit_text, label):
         f"{elem_msg}"
         f"ふだんとは少し違うアプローチで動くと、新しい流れが開けます。"
     )
+
+# ---------- グランドトライン・グランドクロス判定 ----------
+
+MODES = {
+    "活動": ["牡羊座", "蟹座", "天秤座", "山羊座"],
+    "固定": ["牡牛座", "獅子座", "蠍座", "水瓶座"],
+    "柔軟": ["双子座", "乙女座", "射手座", "魚座"],
+}
+
+def _get_sign_from_lon(lon_deg):
+    return SIGNS[int((lon_deg % 360) / 30)]
+
+def detect_grand_trine(planets: dict, orb: float = 8.0) -> list:
+    """
+    グランドトライン（大三角）を検出する
+    同じエレメントの3天体がそれぞれ120°を形成
+    返り値：[{"planets": [p1,p2,p3], "element": "火", "signs": [s1,s2,s3]}]
+    """
+    results = []
+    planet_list = list(planets.items())
+
+    for i in range(len(planet_list)):
+        for j in range(i+1, len(planet_list)):
+            for k in range(j+1, len(planet_list)):
+                p1, d1 = planet_list[i]
+                p2, d2 = planet_list[j]
+                p3, d3 = planet_list[k]
+
+                # 3つの間のアスペクト差を確認
+                def diff(a, b):
+                    d = abs(a - b) % 360
+                    return d if d <= 180 else 360 - d
+
+                d12 = diff(d1, d2)
+                d23 = diff(d2, d3)
+                d13 = diff(d1, d3)
+
+                if (abs(d12 - 120) <= orb and
+                    abs(d23 - 120) <= orb and
+                    abs(d13 - 120) <= orb):
+
+                    s1 = _get_sign_from_lon(d1)
+                    s2 = _get_sign_from_lon(d2)
+                    s3 = _get_sign_from_lon(d3)
+
+                    # エレメント確認
+                    elems = set([ELEMENTS.get(s1), ELEMENTS.get(s2), ELEMENTS.get(s3)])
+                    elem = elems.pop() if len(elems) == 1 else "混合"
+
+                    results.append({
+                        "planets": [p1, p2, p3],
+                        "element": elem,
+                        "signs": [s1, s2, s3],
+                    })
+
+    return results
+
+
+def detect_grand_cross(planets: dict, orb: float = 8.0) -> list:
+    """
+    グランドクロス（大十字）を検出する
+    4天体がスクエア×4＋オポジション×2を形成
+    返り値：[{"planets": [p1,p2,p3,p4], "mode": "活動", "signs": [...]}]
+    """
+    results = []
+    planet_list = list(planets.items())
+
+    for i in range(len(planet_list)):
+        for j in range(i+1, len(planet_list)):
+            for k in range(j+1, len(planet_list)):
+                for l in range(k+1, len(planet_list)):
+                    p1, d1 = planet_list[i]
+                    p2, d2 = planet_list[j]
+                    p3, d3 = planet_list[k]
+                    p4, d4 = planet_list[l]
+
+                    def diff(a, b):
+                        d = abs(a - b) % 360
+                        return d if d <= 180 else 360 - d
+
+                    pairs = [
+                        diff(d1, d2), diff(d1, d3), diff(d1, d4),
+                        diff(d2, d3), diff(d2, d4), diff(d3, d4)
+                    ]
+
+                    # グランドクロス：オポジション×2、スクエア×4
+                    opp_count = sum(1 for d in pairs if abs(d - 180) <= orb)
+                    sq_count = sum(1 for d in pairs if abs(d - 90) <= orb)
+
+                    if opp_count >= 2 and sq_count >= 4:
+                        s1 = _get_sign_from_lon(d1)
+                        s2 = _get_sign_from_lon(d2)
+                        s3 = _get_sign_from_lon(d3)
+                        s4 = _get_sign_from_lon(d4)
+
+                        # モード確認
+                        mode_found = "不定"
+                        for mode_name, mode_signs in MODES.items():
+                            matched = sum(1 for s in [s1,s2,s3,s4] if s in mode_signs)
+                            if matched >= 3:
+                                mode_found = mode_name
+                                break
+
+                        results.append({
+                            "planets": [p1, p2, p3, p4],
+                            "mode": mode_found,
+                            "signs": [s1, s2, s3, s4],
+                        })
+
+    return results
+
+
+def detect_special_patterns(natal: dict, transit: dict = None) -> dict:
+    """
+    ネイタル単体＋トランジット込みの両方でグランドトライン・グランドクロスを検出
+    """
+    results = {
+        "natal_grand_trine": detect_grand_trine(natal),
+        "natal_grand_cross": detect_grand_cross(natal),
+        "transit_grand_trine": [],
+        "transit_grand_cross": [],
+    }
+    if transit:
+        combined = {**natal, **{f"T_{k}": v for k, v in transit.items()}}
+        results["transit_grand_trine"] = detect_grand_trine(combined)
+        results["transit_grand_cross"] = detect_grand_cross(combined)
+
+    return results

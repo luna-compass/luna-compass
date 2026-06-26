@@ -289,6 +289,21 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
             ))
         story.append(KeepTogether(chart_block))
 
+        # 星座・惑星記号の見方
+        sign_legend_rows = [
+            [Paragraph("ホロスコープの記号の見方", S('sl', 10, PURPLE_DARK, True, 'CENTER', sb=4, sa=4))],
+            [Paragraph("♈牡羊 ♉牡牛 ♊双子 ♋蟹  ♌獅子 ♍乙女  ♎天秤 ♏蠍  ♐射手 ♑山羊 ♒水瓶 ♓魚", S('sl2', 8, PURPLE_DARK, False, 'CENTER', sb=2, sa=2))],
+            [Paragraph("Sun=太陽  Moon=月  Me=水星  Ve=金星  Ma=火星  Jup=木星  Sat=土星  Ur=天王星  Ne=海王星  Pl=冥王星", S('sl3', 8, TEXT_GRAY, False, 'CENTER', sb=2, sa=4))],
+        ]
+        sign_legend = Table(sign_legend_rows, colWidths=[165*mm])
+        sign_legend.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,-1), PURPLE_LIGHT),
+            ('BOX', (0,0), (-1,-1), 0.5, PURPLE_BORDER),
+            ('LEFTPADDING', (0,0), (-1,-1), 10),
+            ('RIGHTPADDING', (0,0), (-1,-1), 10),
+        ]))
+        story.append(sign_legend)
+        story.append(Spacer(1, 6))
         story.append(PageBreak())
 
     # --------------------------------------------------------
@@ -388,7 +403,75 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
             story.append(Paragraph(a.get("message", ""), STYLE_BODY))
             story.append(Spacer(1, 6))
 
-    story.append(PageBreak())  
+    # --------------------------------------------------------
+    # ★ グランドトライン・グランドクロス
+    # --------------------------------------------------------
+    grand_trines = user_data.get("grand_trines", [])
+    grand_crosses = user_data.get("grand_crosses", [])
+
+    if grand_trines or grand_crosses:
+        section("特別なパターン")
+
+        for gt in grand_trines:
+            elem = gt.get("element", "")
+            planets_str = "・".join(gt.get("planets", []))
+            signs_str = "・".join(gt.get("signs", []))
+            elem_msg = {
+                "火": "情熱・行動力・創造性が大きく調和しています。自然なエネルギーの流れで、才能が開花しやすい配置です。",
+                "地": "現実的な安定・忍耐・実行力が深く調和しています。着実に目標を実現する強い力を持っています。",
+                "風": "知性・コミュニケーション・自由な発想が調和しています。アイデアが自然に広がる才能があります。",
+                "水": "感情・共感・直感が深く調和しています。人の心を感じ取る繊細な感受性が大きな力になります。",
+                "混合": "異なるエネルギーが大きく調和した、ユニークなグランドトラインです。",
+            }.get(elem, "")
+            rows = [
+                [Paragraph(f"🔺 グランドトライン（{elem}のエレメント）", S('gt', 11, PURPLE_MID, True, sb=4, sa=4))],
+                [Paragraph(f"天体：{planets_str}", STYLE_BODY)],
+                [Paragraph(f"星座：{signs_str}", STYLE_BODY)],
+                [Spacer(1, 4)],
+                [Paragraph(elem_msg, STYLE_BODY)],
+            ]
+            card = Table(rows, colWidths=[165*mm])
+            card.setStyle(TableStyle([
+                ('BACKGROUND', (0,0), (-1,-1), PURPLE_LIGHT),
+                ('BOX', (0,0), (-1,-1), 0.5, PURPLE_MID),
+                ('LEFTPADDING', (0,0), (-1,-1), 14),
+                ('RIGHTPADDING', (0,0), (-1,-1), 14),
+                ('TOPPADDING', (0,0), (0,0), 10),
+                ('BOTTOMPADDING', (0,-1), (-1,-1), 10),
+            ]))
+            story.append(card)
+            story.append(Spacer(1, 12))
+
+        for gc in grand_crosses:
+            mode = gc.get("mode", "")
+            planets_str = "・".join(gc.get("planets", []))
+            signs_str = "・".join(gc.get("signs", []))
+            mode_msg = {
+                "活動": "変化と行動のエネルギーが四方向から働いています。多くの課題に同時に向き合いながら、大きな成長を遂げる配置です。",
+                "固定": "強い意志と粘り強さが四方向から働いています。困難を乗り越えて、揺るぎない力を築く配置です。",
+                "柔軟": "適応力と変化への対応力が四方向から働いています。多様な状況に対処しながら、深い智慧を育てる配置です。",
+                "不定": "強烈なエネルギーが四方向から交差するグランドクロスです。大きな試練と同時に、大きな成長の機会があります。",
+            }.get(mode, "")
+            rows = [
+                [Paragraph(f"✚ グランドクロス（{mode}モード）", S('gc', 11, PURPLE_MID, True, sb=4, sa=4))],
+                [Paragraph(f"天体：{planets_str}", STYLE_BODY)],
+                [Paragraph(f"星座：{signs_str}", STYLE_BODY)],
+                [Spacer(1, 4)],
+                [Paragraph(mode_msg, STYLE_BODY)],
+            ]
+            card = Table(rows, colWidths=[165*mm])
+            card.setStyle(TableStyle([
+                ('BACKGROUND', (0,0), (-1,-1), PURPLE_LIGHT),
+                ('BOX', (0,0), (-1,-1), 0.5, PURPLE_MID),
+                ('LEFTPADDING', (0,0), (-1,-1), 14),
+                ('RIGHTPADDING', (0,0), (-1,-1), 14),
+                ('TOPPADDING', (0,0), (0,0), 10),
+                ('BOTTOMPADDING', (0,-1), (-1,-1), 10),
+            ]))
+            story.append(card)
+            story.append(Spacer(1, 12))
+
+    story.append(PageBreak())
 
     # --------------------------------------------------------
     # ★ 数秘術
@@ -624,12 +707,30 @@ def create_transit_pdf(natal_data, transit_data, aspects, outer_planets, chart_i
     # ★ チャート（2重円）
     # --------------------------------------------------------
     if chart_image_bytes:
-        img = Image(chart_image_bytes, width=165 * mm, height=165 * mm)
+        img = Image(chart_image_bytes, width=150 * mm, height=150 * mm)
         img.hAlign = 'CENTER'
-        story.append(Paragraph("◆ ホロスコープ（ネイタル＋トランジット）", STYLE_H1))
-        story.append(Spacer(1, 4))
-        story.append(img)
-        story.append(Spacer(1, 8))
+        sign_legend_rows = [
+            [Paragraph("ホロスコープの記号の見方", S('sl', 10, PURPLE_DARK, True, 'CENTER', sb=4, sa=4))],
+            [Paragraph("♈牡羊 ♉牡牛 ♊双子 ♋蟹  ♌獅子 ♍乙女  ♎天秤 ♏蠍  ♐射手 ♑山羊 ♒水瓶 ♓魚", S('sl2', 8, PURPLE_DARK, False, 'CENTER', sb=2, sa=2))],
+            [Paragraph("Sun=太陽 Moon=月 Me=水星 Ve=金星 Ma=火星 Jup=木星 Sat=土星 Ur=天王星 Ne=海王星 Pl=冥王星", S('sl3', 8, TEXT_GRAY, False, 'CENTER', sb=2, sa=2))],
+            [Paragraph("▲マーク=トランジット（今日）の天体　●マーク=ネイタル（生まれた時）の天体", S('sl4', 8, TEXT_GRAY, False, 'CENTER', sb=2, sa=4))],
+        ]
+        sign_legend = Table(sign_legend_rows, colWidths=[165*mm])
+        sign_legend.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,-1), PURPLE_LIGHT),
+            ('BOX', (0,0), (-1,-1), 0.5, PURPLE_BORDER),
+            ('LEFTPADDING', (0,0), (-1,-1), 10),
+            ('RIGHTPADDING', (0,0), (-1,-1), 10),
+        ]))
+        chart_block = KeepTogether([
+            Paragraph("◆ ホロスコープ（ネイタル＋トランジット）", STYLE_H1),
+            Spacer(1, 4),
+            img,
+            Spacer(1, 6),
+            sign_legend,
+            Spacer(1, 6),
+        ])
+        story.append(chart_block)
         story.append(PageBreak())
 
     # --------------------------------------------------------
@@ -713,6 +814,70 @@ def create_transit_pdf(natal_data, transit_data, aspects, outer_planets, chart_i
     else:
         story.append(Paragraph("現在、主要なアスペクトはありません。", STYLE_BODY))
 
+    # --------------------------------------------------------
+    # ★ グランドトライン・グランドクロス（トランジット）
+    # --------------------------------------------------------
+    grand_trines = natal_data.get("grand_trines", [])
+    grand_crosses = natal_data.get("grand_crosses", [])
+
+    if grand_trines or grand_crosses:
+        section("特別なパターン")
+
+        for gt in grand_trines:
+            elem = gt.get("element", "")
+            planets_str = "・".join([p.replace("T_","トランジット") for p in gt.get("planets", [])])
+            elem_msg = {
+                "火": "情熱・行動・創造のエネルギーが大きく調和しています。積極的に動く絶好のタイミングです。",
+                "地": "安定・実行・現実化のエネルギーが調和しています。着実な行動が大きな実りを生みます。",
+                "風": "知性・表現・つながりのエネルギーが調和しています。発信や学びに最高のタイミングです。",
+                "水": "感情・直感・癒しのエネルギーが調和しています。感性を信じて動くと良い流れが生まれます。",
+                "混合": "今の天体の流れがあなたのチャートと大きなトラインを形成しています。",
+            }.get(elem, "")
+            rows = [
+                [Paragraph(f"🔺 グランドトライン（{elem}のエレメント）", S('gt', 11, PURPLE_MID, True, sb=4, sa=4))],
+                [Paragraph(f"天体：{planets_str}", STYLE_BODY)],
+                [Spacer(1, 4)],
+                [Paragraph(elem_msg, STYLE_BODY)],
+            ]
+            card = Table(rows, colWidths=[165*mm])
+            card.setStyle(TableStyle([
+                ('BACKGROUND', (0,0), (-1,-1), PURPLE_LIGHT),
+                ('BOX', (0,0), (-1,-1), 0.5, PURPLE_MID),
+                ('LEFTPADDING', (0,0), (-1,-1), 14),
+                ('RIGHTPADDING', (0,0), (-1,-1), 14),
+                ('TOPPADDING', (0,0), (0,0), 10),
+                ('BOTTOMPADDING', (0,-1), (-1,-1), 10),
+            ]))
+            story.append(card)
+            story.append(Spacer(1, 12))
+
+        for gc in grand_crosses:
+            mode = gc.get("mode", "")
+            planets_str = "・".join([p.replace("T_","トランジット") for p in gc.get("planets", [])])
+            mode_msg = {
+                "活動": "今の天体の流れがあなたのチャートと大きな十字を形成しています。多くのテーマと同時に向き合う時期ですが、乗り越えた先に大きな成長があります。",
+                "固定": "強固なエネルギーが今の流れで交差しています。粘り強さと忍耐が大きな力になります。",
+                "柔軟": "今の天体の流れが適応力を試す十字を形成しています。柔軟に対応することで突破口が開けます。",
+                "不定": "今の流れがあなたのチャートと強いグランドクロスを形成しています。",
+            }.get(mode, "")
+            rows = [
+                [Paragraph(f"✚ グランドクロス（{mode}モード）", S('gc', 11, PURPLE_MID, True, sb=4, sa=4))],
+                [Paragraph(f"天体：{planets_str}", STYLE_BODY)],
+                [Spacer(1, 4)],
+                [Paragraph(mode_msg, STYLE_BODY)],
+            ]
+            card = Table(rows, colWidths=[165*mm])
+            card.setStyle(TableStyle([
+                ('BACKGROUND', (0,0), (-1,-1), PURPLE_LIGHT),
+                ('BOX', (0,0), (-1,-1), 0.5, PURPLE_MID),
+                ('LEFTPADDING', (0,0), (-1,-1), 14),
+                ('RIGHTPADDING', (0,0), (-1,-1), 14),
+                ('TOPPADDING', (0,0), (0,0), 10),
+                ('BOTTOMPADDING', (0,-1), (-1,-1), 10),
+            ]))
+            story.append(card)
+            story.append(Spacer(1, 12))
+
     story.append(PageBreak())
 
     # --------------------------------------------------------
@@ -774,7 +939,7 @@ def create_transit_pdf(natal_data, transit_data, aspects, outer_planets, chart_i
 def create_compatibility_pdf(
     name1, birthday1, sun_sign1, moon_sign1, venus_sign1, mars_sign1,
     name2, birthday2, sun_sign2, moon_sign2, venus_sign2, mars_sign2,
-    overall, compat_note, chart_image_bytes=None
+    overall, compat_note, chart_image_bytes=None, overall_data=None
 ):
     import io as _io
 
@@ -838,12 +1003,29 @@ def create_compatibility_pdf(
     # ★ チャート
     # --------------------------------------------------------
     if chart_image_bytes:
-        img = Image(chart_image_bytes, width=165 * mm, height=165 * mm)
+        img = Image(chart_image_bytes, width=150 * mm, height=150 * mm)
         img.hAlign = 'CENTER'
-        story.append(Paragraph("◆ ホロスコープ（2人の重ね表示）", STYLE_H1))
-        story.append(Spacer(1, 4))
-        story.append(img)
-        story.append(Spacer(1, 8))
+        sign_legend_rows = [
+            [Paragraph("ホロスコープの記号の見方", S('sl', 10, PURPLE_DARK, True, 'CENTER', sb=4, sa=4))],
+            [Paragraph("♈牡羊 ♉牡牛 ♊双子 ♋蟹  ♌獅子 ♍乙女  ♎天秤 ♏蠍  ♐射手 ♑山羊 ♒水瓶 ♓魚", S('sl2', 8, PURPLE_DARK, False, 'CENTER', sb=2, sa=2))],
+            [Paragraph("Sun=太陽 Moon=月 Me=水星 Ve=金星 Ma=火星 Jup=木星 Sat=土星 Ur=天王星 Ne=海王星 Pl=冥王星", S('sl3', 8, TEXT_GRAY, False, 'CENTER', sb=2, sa=4))],
+        ]
+        sign_legend = Table(sign_legend_rows, colWidths=[165*mm])
+        sign_legend.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,-1), PURPLE_LIGHT),
+            ('BOX', (0,0), (-1,-1), 0.5, PURPLE_BORDER),
+            ('LEFTPADDING', (0,0), (-1,-1), 10),
+            ('RIGHTPADDING', (0,0), (-1,-1), 10),
+        ]))
+        chart_block = KeepTogether([
+            Paragraph("◆ ホロスコープ（2人の重ね表示）", STYLE_H1),
+            Spacer(1, 4),
+            img,
+            Spacer(1, 6),
+            sign_legend,
+            Spacer(1, 6),
+        ])
+        story.append(chart_block)
         story.append(PageBreak())
 
     # --------------------------------------------------------
@@ -886,6 +1068,70 @@ def create_compatibility_pdf(
         else:
             story.append(Paragraph(line, STYLE_BODY))
     story.append(Spacer(1, 12))
+
+    # --------------------------------------------------------
+    # ★ 2人の特別なパターン
+    # --------------------------------------------------------
+    grand_trines = overall_data.get("grand_trines", []) if isinstance(overall_data, dict) else []
+    grand_crosses = overall_data.get("grand_crosses", []) if isinstance(overall_data, dict) else []
+
+    if grand_trines or grand_crosses:
+        section("2人の特別なパターン")
+
+        for gt in grand_trines:
+            elem = gt.get("element", "")
+            planets_str = "・".join([p.replace("T_","相手の") for p in gt.get("planets", [])])
+            elem_msg = {
+                "火": "2人のエネルギーが火のエレメントで大きく調和しています。情熱・行動力・創造性が共鳴する素晴らしい組み合わせです。",
+                "地": "2人のエネルギーが地のエレメントで大きく調和しています。安定・信頼・現実的な力が深く共鳴します。",
+                "風": "2人のエネルギーが風のエレメントで大きく調和しています。知性・コミュニケーション・自由が共鳴する関係です。",
+                "水": "2人のエネルギーが水のエレメントで大きく調和しています。感情・共感・直感が深く共鳴する魂の絆です。",
+                "混合": "2人の天体が大きなグランドトラインを形成しています。",
+            }.get(elem, "")
+            rows = [
+                [Paragraph(f"2人のグランドトライン（{elem}のエレメント）", S('gt', 11, PURPLE_MID, True, sb=4, sa=4))],
+                [Paragraph(f"天体：{planets_str}", STYLE_BODY)],
+                [Spacer(1, 4)],
+                [Paragraph(elem_msg, STYLE_BODY)],
+            ]
+            card = Table(rows, colWidths=[165*mm])
+            card.setStyle(TableStyle([
+                ('BACKGROUND', (0,0), (-1,-1), PURPLE_LIGHT),
+                ('BOX', (0,0), (-1,-1), 0.5, PURPLE_MID),
+                ('LEFTPADDING', (0,0), (-1,-1), 14),
+                ('RIGHTPADDING', (0,0), (-1,-1), 14),
+                ('TOPPADDING', (0,0), (0,0), 10),
+                ('BOTTOMPADDING', (0,-1), (-1,-1), 10),
+            ]))
+            story.append(card)
+            story.append(Spacer(1, 12))
+
+        for gc in grand_crosses:
+            mode = gc.get("mode", "")
+            planets_str = "・".join([p.replace("T_","相手の") for p in gc.get("planets", [])])
+            mode_msg = {
+                "活動": "2人の天体が活動サインで大きな十字を形成しています。お互いの課題が刺激し合い、大きな成長をもたらす関係です。",
+                "固定": "2人の天体が固定サインで大きな十字を形成しています。強い意志を持つ者同士が向き合う、深い絆の関係です。",
+                "柔軟": "2人の天体が柔軟サインで大きな十字を形成しています。お互いの適応力が試される、成長し合える関係です。",
+                "不定": "2人の天体が大きなグランドクロスを形成しています。",
+            }.get(mode, "")
+            rows = [
+                [Paragraph(f"2人のグランドクロス（{mode}モード）", S('gc', 11, PURPLE_MID, True, sb=4, sa=4))],
+                [Paragraph(f"天体：{planets_str}", STYLE_BODY)],
+                [Spacer(1, 4)],
+                [Paragraph(mode_msg, STYLE_BODY)],
+            ]
+            card = Table(rows, colWidths=[165*mm])
+            card.setStyle(TableStyle([
+                ('BACKGROUND', (0,0), (-1,-1), PURPLE_LIGHT),
+                ('BOX', (0,0), (-1,-1), 0.5, PURPLE_MID),
+                ('LEFTPADDING', (0,0), (-1,-1), 14),
+                ('RIGHTPADDING', (0,0), (-1,-1), 14),
+                ('TOPPADDING', (0,0), (0,0), 10),
+                ('BOTTOMPADDING', (0,-1), (-1,-1), 10),
+            ]))
+            story.append(card)
+            story.append(Spacer(1, 12))
 
     # --------------------------------------------------------
     # ★ 総合メッセージ

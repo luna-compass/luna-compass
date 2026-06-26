@@ -9,7 +9,8 @@ import swisseph as swe
 from utils.astro import (
     make_ts_from_local, get_sun_info, get_moon_info,
     get_body_longitudes_ts, get_planet_signs_ts,
-    split_sign_degree, get_sign, simple_compare_message
+    split_sign_degree, get_sign, simple_compare_message,
+    detect_special_patterns
 )
 from utils.messages import (
     get_transit_aspect_message
@@ -113,7 +114,7 @@ def show(tab, user_info):
             st.caption("● ネイタル天体　▲ トランジット天体（青）")
             fig = plot_horoscope(natal_longs, houses, transit_longs)
             buf = io.BytesIO()
-            fig.savefig(buf, format="png", dpi=300, bbox_inches="tight")
+            fig.savefig(buf, format="png", dpi=150, bbox_inches="tight")  # 表示用はdpi=150で十分
             buf.seek(0)
             st.image(buf, use_container_width=True)
 
@@ -253,6 +254,92 @@ def show(tab, user_info):
             else:
                 st.write("現在、主要なアスペクトはありません。")
 
+            # ===== グランドトライン・グランドクロス判定（トランジット込み） =====
+            patterns = detect_special_patterns(natal_longs, transit_longs)
+            gt_natal = patterns["natal_grand_trine"]
+            gc_natal = patterns["natal_grand_cross"]
+            gt_transit = patterns["transit_grand_trine"]
+            gc_transit = patterns["transit_grand_cross"]
+
+            if gt_natal or gc_natal or gt_transit or gc_transit:
+                st.markdown("---")
+                st.markdown("### ✨ 特別なパターン")
+
+            for gt in gt_natal:
+                elem = gt["element"]
+                planets_str = "・".join(gt["planets"])
+                elem_msg = {
+                    "火": "情熱・行動力・創造性が大きく調和しています。",
+                    "地": "現実的な安定・忍耐・実行力が深く調和しています。",
+                    "風": "知性・コミュニケーション・自由な発想が調和しています。",
+                    "水": "感情・共感・直感が深く調和しています。",
+                    "混合": "異なるエネルギーが大きく調和したグランドトラインです。",
+                }.get(elem, "")
+                st.markdown(f"""
+<div class='luna-message'>
+🔺 <b>【ネイタル】グランドトライン（{elem}のエレメント）</b><br>
+天体：{planets_str}<br><br>
+{elem_msg}
+</div>
+""", unsafe_allow_html=True)
+
+            for gc in gc_natal:
+                mode = gc["mode"]
+                planets_str = "・".join(gc["planets"])
+                mode_msg = {
+                    "活動": "変化と行動のエネルギーが四方向から働いています。",
+                    "固定": "強い意志と粘り強さが四方向から働いています。",
+                    "柔軟": "適応力と変化への対応力が四方向から働いています。",
+                    "不定": "強烈なエネルギーが四方向から交差しています。",
+                }.get(mode, "")
+                st.markdown(f"""
+<div class='luna-message'>
+✚ <b>【ネイタル】グランドクロス（{mode}モード）</b><br>
+天体：{planets_str}<br><br>
+{mode_msg}
+</div>
+""", unsafe_allow_html=True)
+
+            for gt in gt_transit:
+                # ネイタルとの重複を除外
+                if gt in gt_natal:
+                    continue
+                elem = gt["element"]
+                planets_str = "・".join([p.replace("T_","トランジット") for p in gt["planets"]])
+                elem_msg = {
+                    "火": "情熱・行動・創造のエネルギーが今の流れで大きく調和しています。積極的に動く絶好のタイミングです。",
+                    "地": "安定・実行・現実化のエネルギーが今の流れで調和しています。着実な行動が大きな実りを生みます。",
+                    "風": "知性・表現・つながりのエネルギーが今の流れで調和しています。発信や学びに最高のタイミングです。",
+                    "水": "感情・直感・癒しのエネルギーが今の流れで調和しています。感性を信じて動くと良い流れが生まれます。",
+                    "混合": "今の天体の流れがあなたのチャートと大きなトラインを形成しています。",
+                }.get(elem, "")
+                st.markdown(f"""
+<div class='luna-message'>
+🔺 <b>【トランジット】グランドトライン（{elem}のエレメント）</b><br>
+天体：{planets_str}<br><br>
+{elem_msg}
+</div>
+""", unsafe_allow_html=True)
+
+            for gc in gc_transit:
+                if gc in gc_natal:
+                    continue
+                mode = gc["mode"]
+                planets_str = "・".join([p.replace("T_","トランジット") for p in gc["planets"]])
+                mode_msg = {
+                    "活動": "今の天体の流れがあなたのチャートと大きな十字を形成しています。多くのテーマと同時に向き合う時期ですが、乗り越えた先に大きな成長があります。",
+                    "固定": "強固なエネルギーが今の流れで交差しています。粘り強さと忍耐が大きな力になります。",
+                    "柔軟": "今の天体の流れが適応力を試す十字を形成しています。柔軟に対応することで突破口が開けます。",
+                    "不定": "今の流れがあなたのチャートと強いグランドクロスを形成しています。",
+                }.get(mode, "")
+                st.markdown(f"""
+<div class='luna-message'>
+✚ <b>【トランジット】グランドクロス（{mode}モード）</b><br>
+天体：{planets_str}<br><br>
+{mode_msg}
+</div>
+""", unsafe_allow_html=True)
+
             # ===== ⑥注目の外惑星 =====
             st.markdown("---")
             st.markdown("### 🪐 外惑星の動き")
@@ -386,16 +473,20 @@ def show(tab, user_info):
                 "flow_body": flow.get("body", ""),
             }
 
-            pdf_buf = create_transit_pdf(
-                natal_data_pdf, transit_data_pdf,
-                aspects_with_msg, outer_list, chart_buf
-            )
-
-            st.download_button(
-                label="📄 トランジット鑑定書をダウンロード",
-                data=pdf_buf,
-                file_name=f"luna_transit_{user_info.get('name', '')}_{transit_date}.pdf",
-                mime="application/pdf",
-                use_container_width=True,
-                key="dl_transit_pdf"
-            )
+            try:
+                pdf_buf = create_transit_pdf(
+                    natal_data_pdf, transit_data_pdf,
+                    aspects_with_msg, outer_list, chart_buf
+                )
+                st.download_button(
+                    label="📄 トランジット鑑定書をダウンロード",
+                    data=pdf_buf,
+                    file_name=f"luna_transit_{user_info.get('name', '')}_{transit_date}.pdf",
+                    mime="application/pdf",
+                    use_container_width=True,
+                    key="dl_transit_pdf"
+                )
+            except Exception as e:
+                st.error(f"PDF生成エラー: {e}")
+                import traceback
+                st.code(traceback.format_exc())
