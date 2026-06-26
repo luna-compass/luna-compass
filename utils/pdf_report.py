@@ -191,6 +191,32 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
     story.append(Spacer(1, 8))
 
     # --------------------------------------------------------
+    # ★ 鑑定書の読み方ガイド
+    # --------------------------------------------------------
+    guide_rows = [
+        [Paragraph("この鑑定書について", S('gt', 10, PURPLE_DARK, True, 'CENTER', sb=4, sa=4))],
+        [Paragraph(
+            "本鑑定書は「占星術・数秘術・タロット」の3つの視点からお届けする総合鑑定書です。"
+            "まず最初にキーワードと総合メッセージをご覧ください。"
+            "その後、各天体・アスペクト・数秘術と順にお読みいただくと、"
+            "あなたの全体像がより深く理解できます。"
+            "最後のタロットは「今このときのあなたへのメッセージ」としてお受け取りください。",
+            S('gb', 9, TEXT_DARK, False, 'LEFT', sb=2, sa=4)
+        )],
+    ]
+    guide_table = Table(guide_rows, colWidths=[165*mm])
+    guide_table.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,-1), PURPLE_LIGHT),
+        ('BOX', (0,0), (-1,-1), 0.5, PURPLE_BORDER),
+        ('LEFTPADDING', (0,0), (-1,-1), 12),
+        ('RIGHTPADDING', (0,0), (-1,-1), 12),
+        ('TOPPADDING', (0,0), (0,0), 8),
+        ('BOTTOMPADDING', (0,-1), (-1,-1), 8),
+    ]))
+    story.append(guide_table)
+    story.append(Spacer(1, 8))
+
+    # --------------------------------------------------------
     # ★ キーワードサマリー
     # --------------------------------------------------------
     kw_asc     = user_data.get("kw_asc", "")
@@ -416,15 +442,16 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
             elem = gt.get("element", "")
             planets_str = "・".join(gt.get("planets", []))
             signs_str = "・".join(gt.get("signs", []))
-            elem_msg = {
+            elem_base = {
                 "火": "情熱・行動力・創造性が大きく調和しています。自然なエネルギーの流れで、才能が開花しやすい配置です。",
                 "地": "現実的な安定・忍耐・実行力が深く調和しています。着実に目標を実現する強い力を持っています。",
                 "風": "知性・コミュニケーション・自由な発想が調和しています。アイデアが自然に広がる才能があります。",
                 "水": "感情・共感・直感が深く調和しています。人の心を感じ取る繊細な感受性が大きな力になります。",
                 "混合": "異なるエネルギーが大きく調和した、ユニークなグランドトラインです。",
             }.get(elem, "")
+            elem_msg = f"{planets_str}が{elem}のエレメントで大きな三角形を形成しています。{elem_base}"
             rows = [
-                [Paragraph(f"🔺 グランドトライン（{elem}のエレメント）", S('gt', 11, PURPLE_MID, True, sb=4, sa=4))],
+                [Paragraph(f"グランドトライン（{elem}のエレメント）", S('gt', 11, PURPLE_MID, True, sb=4, sa=4))],
                 [Paragraph(f"天体：{planets_str}", STYLE_BODY)],
                 [Paragraph(f"星座：{signs_str}", STYLE_BODY)],
                 [Spacer(1, 4)],
@@ -854,14 +881,15 @@ def create_transit_pdf(natal_data, transit_data, aspects, outer_planets, chart_i
         for gc in grand_crosses:
             mode = gc.get("mode", "")
             planets_str = "・".join([p.replace("T_","トランジット") for p in gc.get("planets", [])])
-            mode_msg = {
+            mode_base = {
                 "活動": "今の天体の流れがあなたのチャートと大きな十字を形成しています。多くのテーマと同時に向き合う時期ですが、乗り越えた先に大きな成長があります。",
                 "固定": "強固なエネルギーが今の流れで交差しています。粘り強さと忍耐が大きな力になります。",
                 "柔軟": "今の天体の流れが適応力を試す十字を形成しています。柔軟に対応することで突破口が開けます。",
                 "不定": "今の流れがあなたのチャートと強いグランドクロスを形成しています。",
             }.get(mode, "")
+            mode_msg = f"{planets_str}が{mode}モードで大きな十字を形成しています。{mode_base}"
             rows = [
-                [Paragraph(f"✚ グランドクロス（{mode}モード）", S('gc', 11, PURPLE_MID, True, sb=4, sa=4))],
+                [Paragraph(f"グランドクロス（{mode}モード）", S('gc', 11, PURPLE_MID, True, sb=4, sa=4))],
                 [Paragraph(f"天体：{planets_str}", STYLE_BODY)],
                 [Spacer(1, 4)],
                 [Paragraph(mode_msg, STYLE_BODY)],

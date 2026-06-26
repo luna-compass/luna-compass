@@ -49,8 +49,14 @@ def get_aspects_transit(natal_planets, transit_planets):
                         "type": asp_name,
                         "orb": abs(diff - asp_angle)
                     })
-    # オーブが小さい順（正確な順）にソート
-    aspects.sort(key=lambda x: x["orb"])
+    # 優先度順に並び替え（個人天体優先→アスペクト強度順→オーブ順）
+    PERSONAL = {"太陽", "月", "水星", "金星", "火星"}
+    ASPECT_PRIO = {"コンジャンクション":0,"オポジション":1,"スクエア":2,"トライン":3,"セクスタイル":4}
+    aspects.sort(key=lambda x: (
+        (0 if x["natal"] in PERSONAL else 1) + (0 if x["transit"] in PERSONAL else 1),
+        ASPECT_PRIO.get(x["type"], 5),
+        x["orb"]
+    ))
     return aspects
 
 
@@ -300,13 +306,14 @@ def show(tab, user_info):
             for gt in gt_natal:
                 elem = gt["element"]
                 planets_str = "・".join(gt["planets"])
-                elem_msg = {
+                elem_base = {
                     "火": "情熱・行動力・創造性が大きく調和しています。",
                     "地": "現実的な安定・忍耐・実行力が深く調和しています。",
                     "風": "知性・コミュニケーション・自由な発想が調和しています。",
                     "水": "感情・共感・直感が深く調和しています。",
                     "混合": "異なるエネルギーが大きく調和したグランドトラインです。",
                 }.get(elem, "")
+                elem_msg = f"{planets_str}が{elem}のエレメントで大きな三角形を形成しています。{elem_base}"
                 st.markdown(f"""
 <div class='luna-message'>
 🔺 <b>【ネイタル】グランドトライン（{elem}のエレメント）</b><br>
@@ -318,12 +325,13 @@ def show(tab, user_info):
             for gc in gc_natal:
                 mode = gc["mode"]
                 planets_str = "・".join(gc["planets"])
-                mode_msg = {
+                mode_base = {
                     "活動": "変化と行動のエネルギーが四方向から働いています。",
                     "固定": "強い意志と粘り強さが四方向から働いています。",
                     "柔軟": "適応力と変化への対応力が四方向から働いています。",
                     "不定": "強烈なエネルギーが四方向から交差しています。",
                 }.get(mode, "")
+                mode_msg = f"{planets_str}が{mode}モードで大きな十字を形成しています。{mode_base}"
                 st.markdown(f"""
 <div class='luna-message'>
 ✚ <b>【ネイタル】グランドクロス（{mode}モード）</b><br>
@@ -333,18 +341,18 @@ def show(tab, user_info):
 """, unsafe_allow_html=True)
 
             for gt in gt_transit:
-                # ネイタルとの重複を除外
                 if gt in gt_natal:
                     continue
                 elem = gt["element"]
                 planets_str = "・".join([p.replace("T_","トランジット") for p in gt["planets"]])
-                elem_msg = {
+                elem_base = {
                     "火": "情熱・行動・創造のエネルギーが今の流れで大きく調和しています。積極的に動く絶好のタイミングです。",
                     "地": "安定・実行・現実化のエネルギーが今の流れで調和しています。着実な行動が大きな実りを生みます。",
                     "風": "知性・表現・つながりのエネルギーが今の流れで調和しています。発信や学びに最高のタイミングです。",
                     "水": "感情・直感・癒しのエネルギーが今の流れで調和しています。感性を信じて動くと良い流れが生まれます。",
                     "混合": "今の天体の流れがあなたのチャートと大きなトラインを形成しています。",
                 }.get(elem, "")
+                elem_msg = f"{planets_str}が{elem}のエレメントで大きな三角形を形成しています。{elem_base}"
                 st.markdown(f"""
 <div class='luna-message'>
 🔺 <b>【トランジット】グランドトライン（{elem}のエレメント）</b><br>
@@ -358,12 +366,13 @@ def show(tab, user_info):
                     continue
                 mode = gc["mode"]
                 planets_str = "・".join([p.replace("T_","トランジット") for p in gc["planets"]])
-                mode_msg = {
+                mode_base = {
                     "活動": "今の天体の流れがあなたのチャートと大きな十字を形成しています。多くのテーマと同時に向き合う時期ですが、乗り越えた先に大きな成長があります。",
                     "固定": "強固なエネルギーが今の流れで交差しています。粘り強さと忍耐が大きな力になります。",
                     "柔軟": "今の天体の流れが適応力を試す十字を形成しています。柔軟に対応することで突破口が開けます。",
                     "不定": "今の流れがあなたのチャートと強いグランドクロスを形成しています。",
                 }.get(mode, "")
+                mode_msg = f"{planets_str}が{mode}モードで大きな十字を形成しています。{mode_base}"
                 st.markdown(f"""
 <div class='luna-message'>
 ✚ <b>【トランジット】グランドクロス（{mode}モード）</b><br>
