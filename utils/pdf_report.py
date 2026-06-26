@@ -546,22 +546,16 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
     lp_num = user_data.get("life_path", "")
     lp_msg = user_data.get("life_path_message", "")
 
-    lp_title_rows = [
-        [Paragraph(f"🌟 ライフパスナンバー {lp_num}　～人生のテーマ・使命～",
-            S('lpt', 12, colors.white, True, sb=0, sa=2))],
-        [Paragraph("人生全体のテーマ・使命・歩むべき道",
-            S('lps', 9, colors.HexColor("#e9d5ff"), False, sb=0, sa=0))],
-    ]
-    lp_title_table = Table(lp_title_rows, colWidths=[165*mm])
-    lp_title_table.setStyle(TableStyle([
-        ('BACKGROUND', (0,0), (-1,-1), colors.HexColor('#a78bfa')),
-        ('LEFTPADDING', (0,0), (-1,-1), 12),
-        ('RIGHTPADDING', (0,0), (-1,-1), 12),
-        ('TOPPADDING', (0,0), (0,0), 10),
-        ('BOTTOMPADDING', (0,-1), (-1,-1), 10),
-    ]))
-    story.append(lp_title_table)
-    story.append(Spacer(1, 8))
+    story.append(Spacer(1, 10))
+    story.append(Paragraph(
+        f"🌟 ライフパスナンバー {lp_num}　～人生のテーマ・使命～",
+        S('lpt', 14, TEXT_DARK, True, sb=0, sa=2)
+    ))
+    story.append(Paragraph(
+        "人生全体のテーマ・使命・歩むべき道",
+        S('lps', 9, TEXT_GRAY, False, sb=0, sa=0)
+    ))
+    story.append(HRFlowable(width="100%", thickness=1, color=PURPLE_BORDER, spaceBefore=6, spaceAfter=8))
 
     if lp_msg:
         for line in lp_msg.split("\n"):
@@ -589,21 +583,18 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
 }
         bd_num_int = int(bd_num) if str(bd_num).isdigit() else 0
         bd_subtitle = NUM_TITLES.get(bd_num_int, "")
-        bd_title_rows = [
-            [Paragraph(f"🎂 バースデーナンバー {bd_num}　～生まれ持った才能～",
-                S('bdt', 12, colors.white, True, sb=0, sa=2))],
-            [Paragraph("生まれ持った才能・自然に発揮できる力",
-                S('bds', 9, colors.HexColor("#e9d5ff"), False, sb=0, sa=0))],
+        bd_block = [
+            Spacer(1, 10),
+            Paragraph(
+                f"🎂 バースデーナンバー {bd_num}　～生まれ持った才能～",
+                S('bdt', 14, TEXT_DARK, True, sb=0, sa=2)
+            ),
+            Paragraph(
+                "生まれ持った才能・自然に発揮できる力",
+                S('bds', 9, TEXT_GRAY, False, sb=0, sa=0)
+            ),
+            HRFlowable(width="100%", thickness=1, color=PURPLE_BORDER, spaceBefore=6, spaceAfter=8),
         ]
-        bd_title_table = Table(bd_title_rows, colWidths=[165*mm])
-        bd_title_table.setStyle(TableStyle([
-            ('BACKGROUND', (0,0), (-1,-1), PURPLE_MID),
-            ('LEFTPADDING', (0,0), (-1,-1), 12),
-            ('RIGHTPADDING', (0,0), (-1,-1), 12),
-            ('TOPPADDING', (0,0), (0,0), 10),
-            ('BOTTOMPADDING', (0,-1), (-1,-1), 10),
-        ]))
-        bd_block = [bd_title_table, Spacer(1, 8)]
         if bd_subtitle:
             bd_block.append(Paragraph(f"{bd_num}：{bd_subtitle}", STYLE_H2))
         for line in bd_msg.split("\n"):
@@ -631,21 +622,18 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
 }
         rl_num_int = int(rl_num) if str(rl_num).isdigit() else 0
         rl_subtitle = NUM_TITLES.get(rl_num_int, "")
-        rl_title_rows = [
-            [Paragraph(f"👑 ルーラーナンバー {rl_num}　～生まれた年の使命～",
-                S('rlt', 12, colors.white, True, sb=0, sa=2))],
-            [Paragraph("生まれた年が示す使命・人生のテーマ",
-                S('rls', 9, colors.HexColor("#e9d5ff"), False, sb=0, sa=0))],
+        rl_block = [
+            Spacer(1, 10),
+            Paragraph(
+                f"👑 ルーラーナンバー {rl_num}　～生まれた年の使命～",
+                S('rlt', 14, TEXT_DARK, True, sb=0, sa=2)
+            ),
+            Paragraph(
+                "生まれた年が示す使命・人生のテーマ",
+                S('rls', 9, TEXT_GRAY, False, sb=0, sa=0)
+            ),
+            HRFlowable(width="100%", thickness=1, color=PURPLE_BORDER, spaceBefore=6, spaceAfter=8),
         ]
-        rl_title_table = Table(rl_title_rows, colWidths=[165*mm])
-        rl_title_table.setStyle(TableStyle([
-            ('BACKGROUND', (0,0), (-1,-1), PURPLE_MID),
-            ('LEFTPADDING', (0,0), (-1,-1), 12),
-            ('RIGHTPADDING', (0,0), (-1,-1), 12),
-            ('TOPPADDING', (0,0), (0,0), 10),
-            ('BOTTOMPADDING', (0,-1), (-1,-1), 10),
-        ]))
-        rl_block = [rl_title_table, Spacer(1, 8)]
         if rl_subtitle:
             rl_block.append(Paragraph(f"{rl_num}：{rl_subtitle}", STYLE_H2))
         for line in rl_msg.split("\n"):
