@@ -377,10 +377,17 @@ def _render(container, user_info):
             }
             OUTER_PLANETS = {"天王星", "海王星", "冥王星"}
             aspects_raw = get_aspects(aspect_planets)
-            aspects = [
+            aspects_filtered = [
                 a for a in aspects_raw
                 if not (a["p1"] in OUTER_PLANETS and a["p2"] in OUTER_PLANETS)
             ]
+            # 優先度順に並び替え（個人天体優先→アスペクト強度順）
+            PERSONAL = {"太陽", "月", "水星", "金星", "火星"}
+            ASPECT_PRIO = {"コンジャンクション":0,"オポジション":1,"スクエア":2,"トライン":3,"セクスタイル":4}
+            aspects = sorted(aspects_filtered, key=lambda a: (
+                (0 if a["p1"] in PERSONAL else 1) + (0 if a["p2"] in PERSONAL else 1),
+                ASPECT_PRIO.get(a["type"], 5)
+            ))
             st.markdown("### 🔷 アスペクト（天体の関係性）")
             if aspects:
                 for a in aspects:
