@@ -57,7 +57,7 @@ def plot_horoscope(natal_longitudes, houses, transit_longitudes=None, time_unkno
     ax.set_aspect("equal")
     ax.axis("off")
     ax.set_xlim(-1.10, 1.10)
-    ax.set_ylim(-1.35, 1.10)
+    ax.set_ylim(-1.20, 1.10)
     fig.patch.set_facecolor("#f5f3ff")
     ax.set_facecolor("#f5f3ff")
 
@@ -182,7 +182,7 @@ def plot_horoscope(natal_longitudes, houses, transit_longitudes=None, time_unkno
             tx, ty = lon_to_xy(deg, 0.85)
             ax.plot(tx, ty, "^", color="blue", markersize=8, alpha=0.6, zorder=4)
 
-    # 凡例
+    # 凡例（英語略称＋星座略称＋度数）
     row1, row2 = [], []
     for i, name in enumerate(PLANET_ORDER):
         if name not in natal_longitudes:
@@ -194,20 +194,14 @@ def plot_horoscope(natal_longitudes, houses, transit_longitudes=None, time_unkno
         if i < 5: row1.append(entry)
         else: row2.append(entry)
 
-    ax.text(0, -1.12, "  |  ".join(row1), ha="center", va="center",
+    ax.text(0, -1.06, "  |  ".join(row1), ha="center", va="center",
             fontsize=13, color="#1a202c", fontweight="bold",
             bbox=dict(boxstyle="round,pad=0.5", facecolor="white",
                       edgecolor="#7c3aed", linewidth=2.0))
-    ax.text(0, -1.26, "  |  ".join(row2), ha="center", va="center",
+    ax.text(0, -1.15, "  |  ".join(row2), ha="center", va="center",
             fontsize=13, color="#1a202c", fontweight="bold",
             bbox=dict(boxstyle="round,pad=0.5", facecolor="white",
                       edgecolor="#7c3aed", linewidth=2.0))
-
-    # 星座記号凡例
-    legend_text = "♈Ari ♉Tau ♊Gem ♋Can ♌Leo ♍Vir  ♎Lib ♏Sco ♐Sag ♑Cap ♒Aqu ♓Pis"
-    ax.text(0, -1.38, legend_text, ha="center", va="center",
-            fontsize=10, color="#4c1d95",
-            bbox=dict(boxstyle="round,pad=0.4", facecolor="#f5f3ff",
-                      edgecolor="#a78bfa", linewidth=1.0))
+    # ※星座記号行は下のボックス（st.markdown）で日本語対応表を表示
 
     return fig
