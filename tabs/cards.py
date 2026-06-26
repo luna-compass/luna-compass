@@ -5,7 +5,7 @@ import streamlit as st
 import random
 from pathlib import Path
 from PIL import Image
-from utils.messages_loader import get_message
+from utils.messages_loader import get_message, get_tarot_message as _get_tarot_msg
 
 # ---------- カードデータ ----------
 ASSET_DIR = Path("assets/tarot")
@@ -96,10 +96,22 @@ _TAROT_REVERSE_DEFAULT = {
 }
 
 def _get_base_msg(card_key):
-    return get_message("tarot_base", card_key) or _TAROT_BASE_DEFAULT.get(card_key, "")
+    """正位置メッセージを取得（JSONのtarotセクション→フォールバック）"""
+    card_name_jp = TAROT_NAME_JP.get(card_key, "")
+    if card_name_jp:
+        tarot_data = _get_tarot_msg(card_name_jp, "正位置")
+        if tarot_data and isinstance(tarot_data, dict):
+            return tarot_data.get("message", "")
+    return _TAROT_BASE_DEFAULT.get(card_key, "")
 
 def _get_reverse_msg(card_key):
-    return get_message("tarot_reverse", card_key) or _TAROT_REVERSE_DEFAULT.get(card_key, "")
+    """逆位置メッセージを取得（JSONのtarotセクション→フォールバック）"""
+    card_name_jp = TAROT_NAME_JP.get(card_key, "")
+    if card_name_jp:
+        tarot_data = _get_tarot_msg(card_name_jp, "逆位置")
+        if tarot_data and isinstance(tarot_data, dict):
+            return tarot_data.get("message", "")
+    return _TAROT_REVERSE_DEFAULT.get(card_key, "")
 
 def draw_card():
     card_key, filename = random.choice(cards)

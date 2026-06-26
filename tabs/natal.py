@@ -253,12 +253,12 @@ def _render(container, user_info):
             st.markdown("### 🌙 円形ホロスコープ")
             fig = plot_horoscope(natal_longs, houses, time_unknown=time_unknown)
             buf = io.BytesIO()
-            fig.savefig(buf, format="png", dpi=300, bbox_inches="tight")
+            fig.savefig(buf, format="png", dpi=150, bbox_inches="tight")  # 表示用はdpi=150で十分
             buf.seek(0)
             st.image(buf, use_container_width=True)
 
             buf2 = io.BytesIO()
-            fig.savefig(buf2, format="png", bbox_inches="tight")
+            fig.savefig(buf2, format="png", dpi=150, bbox_inches="tight")  # ダウンロード用もdpi=150
             buf2.seek(0)
             st.download_button(
                 label="☁ ホロスコープ画像をダウンロード",

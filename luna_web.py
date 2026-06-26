@@ -2,6 +2,11 @@ import streamlit as st
 import datetime
 import pandas as pd
 
+# ---------- 起動時キャッシュウォームアップ ----------
+# JSONファイルを起動時に読み込んでおくことで、1回目のボタン操作を高速化する
+from utils.messages_loader import _load as _warmup_messages
+_warmup_messages()
+
 # ---------- ページ設定 ----------
 st.set_page_config(
     page_title="Luna 占星術 Web版",

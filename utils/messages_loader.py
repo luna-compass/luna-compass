@@ -36,6 +36,27 @@ def get_summary_keyword(planet, sign):
     data = _load()
     return data.get("summary_master", {}).get(planet, {}).get(sign, "")
 
+def get_house_planet_message(house_num, planet_name):
+    """ハウス×惑星のメッセージをJSONから取得
+    house_num: int（例: 1）
+    planet_name: str（例: '太陽'）
+    """
+    data = _load()
+    house_planet = data.get("house_planet", {})
+    key = f"{house_num}|{planet_name}"
+    return house_planet.get(key, "")
+
+def get_transit_aspect_message(transit_planet, natal_planet, aspect):
+    """トランジットアスペクトメッセージをJSONから取得
+    transit_planet: str（例: '木星'）
+    natal_planet: str（例: '太陽'）
+    aspect: str（例: 'コンジャンクション'）
+    """
+    data = _load()
+    transit = data.get("transit_aspects", {})
+    key = f"{transit_planet}|{natal_planet}|{aspect}"
+    return transit.get(key, "")
+
 def get_tarot_message(card_name, position):
     """タロットメッセージをJSONから取得（正位置・逆位置対応）"""
     data = _load()

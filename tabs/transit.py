@@ -113,7 +113,7 @@ def show(tab, user_info):
             st.caption("● ネイタル天体　▲ トランジット天体（青）")
             fig = plot_horoscope(natal_longs, houses, transit_longs)
             buf = io.BytesIO()
-            fig.savefig(buf, format="png", dpi=300, bbox_inches="tight")
+            fig.savefig(buf, format="png", dpi=150, bbox_inches="tight")  # 表示用はdpi=150で十分
             buf.seek(0)
             st.image(buf, use_container_width=True)
 

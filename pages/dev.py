@@ -193,5 +193,17 @@ natal.show(tab1, user_info)
 transit.show(tab2, user_info)
 compatibility.show(tab3)
 numerology.show(tab4, user_info)
-cards.show(tab5)
+
+with tab5:
+    tab_tarot1, tab_tarot2, tab_tarot3, tab_tarot4 = st.tabs([
+        "🔮 1枚引き",
+        "🔮 3枚引き（過去・現在・未来）",
+        "🔮 ケルト十字（10枚）",
+        "🌙 ホロスコープ（12枚）",
+    ])
+    cards.show_single(tab_tarot1)
+    cards.show_three(tab_tarot2)
+    cards.show_celtic(tab_tarot3)
+    cards.show_horoscope_spread(tab_tarot4)
+
 guide.show(tab6)
