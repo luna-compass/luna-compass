@@ -4,8 +4,8 @@ import pandas as pd
 
 # ---------- 起動時キャッシュウォームアップ ----------
 # JSONファイルを起動時に読み込んでおくことで、1回目のボタン操作を高速化する
-from utils.messages_loader import _load as _warmup_messages
-_warmup_messages()
+from utils.messages_loader import reload as _reload_messages
+_reload_messages()  # 毎回リロードして最新JSONを確実に読み込む
 
 # ---------- ページ設定 ----------
 st.set_page_config(
@@ -246,17 +246,19 @@ elif st.session_state["menu_selected"] == "tarot":
 
     from tabs import cards
 
-    tab_tarot1, tab_tarot2, tab_tarot3, tab_tarot4 = st.tabs([
+    tab_tarot1, tab_tarot2, tab_tarot3, tab_tarot4, tab_tarot5 = st.tabs([
         "🔮 1枚引き",
         "🔮 3枚引き（過去・現在・未来）",
         "🔮 ケルト十字（10枚）",
         "🌙 ホロスコープ（12枚）",
+        "💕 相性タロット",
     ])
 
     cards.show_single(tab_tarot1)
     cards.show_three(tab_tarot2)
     cards.show_celtic(tab_tarot3)
     cards.show_horoscope_spread(tab_tarot4)
+    cards.show_compat_tarot(tab_tarot5)
 
 # ---------- 易占い ----------
 elif st.session_state["menu_selected"] == "iching":

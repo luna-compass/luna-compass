@@ -169,6 +169,50 @@ def show(tab, user_info):
         )
         if st.button("🔢 数字の相性を見る", key="btn_num_compat"):
             other_lp = calc_life_path(other_birthday)
-            st.write(f"あなたのライフパス：**{life_path}**　相手のライフパス：**{other_lp}**")
-            compat_msg = get_number_compat(life_path, other_lp)
-            st.markdown(f"<div class='luna-message'>{compat_msg}</div>", unsafe_allow_html=True)
+            other_bd = calc_birthday_number(other_birthday)
+            other_rl = calc_ruler_number(other_birthday)
+
+            st.markdown("#### 📊 2人の数字")
+            col_a, col_b = st.columns(2)
+            with col_a:
+                st.markdown("**あなた**")
+                st.metric("ライフパス", life_path)
+                st.metric("バースデー", birthday_num)
+                st.metric("ルーラー", ruler_num)
+            with col_b:
+                st.markdown("**相手**")
+                st.metric("ライフパス", other_lp)
+                st.metric("バースデー", other_bd)
+                st.metric("ルーラー", other_rl)
+
+            st.markdown("---")
+            st.markdown("#### 🌟 ライフパスの相性（人生テーマの相性）")
+            lp_msg = get_number_compat(life_path, other_lp)
+            st.write(f"あなた：**{life_path}**　×　相手：**{other_lp}**")
+            st.markdown(f"<div class='luna-message'>{lp_msg}</div>", unsafe_allow_html=True)
+
+            st.markdown("#### 🎂 バースデーの相性（才能・個性の相性）")
+            bd_msg = get_number_compat(birthday_num, other_bd)
+            st.write(f"あなた：**{birthday_num}**　×　相手：**{other_bd}**")
+            st.markdown(f"<div class='luna-message'>{bd_msg}</div>", unsafe_allow_html=True)
+
+            st.markdown("#### 👑 ルーラーの相性（使命・エネルギーの相性）")
+            rl_msg = get_number_compat(ruler_num, other_rl)
+            st.write(f"あなた：**{ruler_num}**　×　相手：**{other_rl}**")
+            st.markdown(f"<div class='luna-message'>{rl_msg}</div>", unsafe_allow_html=True)
+
+            st.markdown("---")
+            st.markdown("#### 💫 総合数秘術相性メッセージ")
+            good_count = sum([
+                1 for n1, n2 in [(life_path, other_lp), (birthday_num, other_bd), (ruler_num, other_rl)]
+                if n1 == n2 or abs(n1-n2) <= 2 or (min(n1,n2), max(n1,n2)) in COMPATIBILITY_NUMBERS
+            ])
+            if good_count == 3:
+                overall = "3つの数字すべてが調和しています✨ 魂レベルで深くつながれる、非常に稀な組み合わせです。"
+            elif good_count == 2:
+                overall = "2つの数字が調和しています😊 共鳴する部分が多く、自然に理解し合える相性です。"
+            elif good_count == 1:
+                overall = "1つの数字が調和しています🌟 違いを活かし合うことで、お互いを高め合える関係です。"
+            else:
+                overall = "数字の個性が異なります💫 違いが多い分、刺激し合い、共に成長できる関係です。"
+            st.markdown(f"<div class='luna-message'>{overall}</div>", unsafe_allow_html=True)

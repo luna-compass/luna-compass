@@ -11,6 +11,9 @@ from utils.astro import (
     get_body_longitudes_ts, split_sign_degree, get_sign, ELEMENTS,
     detect_special_patterns
 )
+from tabs.numerology import (
+    calc_life_path, calc_birthday_number, calc_ruler_number, get_number_compat
+)
 from utils.chart import plot_horoscope
 
 
@@ -465,6 +468,55 @@ def _render(container):
                 f"【総合】{overall}"
             )
 
+            # ===== 数秘術相性 =====
+            lp1 = calc_life_path(bday1)
+            bd1 = calc_birthday_number(bday1)
+            rl1 = calc_ruler_number(bday1)
+            lp2 = calc_life_path(bday2)
+            bd2 = calc_birthday_number(bday2)
+            rl2 = calc_ruler_number(bday2)
+
+            st.markdown("---")
+            st.markdown("### 🔢 数秘術の相性")
+
+            col_n1, col_n2 = st.columns(2)
+            with col_n1:
+                st.markdown(f"**{disp1}**")
+                st.metric("ライフパス", lp1)
+                st.metric("バースデー", bd1)
+                st.metric("ルーラー", rl1)
+            with col_n2:
+                st.markdown(f"**{disp2}**")
+                st.metric("ライフパス", lp2)
+                st.metric("バースデー", bd2)
+                st.metric("ルーラー", rl2)
+
+            st.markdown("**🌟 ライフパスの相性（人生テーマ）**")
+            lp_msg = get_number_compat(lp1, lp2)
+            st.markdown(f"<div class='luna-message'>{lp_msg}</div>", unsafe_allow_html=True)
+
+            st.markdown("**🎂 バースデーの相性（才能・個性）**")
+            bd_msg = get_number_compat(bd1, bd2)
+            st.markdown(f"<div class='luna-message'>{bd_msg}</div>", unsafe_allow_html=True)
+
+            st.markdown("**👑 ルーラーの相性（使命・エネルギー）**")
+            rl_msg = get_number_compat(rl1, rl2)
+            st.markdown(f"<div class='luna-message'>{rl_msg}</div>", unsafe_allow_html=True)
+
+            good_count = sum([
+                1 for n1, n2 in [(lp1,lp2),(bd1,bd2),(rl1,rl2)]
+                if n1==n2 or abs(n1-n2)<=2
+            ])
+            if good_count == 3:
+                num_overall = "3つの数字すべてが調和しています✨ 魂レベルで深くつながれる、非常に稀な組み合わせです。"
+            elif good_count == 2:
+                num_overall = "2つの数字が調和しています😊 共鳴する部分が多く、自然に理解し合える相性です。"
+            elif good_count == 1:
+                num_overall = "1つの数字が調和しています🌟 違いを活かし合うことで、お互いを高め合える関係です。"
+            else:
+                num_overall = "数字の個性が異なります💫 違いが多い分、刺激し合い、共に成長できる関係です。"
+            st.markdown(f"<div class='luna-message'>{num_overall}</div>", unsafe_allow_html=True)
+
             from utils.pdf_report import create_compatibility_pdf
             pdf_buf = create_compatibility_pdf(
                 name1=disp1, birthday1=bday1,
@@ -479,6 +531,11 @@ def _render(container):
                 overall_data={
                     "grand_trines": gt_combined,
                     "grand_crosses": gc_combined,
+                    "num_lp1": lp1, "num_bd1": bd1, "num_rl1": rl1,
+                    "num_lp2": lp2, "num_bd2": bd2, "num_rl2": rl2,
+                    "num_lp_msg": lp_msg, "num_bd_msg": bd_msg,
+                    "num_rl_msg": rl_msg, "num_overall": num_overall,
+                    "name1": disp1, "name2": disp2,
                 },
             )
             st.download_button(

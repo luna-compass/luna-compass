@@ -96,21 +96,26 @@ _TAROT_REVERSE_DEFAULT = {
 }
 
 def _get_base_msg(card_key):
-    """正位置メッセージを取得（JSONのtarotセクション→フォールバック）"""
+    """正位置メッセージを取得（JSONのtarotセクション優先）"""
+    from utils.messages_loader import reload as _reload_cache
     card_name_jp = TAROT_NAME_JP.get(card_key, "")
     if card_name_jp:
         tarot_data = _get_tarot_msg(card_name_jp, "正位置")
         if tarot_data and isinstance(tarot_data, dict):
-            return tarot_data.get("message", "")
+            msg = tarot_data.get("message", "")
+            if msg:
+                return msg
     return _TAROT_BASE_DEFAULT.get(card_key, "")
 
 def _get_reverse_msg(card_key):
-    """逆位置メッセージを取得（JSONのtarotセクション→フォールバック）"""
+    """逆位置メッセージを取得（JSONのtarotセクション優先）"""
     card_name_jp = TAROT_NAME_JP.get(card_key, "")
     if card_name_jp:
         tarot_data = _get_tarot_msg(card_name_jp, "逆位置")
         if tarot_data and isinstance(tarot_data, dict):
-            return tarot_data.get("message", "")
+            msg = tarot_data.get("message", "")
+            if msg:
+                return msg
     return _TAROT_REVERSE_DEFAULT.get(card_key, "")
 
 def draw_card():
@@ -427,6 +432,82 @@ def draw_horoscope_spread():
             "is_reversed": is_reversed,
         })
     return result
+
+
+def show_compat_tarot(tab=None, name1="あなた", name2="相手"):
+    """相性用タロット（2枚引き：あなた・相手）＋関係性の1枚"""
+    import contextlib
+    ctx = tab if tab is not None else contextlib.nullcontext()
+    with ctx:
+        st.markdown("### 🔮 相性タロット")
+        st.caption("2人の関係性をタロットで読み解きます")
+
+        col_btn, col_reset = st.columns([3, 1])
+        with col_btn:
+            draw_btn = st.button("🃏 相性タロットを引く", key="card_compat_draw")
+        with col_reset:
+            reset_btn = st.button("🔄 引き直す", key="card_compat_reset")
+
+        if reset_btn and "compat_tarot_result" in st.session_state:
+            del st.session_state["compat_tarot_result"]
+
+        if draw_btn or "compat_tarot_result" not in st.session_state and draw_btn:
+            st.session_state["compat_tarot_result"] = {
+                "card1": draw_card(),
+                "card2": draw_card(),
+                "card3": draw_card(),
+            }
+
+        if "compat_tarot_result" in st.session_state:
+            d = st.session_state["compat_tarot_result"]
+            card1_name, card1_msg, card1_img, is_rev1 = d["card1"]
+            card2_name, card2_msg, card2_img, is_rev2 = d["card2"]
+            card3_name, card3_msg, card3_img, is_rev3 = d["card3"]
+
+            st.markdown("---")
+            col1, col2 = st.columns(2)
+
+            with col1:
+                st.markdown(f"#### 🌟 {name1}のカード")
+                img_path = Path(card1_img) if card1_img else None
+                if img_path and img_path.exists():
+                    img = load_card_image(img_path, is_rev1)
+                    if img:
+                        st.image(img, width=220)
+                st.markdown(f"**{card1_name}**")
+                st.markdown(f"<div class='luna-message'>{card1_msg}</div>", unsafe_allow_html=True)
+
+            with col2:
+                st.markdown(f"#### 🌙 {name2}のカード")
+                img_path = Path(card2_img) if card2_img else None
+                if img_path and img_path.exists():
+                    img = load_card_image(img_path, is_rev2)
+                    if img:
+                        st.image(img, width=220)
+                st.markdown(f"**{card2_name}**")
+                st.markdown(f"<div class='luna-message'>{card2_msg}</div>", unsafe_allow_html=True)
+
+            st.markdown("---")
+            st.markdown("#### 💕 2人の関係性を示すカード")
+            img_path = Path(card3_img) if card3_img else None
+            if img_path and img_path.exists():
+                col_a, col_b, col_c = st.columns([2, 3, 2])
+                with col_b:
+                    img = load_card_image(img_path, is_rev3)
+                    if img:
+                        st.image(img, width=300)
+            st.markdown(f"**{card3_name}**")
+            st.markdown(f"<div class='luna-message'>{card3_msg}</div>", unsafe_allow_html=True)
+
+            st.markdown("---")
+            st.markdown("#### ✨ 総合メッセージ")
+            summary = (
+                name1 + "には" + card1_name + "のエネルギーが示されています。"
+                + name2 + "には" + card2_name + "のエネルギーが示されています。"
+                + "2人の関係性を示すカードは" + card3_name + "。"
+                + "このカードが2人の間に流れるエネルギーのテーマを示しています。"
+            )
+            st.markdown(f"<div class='luna-message'>{summary}</div>", unsafe_allow_html=True)
 
 
 def show_horoscope_spread(tab):

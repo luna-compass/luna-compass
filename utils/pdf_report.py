@@ -729,12 +729,33 @@ def create_transit_pdf(natal_data, transit_data, aspects, outer_planets, chart_i
     ]))
     story.append(t)
     story.append(Spacer(1, 12))
+    # --------------------------------------------------------
+    # ★ 鑑定書の読み方ガイド
+    # --------------------------------------------------------
+    guide_rows = [
+        [Paragraph(
+            "【この鑑定書について】ネイタルチャートに今日の天体（トランジット）がどう影響しているかをお伝えします。"
+            "アスペクトで今の流れを、外惑星の動きで大きなテーマをご確認ください。",
+            S('gb', 8, PURPLE_DARK, False, 'LEFT', sb=2, sa=2)
+        )],
+    ]
+    guide_table = Table(guide_rows, colWidths=[165*mm])
+    guide_table.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,-1), PURPLE_LIGHT),
+        ('BOX', (0,0), (-1,-1), 0.5, PURPLE_BORDER),
+        ('LEFTPADDING', (0,0), (-1,-1), 10),
+        ('RIGHTPADDING', (0,0), (-1,-1), 10),
+        ('TOPPADDING', (0,0), (0,0), 6),
+        ('BOTTOMPADDING', (0,-1), (-1,-1), 6),
+    ]))
+    story.append(guide_table)
+    story.append(Spacer(1, 6))
 
     # --------------------------------------------------------
     # ★ チャート（2重円）
     # --------------------------------------------------------
     if chart_image_bytes:
-        img = Image(chart_image_bytes, width=150 * mm, height=150 * mm)
+        img = Image(chart_image_bytes, width=130 * mm, height=130 * mm)
         img.hAlign = 'CENTER'
         sign_legend_rows = [
             [Paragraph("ホロスコープの記号の見方", S('sl', 10, PURPLE_DARK, True, 'CENTER', sb=4, sa=4))],
@@ -1026,12 +1047,34 @@ def create_compatibility_pdf(
     ]))
     story.append(t)
     story.append(Spacer(1, 12))
+    # --------------------------------------------------------
+    # ★ 鑑定書の読み方ガイド
+    # --------------------------------------------------------
+    guide_rows = [
+        [Paragraph(
+            "【この鑑定書について】2人の星の配置から相性を読み解く総合相性鑑定書です。"
+            "太陽・月・金星×火星の相性でお二人の本質的なつながりを、"
+            "グランドトライン等の特別なパターンにもぜひご注目ください。",
+            S('gb', 8, PURPLE_DARK, False, 'LEFT', sb=2, sa=2)
+        )],
+    ]
+    guide_table = Table(guide_rows, colWidths=[165*mm])
+    guide_table.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,-1), PURPLE_LIGHT),
+        ('BOX', (0,0), (-1,-1), 0.5, PURPLE_BORDER),
+        ('LEFTPADDING', (0,0), (-1,-1), 10),
+        ('RIGHTPADDING', (0,0), (-1,-1), 10),
+        ('TOPPADDING', (0,0), (0,0), 6),
+        ('BOTTOMPADDING', (0,-1), (-1,-1), 6),
+    ]))
+    story.append(guide_table)
+    story.append(Spacer(1, 6))
 
     # --------------------------------------------------------
     # ★ チャート
     # --------------------------------------------------------
     if chart_image_bytes:
-        img = Image(chart_image_bytes, width=150 * mm, height=150 * mm)
+        img = Image(chart_image_bytes, width=130 * mm, height=130 * mm)
         img.hAlign = 'CENTER'
         sign_legend_rows = [
             [Paragraph("ホロスコープの記号の見方", S('sl', 10, PURPLE_DARK, True, 'CENTER', sb=4, sa=4))],
@@ -1160,6 +1203,65 @@ def create_compatibility_pdf(
             ]))
             story.append(card)
             story.append(Spacer(1, 12))
+
+    # --------------------------------------------------------
+    # ★ 数秘術の相性
+    # --------------------------------------------------------
+    num_lp1 = overall_data.get("num_lp1") if isinstance(overall_data, dict) else None
+    if num_lp1 is not None:
+        section("数秘術の相性")
+        num_lp2 = overall_data.get("num_lp2")
+        num_bd1 = overall_data.get("num_bd1")
+        num_bd2 = overall_data.get("num_bd2")
+        num_rl1 = overall_data.get("num_rl1")
+        num_rl2 = overall_data.get("num_rl2")
+        num_lp_msg = overall_data.get("num_lp_msg", "")
+        num_bd_msg = overall_data.get("num_bd_msg", "")
+        num_rl_msg = overall_data.get("num_rl_msg", "")
+        num_overall = overall_data.get("num_overall", "")
+        n1 = overall_data.get("name1", "お相手1")
+        n2 = overall_data.get("name2", "お相手2")
+
+        # 数字一覧テーブル
+        num_info = [
+            [Paragraph("", STYLE_BODY),
+             Paragraph(str(n1), S('h', 10, PURPLE_DARK, True)),
+             Paragraph(str(n2), S('h', 10, PURPLE_DARK, True))],
+            [Paragraph("ライフパス", S('h', 9, PURPLE_DARK, True)),
+             Paragraph(str(num_lp1), S('v', 11, PURPLE_MID, True, 'CENTER')),
+             Paragraph(str(num_lp2), S('v', 11, PURPLE_MID, True, 'CENTER'))],
+            [Paragraph("バースデー", S('h', 9, PURPLE_DARK, True)),
+             Paragraph(str(num_bd1), S('v', 11, PURPLE_MID, True, 'CENTER')),
+             Paragraph(str(num_bd2), S('v', 11, PURPLE_MID, True, 'CENTER'))],
+            [Paragraph("ルーラー", S('h', 9, PURPLE_DARK, True)),
+             Paragraph(str(num_rl1), S('v', 11, PURPLE_MID, True, 'CENTER')),
+             Paragraph(str(num_rl2), S('v', 11, PURPLE_MID, True, 'CENTER'))],
+        ]
+        num_table = Table(num_info, colWidths=[40*mm, 60*mm, 60*mm])
+        num_table.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (0,-1), PURPLE_LIGHT),
+            ('BACKGROUND', (0,0), (-1,0), PURPLE_LIGHT),
+            ('BOX', (0,0), (-1,-1), 0.5, PURPLE_BORDER),
+            ('INNERGRID', (0,0), (-1,-1), 0.3, PURPLE_BORDER),
+            ('TOPPADDING', (0,0), (-1,-1), 5),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 5),
+            ('ALIGN', (1,0), (-1,-1), 'CENTER'),
+        ]))
+        story.append(num_table)
+        story.append(Spacer(1, 10))
+
+        for label, msg in [
+            ("ライフパスの相性（人生テーマ）", num_lp_msg),
+            ("バースデーの相性（才能・個性）", num_bd_msg),
+            ("ルーラーの相性（使命・エネルギー）", num_rl_msg),
+        ]:
+            story.append(Paragraph(f"◇ {label}", STYLE_H3))
+            story.append(Paragraph(msg, STYLE_BODY))
+            story.append(Spacer(1, 6))
+
+        story.append(Paragraph("◇ 総合数秘術相性", STYLE_H3))
+        story.append(Paragraph(num_overall, STYLE_BODY))
+        story.append(Spacer(1, 10))
 
     # --------------------------------------------------------
     # ★ 総合メッセージ
