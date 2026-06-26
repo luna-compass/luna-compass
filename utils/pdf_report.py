@@ -29,7 +29,7 @@ for _path in _FONT_PATHS:
 # -----------------------------
 # 色
 # -----------------------------
-PURPLE_DARK   = colors.HexColor("#5b21b6")
+PURPLE_DARK   = colors.HexColor("#7c3aed")
 PURPLE_MID    = colors.HexColor("#7c3aed")
 PURPLE_LIGHT  = colors.HexColor("#f3f0ff")
 PURPLE_BORDER = colors.HexColor("#c4b5fd")
@@ -554,7 +554,7 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
     ]
     lp_title_table = Table(lp_title_rows, colWidths=[165*mm])
     lp_title_table.setStyle(TableStyle([
-        ('BACKGROUND', (0,0), (-1,-1), colors.HexColor('#8b5cf6')),
+        ('BACKGROUND', (0,0), (-1,-1), colors.HexColor('#a78bfa')),
         ('LEFTPADDING', (0,0), (-1,-1), 12),
         ('RIGHTPADDING', (0,0), (-1,-1), 12),
         ('TOPPADDING', (0,0), (0,0), 10),
