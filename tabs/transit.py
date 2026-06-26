@@ -306,6 +306,12 @@ def show(tab, user_info):
             for gt in gt_natal:
                 elem = gt["element"]
                 planets_str = "・".join(gt["planets"])
+                elem_signs_note = {
+                    "火": "（牡羊座・獅子座・射手座のエレメント）",
+                    "地": "（牡牛座・乙女座・山羊座のエレメント）",
+                    "風": "（双子座・天秤座・水瓶座のエレメント）",
+                    "水": "（蟹座・蠍座・魚座のエレメント）",
+                }.get(elem, "")
                 elem_base = {
                     "火": "情熱・行動力・創造性が大きく調和しています。",
                     "地": "現実的な安定・忍耐・実行力が深く調和しています。",
@@ -316,7 +322,7 @@ def show(tab, user_info):
                 elem_msg = f"{planets_str}が{elem}のエレメントで大きな三角形を形成しています。{elem_base}"
                 st.markdown(f"""
 <div class='luna-message'>
-🔺 <b>【ネイタル】グランドトライン（{elem}のエレメント）</b><br>
+🔺 <b>【ネイタル】グランドトライン（{elem}のエレメント）{elem_signs_note}</b><br>
 天体：{planets_str}<br><br>
 {elem_msg}
 </div>
@@ -345,6 +351,12 @@ def show(tab, user_info):
                     continue
                 elem = gt["element"]
                 planets_str = "・".join([p.replace("T_","トランジット") for p in gt["planets"]])
+                elem_signs_note = {
+                    "火": "（牡羊座・獅子座・射手座のエレメント）",
+                    "地": "（牡牛座・乙女座・山羊座のエレメント）",
+                    "風": "（双子座・天秤座・水瓶座のエレメント）",
+                    "水": "（蟹座・蠍座・魚座のエレメント）",
+                }.get(elem, "")
                 elem_base = {
                     "火": "情熱・行動・創造のエネルギーが今の流れで大きく調和しています。積極的に動く絶好のタイミングです。",
                     "地": "安定・実行・現実化のエネルギーが今の流れで調和しています。着実な行動が大きな実りを生みます。",
@@ -355,7 +367,7 @@ def show(tab, user_info):
                 elem_msg = f"{planets_str}が{elem}のエレメントで大きな三角形を形成しています。{elem_base}"
                 st.markdown(f"""
 <div class='luna-message'>
-🔺 <b>【トランジット】グランドトライン（{elem}のエレメント）</b><br>
+🔺 <b>【トランジット】グランドトライン（{elem}のエレメント）{elem_signs_note}</b><br>
 天体：{planets_str}<br><br>
 {elem_msg}
 </div>

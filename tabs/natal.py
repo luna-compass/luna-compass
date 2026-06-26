@@ -409,6 +409,12 @@ def _render(container, user_info):
                 elem = gt["element"]
                 planets_str = "・".join(gt["planets"])
                 signs_str = "・".join(gt["signs"])
+                elem_signs_note = {
+                    "火": "（牡羊座・獅子座・射手座のエレメント）",
+                    "地": "（牡牛座・乙女座・山羊座のエレメント）",
+                    "風": "（双子座・天秤座・水瓶座のエレメント）",
+                    "水": "（蟹座・蠍座・魚座のエレメント）",
+                }.get(elem, "")
                 elem_base = {
                     "火": "情熱・行動力・創造性が大きく調和しています。自然なエネルギーの流れで、才能が開花しやすい配置です。",
                     "地": "現実的な安定・忍耐・実行力が深く調和しています。着実に目標を実現する強い力を持っています。",
@@ -419,7 +425,7 @@ def _render(container, user_info):
                 elem_msg = f"{planets_str}が{elem}のエレメントで大きな三角形を形成しています。{elem_base}"
                 st.markdown(f"""
 <div class='luna-message'>
-🔺 <b>グランドトライン（{elem}のエレメント）</b><br>
+🔺 <b>グランドトライン（{elem}のエレメント）{elem_signs_note}</b><br>
 天体：{planets_str}<br>
 星座：{signs_str}<br><br>
 {elem_msg}
@@ -430,6 +436,11 @@ def _render(container, user_info):
                 mode = gc["mode"]
                 planets_str = "・".join(gc["planets"])
                 signs_str = "・".join(gc["signs"])
+                mode_signs_note = {
+                    "活動": "（牡羊座・蟹座・天秤座・山羊座のモード）",
+                    "固定": "（牡牛座・獅子座・蠍座・水瓶座のモード）",
+                    "柔軟": "（双子座・乙女座・射手座・魚座のモード）",
+                }.get(mode, "")
                 mode_base = {
                     "活動": "変化と行動のエネルギーが四方向から働いています。多くの課題に同時に向き合いながら、大きな成長を遂げる配置です。",
                     "固定": "強い意志と粘り強さが四方向から働いています。困難を乗り越えて、揺るぎない力を築く配置です。",
@@ -439,7 +450,7 @@ def _render(container, user_info):
                 mode_msg = f"{planets_str}が{mode}モードで大きな十字を形成しています。{mode_base}"
                 st.markdown(f"""
 <div class='luna-message'>
-✚ <b>グランドクロス（{mode}モード）</b><br>
+✚ <b>グランドクロス（{mode}モード）{mode_signs_note}</b><br>
 天体：{planets_str}<br>
 星座：{signs_str}<br><br>
 {mode_msg}

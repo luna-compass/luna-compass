@@ -29,10 +29,12 @@ for _path in _FONT_PATHS:
 # -----------------------------
 # 色
 # -----------------------------
-PURPLE_DARK   = colors.HexColor("#4c1d95")
+PURPLE_DARK   = colors.HexColor("#3b0764")
 PURPLE_MID    = colors.HexColor("#7c3aed")
-PURPLE_LIGHT  = colors.HexColor("#f5f3ff")
-PURPLE_BORDER = colors.HexColor("#a78bfa")
+PURPLE_LIGHT  = colors.HexColor("#f3f0ff")
+PURPLE_BORDER = colors.HexColor("#c4b5fd")
+PURPLE_ACCENT = colors.HexColor("#d946ef")
+GOLD          = colors.HexColor("#d97706")
 TEXT_DARK     = colors.HexColor("#1f1437")
 TEXT_GRAY     = colors.HexColor("#6b7280")
 
@@ -77,20 +79,19 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
     # ★ ここで section を定義（絶対に最初）
     # --------------------------------------------------------
     def section(title):
-        # 前のカードとの間にしっかり距離を取る
-        #story.append(Spacer(1, 40))  # ← ここが最重要（上の余白）
-
-        story.append(HRFlowable(
-            width="100%",
-            thickness=1,
-            color=PURPLE_BORDER,
-            spaceBefore=6,
-            spaceAfter=6
-        ))
-
-        story.append(Paragraph(f"◆ {title}", STYLE_H1))
-
-        story.append(Spacer(1, 12))  # 見出しの下の余白
+        story.append(Spacer(1, 8))
+        # グラデーション風セクションヘッダー
+        sec_rows = [[Paragraph(f"◆ {title}", S('sec', 13, colors.white, True, sb=0, sa=0))]]
+        sec_table = Table(sec_rows, colWidths=[165*mm])
+        sec_table.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,-1), PURPLE_DARK),
+            ('LEFTPADDING', (0,0), (-1,-1), 14),
+            ('RIGHTPADDING', (0,0), (-1,-1), 14),
+            ('TOPPADDING', (0,0), (-1,-1), 10),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 10),
+        ]))
+        story.append(sec_table)
+        story.append(Spacer(1, 10))
 
 
     # --------------------------------------------------------
@@ -449,9 +450,15 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
                 "水": "感情・共感・直感が深く調和しています。人の心を感じ取る繊細な感受性が大きな力になります。",
                 "混合": "異なるエネルギーが大きく調和した、ユニークなグランドトラインです。",
             }.get(elem, "")
+            elem_signs_note = {
+                "火": "（牡羊座・獅子座・射手座のエレメント）",
+                "地": "（牡牛座・乙女座・山羊座のエレメント）",
+                "風": "（双子座・天秤座・水瓶座のエレメント）",
+                "水": "（蟹座・蠍座・魚座のエレメント）",
+            }.get(elem, "")
             elem_msg = f"{planets_str}が{elem}のエレメントで大きな三角形を形成しています。{elem_base}"
             rows = [
-                [Paragraph(f"グランドトライン（{elem}のエレメント）", S('gt', 11, PURPLE_MID, True, sb=4, sa=4))],
+                [Paragraph(f"グランドトライン（{elem}のエレメント）{elem_signs_note}", S('gt', 11, PURPLE_MID, True, sb=4, sa=4))],
                 [Paragraph(f"天体：{planets_str}", STYLE_BODY)],
                 [Paragraph(f"星座：{signs_str}", STYLE_BODY)],
                 [Spacer(1, 4)],
@@ -539,10 +546,22 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
     lp_num = user_data.get("life_path", "")
     lp_msg = user_data.get("life_path_message", "")
 
-    story.append(Paragraph(
-        f"◇ ライフパスナンバー {lp_num}　～人生のテーマ・使命～",
-        STYLE_H2,
-    ))
+    lp_title_rows = [
+        [Paragraph(f"🌟 ライフパスナンバー {lp_num}　～人生のテーマ・使命～",
+            S('lpt', 12, colors.white, True, sb=0, sa=2))],
+        [Paragraph("人生全体のテーマ・使命・歩むべき道",
+            S('lps', 9, colors.HexColor("#e9d5ff"), False, sb=0, sa=0))],
+    ]
+    lp_title_table = Table(lp_title_rows, colWidths=[165*mm])
+    lp_title_table.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,-1), PURPLE_MID),
+        ('LEFTPADDING', (0,0), (-1,-1), 12),
+        ('RIGHTPADDING', (0,0), (-1,-1), 12),
+        ('TOPPADDING', (0,0), (0,0), 10),
+        ('BOTTOMPADDING', (0,-1), (-1,-1), 10),
+    ]))
+    story.append(lp_title_table)
+    story.append(Spacer(1, 8))
 
     if lp_msg:
         for line in lp_msg.split("\n"):
@@ -560,10 +579,33 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
     bd_num = user_data.get("birthday_num", "")
     bd_msg = user_data.get("birthday_message", "")
     if bd_msg:
-        bd_block = [Paragraph(
-            f"◇ バースデーナンバー {bd_num}　～生まれ持った才能～",
-            STYLE_H2,
-        )]
+        NUM_TITLES = {
+    1: "リーダー・開拓者", 2: "調和・協力者", 3: "表現者・クリエイター",
+    4: "誠実・建設者", 5: "自由・冒険者", 6: "愛・奉仕者",
+    7: "探求・思想家", 8: "達成・実業家", 9: "博愛・完成者",
+    11: "直感・インスピレーター（マスターナンバー）",
+    22: "夢実現・マスタービルダー（マスターナンバー）",
+    33: "愛と癒しの師（マスターナンバー）",
+}
+        bd_num_int = int(bd_num) if str(bd_num).isdigit() else 0
+        bd_subtitle = NUM_TITLES.get(bd_num_int, "")
+        bd_title_rows = [
+            [Paragraph(f"🎂 バースデーナンバー {bd_num}　～生まれ持った才能～",
+                S('bdt', 12, colors.white, True, sb=0, sa=2))],
+            [Paragraph("生まれ持った才能・自然に発揮できる力",
+                S('bds', 9, colors.HexColor("#e9d5ff"), False, sb=0, sa=0))],
+        ]
+        bd_title_table = Table(bd_title_rows, colWidths=[165*mm])
+        bd_title_table.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,-1), PURPLE_MID),
+            ('LEFTPADDING', (0,0), (-1,-1), 12),
+            ('RIGHTPADDING', (0,0), (-1,-1), 12),
+            ('TOPPADDING', (0,0), (0,0), 10),
+            ('BOTTOMPADDING', (0,-1), (-1,-1), 10),
+        ]))
+        bd_block = [bd_title_table, Spacer(1, 8)]
+        if bd_subtitle:
+            bd_block.append(Paragraph(f"{bd_num}：{bd_subtitle}", STYLE_H2))
         for line in bd_msg.split("\n"):
             line = line.strip()
             if not line:
@@ -579,10 +621,33 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
     rl_num = user_data.get("ruler_num", "")
     rl_msg = user_data.get("ruler_message", "")
     if rl_msg:
-        rl_block = [Paragraph(
-            f"◇ ルーラーナンバー {rl_num}　～生まれた年の使命～",
-            STYLE_H2,
-        )]
+        NUM_TITLES = {
+    1: "リーダー・開拓者", 2: "調和・協力者", 3: "表現者・クリエイター",
+    4: "誠実・建設者", 5: "自由・冒険者", 6: "愛・奉仕者",
+    7: "探求・思想家", 8: "達成・実業家", 9: "博愛・完成者",
+    11: "直感・インスピレーター（マスターナンバー）",
+    22: "夢実現・マスタービルダー（マスターナンバー）",
+    33: "愛と癒しの師（マスターナンバー）",
+}
+        rl_num_int = int(rl_num) if str(rl_num).isdigit() else 0
+        rl_subtitle = NUM_TITLES.get(rl_num_int, "")
+        rl_title_rows = [
+            [Paragraph(f"👑 ルーラーナンバー {rl_num}　～生まれた年の使命～",
+                S('rlt', 12, colors.white, True, sb=0, sa=2))],
+            [Paragraph("生まれた年が示す使命・人生のテーマ",
+                S('rls', 9, colors.HexColor("#e9d5ff"), False, sb=0, sa=0))],
+        ]
+        rl_title_table = Table(rl_title_rows, colWidths=[165*mm])
+        rl_title_table.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,-1), PURPLE_MID),
+            ('LEFTPADDING', (0,0), (-1,-1), 12),
+            ('RIGHTPADDING', (0,0), (-1,-1), 12),
+            ('TOPPADDING', (0,0), (0,0), 10),
+            ('BOTTOMPADDING', (0,-1), (-1,-1), 10),
+        ]))
+        rl_block = [rl_title_table, Spacer(1, 8)]
+        if rl_subtitle:
+            rl_block.append(Paragraph(f"{rl_num}：{rl_subtitle}", STYLE_H2))
         for line in rl_msg.split("\n"):
             line = line.strip()
             if not line:

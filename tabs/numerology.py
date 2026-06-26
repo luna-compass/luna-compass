@@ -55,6 +55,21 @@ RULER_MESSAGES = {
     33: "生まれた年の使命：愛と癒しで人々を導くこと（マスターナンバー）",
 }
 
+NUM_TITLES = {
+    1: "リーダー・開拓者",
+    2: "調和・協力者",
+    3: "表現者・クリエイター",
+    4: "誠実・建設者",
+    5: "自由・冒険者",
+    6: "愛・奉仕者",
+    7: "探求・思想家",
+    8: "達成・実業家",
+    9: "博愛・完成者",
+    11: "直感・インスピレーター（マスターナンバー）",
+    22: "夢実現・マスタービルダー（マスターナンバー）",
+    33: "愛と癒しの師（マスターナンバー）",
+}
+
 def _get_lp_data(num):
     """ライフパスデータをJSONから取得（なければデフォルト）"""
     json_data = get_message("numerology_life_path", str(num))
@@ -144,6 +159,7 @@ def show(tab, user_info):
             st.markdown(f"**🔑 キーワード：** {lp.get('keywords','')}")
 
         st.markdown("---")
+        bd_title = NUM_TITLES.get(birthday_num, "")
         st.markdown(f"""
 <div style='background: linear-gradient(135deg, #7c3aed, #a855f7); 
      border-radius: 14px; padding: 14px 20px; margin: 10px 0;'>
@@ -153,11 +169,14 @@ def show(tab, user_info):
 <span style='color: #e9d5ff; font-size: 12px;'>生まれ持った才能・自然に発揮できる力</span>
 </div>
 """, unsafe_allow_html=True)
+        if bd_title:
+            st.markdown(f"**{birthday_num}：{bd_title}**")
         bd_msg = _get_birthday_msg(birthday_num)
         if bd_msg:
             st.markdown(f"<div class='luna-message'>{bd_msg}</div>", unsafe_allow_html=True)
 
         st.markdown("---")
+        rl_title = NUM_TITLES.get(ruler_num, "")
         st.markdown(f"""
 <div style='background: linear-gradient(135deg, #7c3aed, #a855f7); 
      border-radius: 14px; padding: 14px 20px; margin: 10px 0;'>
@@ -167,6 +186,8 @@ def show(tab, user_info):
 <span style='color: #e9d5ff; font-size: 12px;'>生まれた年が示す使命・人生のテーマ</span>
 </div>
 """, unsafe_allow_html=True)
+        if rl_title:
+            st.markdown(f"**{ruler_num}：{rl_title}**")
         ruler_msg = _get_ruler_msg(ruler_num)
         if ruler_msg:
             st.markdown(f"<div class='luna-message'>{ruler_msg}</div>", unsafe_allow_html=True)
