@@ -29,7 +29,7 @@ for _path in _FONT_PATHS:
 # -----------------------------
 # 色
 # -----------------------------
-PURPLE_DARK   = colors.HexColor("#3b0764")
+PURPLE_DARK   = colors.HexColor("#5b21b6")
 PURPLE_MID    = colors.HexColor("#7c3aed")
 PURPLE_LIGHT  = colors.HexColor("#f3f0ff")
 PURPLE_BORDER = colors.HexColor("#c4b5fd")
@@ -554,7 +554,7 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
     ]
     lp_title_table = Table(lp_title_rows, colWidths=[165*mm])
     lp_title_table.setStyle(TableStyle([
-        ('BACKGROUND', (0,0), (-1,-1), PURPLE_MID),
+        ('BACKGROUND', (0,0), (-1,-1), colors.HexColor('#8b5cf6')),
         ('LEFTPADDING', (0,0), (-1,-1), 12),
         ('RIGHTPADDING', (0,0), (-1,-1), 12),
         ('TOPPADDING', (0,0), (0,0), 10),
@@ -688,10 +688,10 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
                 img_buf = _io.BytesIO()
                 pil_img.save(img_buf, format="JPEG", quality=75, optimize=True)
                 img_buf.seek(0)
-                card_image = Image(img_buf, width=40 * mm, height=65 * mm)
+                card_image = Image(img_buf, width=70 * mm, height=115 * mm)
                 card_image.hAlign = 'CENTER'
                 story.append(card_image)
-                story.append(Spacer(1, 6))
+                story.append(Spacer(1, 16))
             except Exception:
                 pass
 
@@ -850,12 +850,18 @@ def create_transit_pdf(natal_data, transit_data, aspects, outer_planets, chart_i
     # ★ section関数をローカル定義
     # --------------------------------------------------------
     def section(title):
-        story.append(HRFlowable(
-            width="100%", thickness=1, color=PURPLE_BORDER,
-            spaceBefore=6, spaceAfter=6
-        ))
-        story.append(Paragraph(f"◆ {title}", STYLE_H1))
-        story.append(Spacer(1, 12))
+        story.append(Spacer(1, 8))
+        sec_rows = [[Paragraph(f"◆ {title}", S('sec', 13, colors.white, True, sb=0, sa=0))]]
+        sec_table = Table(sec_rows, colWidths=[165*mm])
+        sec_table.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,-1), PURPLE_DARK),
+            ('LEFTPADDING', (0,0), (-1,-1), 14),
+            ('RIGHTPADDING', (0,0), (-1,-1), 14),
+            ('TOPPADDING', (0,0), (-1,-1), 10),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 10),
+        ]))
+        story.append(sec_table)
+        story.append(Spacer(1, 10))
 
     # --------------------------------------------------------
     # ★ 今日の流れ
@@ -1069,12 +1075,18 @@ def create_compatibility_pdf(
     story = []
 
     def section(title):
-        story.append(HRFlowable(
-            width="100%", thickness=1, color=PURPLE_BORDER,
-            spaceBefore=6, spaceAfter=6
-        ))
-        story.append(Paragraph(f"◆ {title}", STYLE_H1))
-        story.append(Spacer(1, 12))
+        story.append(Spacer(1, 8))
+        sec_rows = [[Paragraph(f"◆ {title}", S('sec', 13, colors.white, True, sb=0, sa=0))]]
+        sec_table = Table(sec_rows, colWidths=[165*mm])
+        sec_table.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,-1), PURPLE_DARK),
+            ('LEFTPADDING', (0,0), (-1,-1), 14),
+            ('RIGHTPADDING', (0,0), (-1,-1), 14),
+            ('TOPPADDING', (0,0), (-1,-1), 10),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 10),
+        ]))
+        story.append(sec_table)
+        story.append(Spacer(1, 10))
 
     # --------------------------------------------------------
     # ★ タイトル
