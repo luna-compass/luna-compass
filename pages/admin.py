@@ -85,13 +85,14 @@ if not data:
     st.stop()
 
 # ---------- タブ構成 ----------
-tab_planets, tab_aspects, tab_house, tab_transit, tab_tarot, tab_numerology = st.tabs([
+tab_planets, tab_aspects, tab_house, tab_transit, tab_tarot, tab_numerology, tab_elem = st.tabs([
     "🌟 天体・ASCメッセージ",
     "🔷 アスペクトメッセージ",
     "🏠 ハウスメッセージ",
     "🌍 トランジットアスペクト",
     "🔮 タロットメッセージ",
     "🔢 数秘術メッセージ",
+    "🔥 エレメントテンプレ",
 ])
 
 # ===== 天体メッセージ =====
@@ -295,51 +296,44 @@ with tab_tarot:
     st.markdown("### 🔮 タロットメッセージの編集")
     st.caption("各カードの正位置・逆位置メッセージを編集できます。")
 
-    tarot_data = data.get("tarot", {})
+    tarot_base = data.get("tarot_base", {})
+    tarot_reverse = data.get("tarot_reverse", {})
 
-    TAROT_CARDS_JP = [
-        "愚者","魔術師","女教皇","女帝","皇帝","教皇",
-        "恋人","戦車","力","隠者","運命の輪","正義",
-        "吊るされた男","死神","節制","悪魔","塔","星",
-        "月","太陽","審判","世界",
-    ]
+    TAROT_NAME_JP = {
+        "fool":"愚者", "magician":"魔術師", "high_priestess":"女教皇",
+        "empress":"女帝", "emperor":"皇帝", "hierophant":"教皇",
+        "lovers":"恋人", "chariot":"戦車", "strength":"力",
+        "hermit":"隠者", "wheel_of_fortune":"運命の輪", "justice":"正義",
+        "hanged_man":"吊るされた男", "death":"死神", "temperance":"節制",
+        "devil":"悪魔", "tower":"塔", "star":"星",
+        "moon":"月", "sun":"太陽", "judgement":"審判", "world":"世界",
+    }
 
-    edited_tarot = {k: dict(v) for k, v in tarot_data.items()}
+    edited_base = dict(tarot_base)
+    edited_reverse = dict(tarot_reverse)
 
-    for card_name_jp in TAROT_CARDS_JP:
-        card = tarot_data.get(card_name_jp, {})
-        st.markdown(f"#### 🃏 {card_name_jp}")
+    for card_key, card_name_jp in TAROT_NAME_JP.items():
+        st.markdown(f"#### 🃏 {card_name_jp}（{card_key}）")
         col_b, col_r = st.columns(2)
         with col_b:
-            base_data = card.get("正位置", {})
-            new_msg = st.text_area(
+            edited_base[card_key] = st.text_area(
                 "正位置",
-                value=base_data.get("message", "") if isinstance(base_data, dict) else "",
-                height=120,
-                key=f"tarot_base_{card_name_jp}"
+                value=tarot_base.get(card_key, ""),
+                height=80,
+                key=f"tarot_base_{card_key}"
             )
-            if card_name_jp not in edited_tarot:
-                edited_tarot[card_name_jp] = {}
-            if "正位置" not in edited_tarot[card_name_jp]:
-                edited_tarot[card_name_jp]["正位置"] = {}
-            edited_tarot[card_name_jp]["正位置"]["title"] = f"{card_name_jp}（正位置）"
-            edited_tarot[card_name_jp]["正位置"]["message"] = new_msg
         with col_r:
-            rev_data = card.get("逆位置", {})
-            new_rev = st.text_area(
+            edited_reverse[card_key] = st.text_area(
                 "逆位置",
-                value=rev_data.get("message", "") if isinstance(rev_data, dict) else "",
-                height=120,
-                key=f"tarot_rev_{card_name_jp}"
+                value=tarot_reverse.get(card_key, ""),
+                height=80,
+                key=f"tarot_rev_{card_key}"
             )
-            if "逆位置" not in edited_tarot[card_name_jp]:
-                edited_tarot[card_name_jp]["逆位置"] = {}
-            edited_tarot[card_name_jp]["逆位置"]["title"] = f"{card_name_jp}（逆位置）"
-            edited_tarot[card_name_jp]["逆位置"]["message"] = new_rev
         st.markdown("---")
 
     if st.button("💾 タロットメッセージを保存", type="primary", use_container_width=True, key="save_tarot"):
-        data["tarot"] = edited_tarot
+        data["tarot_base"] = edited_base
+        data["tarot_reverse"] = edited_reverse
         save_data(data)
         st.success("✅ タロットメッセージを保存しました！")
         st.rerun()
@@ -405,3 +399,31 @@ with tab_numerology:
 
 st.markdown("---")
 st.caption(f"📁 保存先: {JSON_PATH}")
+
+# ===== エレメントテンプレ =====
+with tab_elem:
+    st.markdown("### 🔥 エレメントテンプレの編集")
+    st.caption("占い師からのひとことで使うエレメント別テンプレを編集できます。{name}・{count}・{planets}は自動で置き換わります。")
+
+    elem_data = data.get("element_templates", {})
+    ELEMENTS_LIST = ["火", "地", "風", "水"]
+    ELEM_LABELS = {"火": "🔥 火のエレメント", "地": "🌍 地のエレメント", "風": "💨 風のエレメント", "水": "💧 水のエレメント"}
+
+    edited_elem = dict(elem_data)
+
+    for elem in ELEMENTS_LIST:
+        st.markdown(f"#### {ELEM_LABELS[elem]}")
+        st.caption("{name}=お名前、{count}=天体数、{planets}=天体名 が自動で入ります")
+        edited_elem[elem] = st.text_area(
+            f"{elem}のテンプレ",
+            value=elem_data.get(elem, ""),
+            height=150,
+            key=f"elem_{elem}"
+        )
+        st.markdown("---")
+
+    if st.button("💾 エレメントテンプレを保存", type="primary", use_container_width=True, key="save_elem"):
+        data["element_templates"] = edited_elem
+        save_data(data)
+        st.success("✅ エレメントテンプレを保存しました！")
+        st.rerun()

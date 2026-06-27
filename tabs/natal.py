@@ -182,6 +182,7 @@ def _render(container, user_info):
 
         if st.button("✨ エレメントテンプレを生成", key="btn_gen_template"):
             from utils.astro import make_ts_from_local, get_body_longitudes_ts, ELEMENTS, SIGNS
+            from utils.messages_loader import _load as _load_json
             _t = make_ts_from_local(birthday, int(birth_hour), int(birth_minute), tz_offset)
             _longs = get_body_longitudes_ts(_t)
 
@@ -202,13 +203,15 @@ def _render(container, user_info):
             _dominant_count = _elem_count[_dominant]
             _dominant_planets = "・".join(_elem_planets_detail[_dominant])
 
-            _elem_templates = {
-                "火": f"（主要五惑星：火のエレメントが強い {_dominant_count}天体／{_dominant_planets}）\n{name or 'お客様'}さんは火のエネルギーが強く、情熱的で行動力にあふれています。直感で動き、新しいことへの挑戦を恐れない傾向があります。そのエネルギーを建設的な方向へ向けることで、大きな成果が生まれます。\n\n（ここに追加メッセージを入力してください）",
-                "地": f"（主要五惑星：地のエレメントが強い {_dominant_count}天体／{_dominant_planets}）\n{name or 'お客様'}さんは地のエネルギーが強く、現実的で着実な積み上げが得意です。コツコツと努力を重ね、長期的な視点で物事を見る力があります。その安定感が周囲に安心感を与えます。\n\n（ここに追加メッセージを入力してください）",
-                "風": f"（主要五惑星：風のエレメントが強い {_dominant_count}天体／{_dominant_planets}）\n{name or 'お客様'}さんは風のエネルギーが強く、知性と柔軟性に優れています。コミュニケーション能力が高く、人と人をつなぐ力があります。その発想力と言葉の力を活かすことで、多くの人に影響を与えられます。\n\n（ここに追加メッセージを入力してください）",
-                "水": f"（主要五惑星：水のエレメントが強い {_dominant_count}天体／{_dominant_planets}）\n{name or 'お客様'}さんは水のエネルギーが強く、感受性が豊かで深い共感力を持っています。人の気持ちを察する力に優れ、癒しの存在として周囲に慕われます。その繊細な感性を大切にしてください。\n\n（ここに追加メッセージを入力してください）",
-            }
-            st.session_state[_template_key] = _elem_templates.get(_dominant, "")
+            # JSONからテンプレを読み込む
+            _json_data = _load_json()
+            _elem_templates = _json_data.get("element_templates", {})
+
+            # テンプレに変数を埋め込む
+            _template_raw = _elem_templates.get(_dominant, "")
+            _template = _template_raw.replace("{name}", name or "お客様").replace("{count}", str(_dominant_count)).replace("{planets}", _dominant_planets)
+
+            st.session_state[_template_key] = _template
             st.success(f"✅ {_dominant}のエレメントが強い（主要五惑星中{_dominant_count}天体）テンプレを生成しました！")
 
         astrologer_message = st.text_area(
