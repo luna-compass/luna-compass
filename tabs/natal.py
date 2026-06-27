@@ -174,11 +174,47 @@ def _render(container, user_info):
         st.markdown("---")
         st.markdown("### 🔮 占い師からのメッセージ（任意）")
         st.caption("PDFに載せる一言メッセージをあらかじめ入力してからボタンを押してください。")
+
+        # ===== エレメントテンプレ自動生成 =====
+        _template_key = "astrologer_message_main"
+        if _template_key not in st.session_state:
+            st.session_state[_template_key] = ""
+
+        if st.button("✨ エレメントテンプレを生成", key="btn_gen_template"):
+            from utils.astro import make_ts_from_local, get_body_longitudes_ts, ELEMENTS, SIGNS
+            _t = make_ts_from_local(birthday, int(birth_hour), int(birth_minute), tz_offset)
+            _longs = get_body_longitudes_ts(_t)
+
+            _personal_planets = ["太陽", "月", "水星", "金星", "火星"]
+            _elem_count = {"火": 0, "地": 0, "風": 0, "水": 0}
+            _elem_planets_detail = {"火": [], "地": [], "風": [], "水": []}
+            for _planet in _personal_planets:
+                if _planet not in _longs:
+                    continue
+                _lon = _longs[_planet]
+                _sign = SIGNS[int((_lon % 360) / 30)]
+                _elem = ELEMENTS.get(_sign, "")
+                if _elem in _elem_count:
+                    _elem_count[_elem] += 1
+                    _elem_planets_detail[_elem].append(_planet)
+
+            _dominant = max(_elem_count, key=_elem_count.get)
+            _dominant_count = _elem_count[_dominant]
+            _dominant_planets = "・".join(_elem_planets_detail[_dominant])
+
+            _elem_templates = {
+                "火": f"（主要五惑星：火のエレメントが強い {_dominant_count}天体／{_dominant_planets}）\n{name or 'お客様'}さんは火のエネルギーが強く、情熱的で行動力にあふれています。直感で動き、新しいことへの挑戦を恐れない傾向があります。そのエネルギーを建設的な方向へ向けることで、大きな成果が生まれます。\n\n（ここに追加メッセージを入力してください）",
+                "地": f"（主要五惑星：地のエレメントが強い {_dominant_count}天体／{_dominant_planets}）\n{name or 'お客様'}さんは地のエネルギーが強く、現実的で着実な積み上げが得意です。コツコツと努力を重ね、長期的な視点で物事を見る力があります。その安定感が周囲に安心感を与えます。\n\n（ここに追加メッセージを入力してください）",
+                "風": f"（主要五惑星：風のエレメントが強い {_dominant_count}天体／{_dominant_planets}）\n{name or 'お客様'}さんは風のエネルギーが強く、知性と柔軟性に優れています。コミュニケーション能力が高く、人と人をつなぐ力があります。その発想力と言葉の力を活かすことで、多くの人に影響を与えられます。\n\n（ここに追加メッセージを入力してください）",
+                "水": f"（主要五惑星：水のエレメントが強い {_dominant_count}天体／{_dominant_planets}）\n{name or 'お客様'}さんは水のエネルギーが強く、感受性が豊かで深い共感力を持っています。人の気持ちを察する力に優れ、癒しの存在として周囲に慕われます。その繊細な感性を大切にしてください。\n\n（ここに追加メッセージを入力してください）",
+            }
+            st.session_state[_template_key] = _elem_templates.get(_dominant, "")
+            st.success(f"✅ {_dominant}のエレメントが強い（主要五惑星中{_dominant_count}天体）テンプレを生成しました！")
+
         astrologer_message = st.text_area(
-            "占い師からの一言",
-            placeholder=f"{user_info.get('name') or 'お客様'}さんへ\n\n今日の星たちは、あなたの内側にある光をそっと照らしています。今回の鑑定で心に浮かんだテーマや、胸に響いた感覚を大切にしてみてください。\n\n太陽と月が示すあなたの本質は、今まさに新しい流れへと導かれています。直感が教えてくれる小さなサインを受け取りながら、あなたらしいペースで進んでいけば大丈夫です。\n\nこのメッセージが、あなたの未来を照らす道しるべとなりますように。",
+            "占い師からの一言（テンプレ生成後に追記・編集できます）",
             height=250,
-            key="astrologer_message_main"
+            key=_template_key
         )
         st.markdown("---")
 
