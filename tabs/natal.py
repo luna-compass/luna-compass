@@ -175,47 +175,83 @@ def _render(container, user_info):
         st.markdown("### 🔮 占い師からのメッセージ（任意）")
         st.caption("PDFに載せる一言メッセージをあらかじめ入力してからボタンを押してください。")
 
-        # ===== エレメントテンプレ自動生成 =====
+        # ===== テンプレ管理 =====
         _template_key = "astrologer_message_main"
+        _preview_key = "template_preview"
         if _template_key not in st.session_state:
             st.session_state[_template_key] = ""
+        if _preview_key not in st.session_state:
+            st.session_state[_preview_key] = ""
 
-        if st.button("✨ エレメントテンプレを生成", key="btn_gen_template"):
+        # テンプレ生成の共通処理
+        def _calc_elem_info():
             from utils.astro import make_ts_from_local, get_body_longitudes_ts, ELEMENTS, SIGNS
-            from utils.messages_loader import _load as _load_json
             _t = make_ts_from_local(birthday, int(birth_hour), int(birth_minute), tz_offset)
             _longs = get_body_longitudes_ts(_t)
-
             _personal_planets = ["太陽", "月", "水星", "金星", "火星"]
             _elem_count = {"火": 0, "地": 0, "風": 0, "水": 0}
-            _elem_planets_detail = {"火": [], "地": [], "風": [], "水": []}
-            for _planet in _personal_planets:
-                if _planet not in _longs:
+            _elem_detail = {"火": [], "地": [], "風": [], "水": []}
+            for _p in _personal_planets:
+                if _p not in _longs:
                     continue
-                _lon = _longs[_planet]
-                _sign = SIGNS[int((_lon % 360) / 30)]
-                _elem = ELEMENTS.get(_sign, "")
-                if _elem in _elem_count:
-                    _elem_count[_elem] += 1
-                    _elem_planets_detail[_elem].append(_planet)
-
+                _sign = SIGNS[int((_longs[_p] % 360) / 30)]
+                _e = ELEMENTS.get(_sign, "")
+                if _e in _elem_count:
+                    _elem_count[_e] += 1
+                    _elem_detail[_e].append(_p)
             _dominant = max(_elem_count, key=_elem_count.get)
-            _dominant_count = _elem_count[_dominant]
-            _dominant_planets = "・".join(_elem_planets_detail[_dominant])
+            return _dominant, _elem_count[_dominant], "・".join(_elem_detail[_dominant]), _longs
 
-            # JSONからテンプレを読み込む
-            _json_data = _load_json()
-            _elem_templates = _json_data.get("element_templates", {})
+        from utils.messages_loader import _load as _load_json
+        _json_data = _load_json()
 
-            # テンプレに変数を埋め込む
-            _template_raw = _elem_templates.get(_dominant, "")
-            _template = _template_raw.replace("{name}", name or "お客様").replace("{count}", str(_dominant_count)).replace("{planets}", _dominant_planets)
+        # ===== テンプレ選択ボタン =====
+        st.markdown("**テンプレを選んでプレビューで確認してから追加してください**")
+        col_b1, col_b2, col_b3 = st.columns(3)
 
-            st.session_state[_template_key] = _template
-            st.success(f"✅ {_dominant}のエレメントが強い（主要五惑星中{_dominant_count}天体）テンプレを生成しました！")
+        with col_b1:
+            if st.button("🔥 エレメントテンプレ", key="btn_elem", use_container_width=True):
+                _dom, _cnt, _planets, _ = _calc_elem_info()
+                _raw = _json_data.get("element_templates", {}).get(_dom, "")
+                _preview = _raw.replace("{name}", name or "お客様").replace("{count}", str(_cnt)).replace("{planets}", _planets)
+                st.session_state[_preview_key] = _preview
+                st.session_state["preview_label"] = f"🔥 エレメント（{_dom}が強い・{_cnt}天体）"
 
+        with col_b2:
+            if st.button("☀ 太陽星座テンプレ", key="btn_sun", use_container_width=True):
+                _, _, _, _longs = _calc_elem_info()
+                from utils.astro import SIGNS
+                _sun_sign = SIGNS[int((_longs.get("太陽", 0) % 360) / 30)]
+                _sun_templates = _json_data.get("sun_sign_templates", {})
+                _raw = _sun_templates.get(_sun_sign, f"{name or 'お客様'}さんは{_sun_sign}の太陽を持ち、その星座らしい輝きを放っています。\n\n")
+                _preview = _raw.replace("{name}", name or "お客様").replace("{sign}", _sun_sign)
+                st.session_state[_preview_key] = _preview
+                st.session_state["preview_label"] = f"☀ 太陽星座（{_sun_sign}）"
+
+        with col_b3:
+            if st.button("🔢 数秘術テンプレ", key="btn_num", use_container_width=True):
+                from tabs.numerology import calc_life_path
+                _lp = calc_life_path(birthday)
+                _num_templates = _json_data.get("numerology_templates", {})
+                _raw = _num_templates.get(str(_lp), f"{name or 'お客様'}さんのライフパスナンバーは{_lp}です。\n\n")
+                _preview = _raw.replace("{name}", name or "お客様").replace("{lp}", str(_lp))
+                st.session_state[_preview_key] = _preview
+                st.session_state["preview_label"] = f"🔢 数秘術（ライフパス{_lp}）"
+
+        # ===== プレビューエリア =====
+        if st.session_state[_preview_key]:
+            st.markdown(f"**📋 プレビュー：{st.session_state.get('preview_label', '')}**")
+            st.info(st.session_state[_preview_key])
+            if st.button("📝 テキストエリアに追加", key="btn_add_template", use_container_width=True):
+                _current = st.session_state.get(_template_key, "")
+                _add = st.session_state[_preview_key]
+                st.session_state[_template_key] = (_current + "\n" + _add).strip()
+                st.session_state[_preview_key] = ""
+                st.session_state["preview_label"] = ""
+
+        # ===== テキストエリア =====
         astrologer_message = st.text_area(
-            "占い師からの一言（テンプレ生成後に追記・編集できます）",
+            "占い師からの一言（テンプレを追加して編集してください）",
             height=250,
             key=_template_key
         )

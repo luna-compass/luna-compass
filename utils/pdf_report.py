@@ -284,23 +284,11 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
                 story.append(Paragraph(line, STYLE_BODY))
         story.append(Spacer(1, 8))
 
-    # ② 占い師からのメッセージ
-    if astrologer_top and astrologer_top.strip():
-        story.append(HRFlowable(width="100%", thickness=0.5, color=PURPLE_BORDER, spaceBefore=4, spaceAfter=4))
-        story.append(Paragraph("【占い師からのひとこと】", STYLE_H2))
-        for line in astrologer_top.split("\n"):
-            line = line.strip()
-            if not line:
-                story.append(Spacer(1, 4))
-            else:
-                story.append(Paragraph(line, STYLE_BODY))
-        story.append(Spacer(1, 8))
-
     # --------------------------------------------------------
     # ★ ホロスコープ画像
     # --------------------------------------------------------
     if chart_image_bytes:
-        img = Image(chart_image_bytes, width=165 * mm, height=165 * mm)
+        img = Image(chart_image_bytes, width=140 * mm, height=140 * mm)
         img.hAlign = 'CENTER'
         chart_title = "◆ 円形ホロスコープ（ソーラーチャート）" if user_data.get("time_unknown") else "◆ 円形ホロスコープ"
         chart_block = [
@@ -331,7 +319,21 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
         ]))
         story.append(sign_legend)
         story.append(Spacer(1, 6))
-        story.append(PageBreak())
+
+    # 占い師からのメッセージ（ホロスコープの下）
+    if astrologer_top and astrologer_top.strip():
+        story.append(Spacer(1, 8))
+        story.append(HRFlowable(width="100%", thickness=0.5, color=PURPLE_BORDER, spaceBefore=4, spaceAfter=4))
+        story.append(Paragraph("【占い師からのひとこと】", STYLE_H2))
+        for line in astrologer_top.split("\n"):
+            line = line.strip()
+            if not line:
+                story.append(Spacer(1, 4))
+            else:
+                story.append(Paragraph(line, STYLE_BODY))
+        story.append(Spacer(1, 8))
+
+    story.append(PageBreak())
 
     # --------------------------------------------------------
     # ★ ASC（第一印象）：出生時刻不明の場合は非表示

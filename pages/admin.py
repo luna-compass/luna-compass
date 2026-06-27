@@ -85,7 +85,7 @@ if not data:
     st.stop()
 
 # ---------- タブ構成 ----------
-tab_planets, tab_aspects, tab_house, tab_transit, tab_tarot, tab_numerology, tab_elem = st.tabs([
+tab_planets, tab_aspects, tab_house, tab_transit, tab_tarot, tab_numerology, tab_elem, tab_sun, tab_num_tmpl = st.tabs([
     "🌟 天体・ASCメッセージ",
     "🔷 アスペクトメッセージ",
     "🏠 ハウスメッセージ",
@@ -93,6 +93,8 @@ tab_planets, tab_aspects, tab_house, tab_transit, tab_tarot, tab_numerology, tab
     "🔮 タロットメッセージ",
     "🔢 数秘術メッセージ",
     "🔥 エレメントテンプレ",
+    "☀ 太陽星座テンプレ",
+    "🔢 数秘術テンプレ",
 ])
 
 # ===== 天体メッセージ =====
@@ -410,20 +412,56 @@ with tab_elem:
     ELEM_LABELS = {"火": "🔥 火のエレメント", "地": "🌍 地のエレメント", "風": "💨 風のエレメント", "水": "💧 水のエレメント"}
 
     edited_elem = dict(elem_data)
-
     for elem in ELEMENTS_LIST:
         st.markdown(f"#### {ELEM_LABELS[elem]}")
         st.caption("{name}=お名前、{count}=天体数、{planets}=天体名 が自動で入ります")
-        edited_elem[elem] = st.text_area(
-            f"{elem}のテンプレ",
-            value=elem_data.get(elem, ""),
-            height=150,
-            key=f"elem_{elem}"
-        )
+        edited_elem[elem] = st.text_area(f"{elem}のテンプレ", value=elem_data.get(elem, ""), height=150, key=f"elem_{elem}")
         st.markdown("---")
 
     if st.button("💾 エレメントテンプレを保存", type="primary", use_container_width=True, key="save_elem"):
         data["element_templates"] = edited_elem
         save_data(data)
         st.success("✅ エレメントテンプレを保存しました！")
+        st.rerun()
+
+# ===== 太陽星座テンプレ =====
+with tab_sun:
+    st.markdown("### ☀ 太陽星座テンプレの編集")
+    st.caption("{name}=お名前、{sign}=星座名 が自動で入ります。")
+
+    sun_tmpl_data = data.get("sun_sign_templates", {})
+    SIGNS_LIST = ["牡羊座","牡牛座","双子座","蟹座","獅子座","乙女座","天秤座","蠍座","射手座","山羊座","水瓶座","魚座"]
+
+    edited_sun = dict(sun_tmpl_data)
+    cols_sun = st.columns(2)
+    for i, sign in enumerate(SIGNS_LIST):
+        with cols_sun[i % 2]:
+            edited_sun[sign] = st.text_area(f"☀ {sign}", value=sun_tmpl_data.get(sign, ""), height=120, key=f"sun_tmpl_{sign}")
+
+    st.markdown("---")
+    if st.button("💾 太陽星座テンプレを保存", type="primary", use_container_width=True, key="save_sun_tmpl"):
+        data["sun_sign_templates"] = edited_sun
+        save_data(data)
+        st.success("✅ 太陽星座テンプレを保存しました！")
+        st.rerun()
+
+# ===== 数秘術テンプレ =====
+with tab_num_tmpl:
+    st.markdown("### 🔢 数秘術テンプレの編集")
+    st.caption("{name}=お名前、{lp}=ライフパスナンバー が自動で入ります。")
+
+    num_tmpl_data = data.get("numerology_templates", {})
+    NUM_KEYS = ["1","2","3","4","5","6","7","8","9","11","22","33"]
+
+    edited_num_tmpl = dict(num_tmpl_data)
+    cols_num = st.columns(2)
+    for i, k in enumerate(NUM_KEYS):
+        with cols_num[i % 2]:
+            edited_num_tmpl[k] = st.text_area(f"🔢 ライフパス{k}", value=num_tmpl_data.get(k, ""), height=120, key=f"num_tmpl_{k}")
+
+    st.markdown("---")
+    if st.button("💾 数秘術テンプレを保存", type="primary", use_container_width=True, key="save_num_tmpl"):
+        data["numerology_templates"] = edited_num_tmpl
+        save_data(data)
+        st.success("✅ 数秘術テンプレを保存しました！")
         st.rerun()
