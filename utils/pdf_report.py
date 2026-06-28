@@ -26,6 +26,25 @@ for _path in _FONT_PATHS:
         pdfmetrics.registerFont(TTFont('JPB', _path))
         break
 
+# Noto Sans Symbols（占星術記号用）
+_SYMBOL_FONT_PATHS = [
+    os.path.join(_BASE, 'fonts', 'NotoSansSymbols-VariableFont_wght.ttf'),
+    os.path.join(_BASE, 'fonts', 'NotoSansSymbols-Regular.ttf'),
+]
+_symbol_font_registered = False
+for _path in _SYMBOL_FONT_PATHS:
+    if os.path.exists(_path):
+        pdfmetrics.registerFont(TTFont('Symbols', _path))
+        _symbol_font_registered = True
+        break
+
+# Noto Sans Symbols 2（☉太陽など一部記号用）
+_SYMBOL2_FONT_PATH = os.path.join(_BASE, 'fonts', 'NotoSansSymbols2-Regular.ttf')
+_symbol2_font_registered = False
+if os.path.exists(_SYMBOL2_FONT_PATH):
+    pdfmetrics.registerFont(TTFont('Symbols2', _SYMBOL2_FONT_PATH))
+    _symbol2_font_registered = True
+
 # -----------------------------
 # 色
 # -----------------------------
@@ -304,11 +323,32 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
             ))
         story.append(KeepTogether(chart_block))
 
-        # 星座・惑星記号の見方
+        # 星座・惑星記号の見方（Symbolsフォントで記号＋日本語を併記）
+        _sym = 'Symbols' if _symbol_font_registered else 'JP'
+        _sym2 = 'Symbols2' if _symbol2_font_registered else _sym
+        def _s(sym, jp):
+            # ☉（太陽）はSymbols2を使用
+            font = _sym2 if sym == "☉" else _sym
+            return f'<font name="{font}">{sym}</font>{jp}'
+        sign_row1 = "　".join([
+            _s("♈","牡羊座"), _s("♉","牡牛座"), _s("♊","双子座"), _s("♋","蟹座"),
+            _s("♌","獅子座"), _s("♍","乙女座"),
+        ])
+        sign_row2 = "　".join([
+            _s("♎","天秤座"), _s("♏","蠍座"), _s("♐","射手座"),
+            _s("♑","山羊座"), _s("♒","水瓶座"), _s("♓","魚座"),
+        ])
         sign_legend_rows = [
             [Paragraph("ホロスコープの記号の見方", S('sl', 10, PURPLE_DARK, True, 'CENTER', sb=4, sa=4))],
-            [Paragraph("♈牡羊 ♉牡牛 ♊双子 ♋蟹  ♌獅子 ♍乙女  ♎天秤 ♏蠍  ♐射手 ♑山羊 ♒水瓶 ♓魚", S('sl2', 8, PURPLE_DARK, False, 'CENTER', sb=2, sa=2))],
-            [Paragraph("Sun=太陽  Moon=月  Me=水星  Ve=金星  Ma=火星  Jup=木星  Sat=土星  Ur=天王星  Ne=海王星  Pl=冥王星", S('sl3', 8, TEXT_GRAY, False, 'CENTER', sb=2, sa=4))],
+            [Paragraph(sign_row1, S('sl2', 8, PURPLE_DARK, False, 'CENTER', sb=2, sa=2))],
+            [Paragraph(sign_row2, S('sl2b', 8, PURPLE_DARK, False, 'CENTER', sb=2, sa=2))],
+            [Paragraph(
+                "　".join([
+                    _s("☉","太陽"), _s("☽","月"), _s("☿","水星"), _s("♀","金星"), _s("♂","火星"),
+                    _s("♃","木星"), _s("♄","土星"), _s("♅","天王星"), _s("♆","海王星"), _s("♇","冥王星"),
+                ]),
+                S('sl3', 8, TEXT_GRAY, False, 'CENTER', sb=2, sa=4)
+            )],
         ]
         sign_legend = Table(sign_legend_rows, colWidths=[165*mm])
         sign_legend.setStyle(TableStyle([
@@ -812,10 +852,19 @@ def create_transit_pdf(natal_data, transit_data, aspects, outer_planets, chart_i
     if chart_image_bytes:
         img = Image(chart_image_bytes, width=130 * mm, height=130 * mm)
         img.hAlign = 'CENTER'
+        _sym_t = 'Symbols' if _symbol_font_registered else 'JP'
+        _sym2_t = 'Symbols2' if _symbol2_font_registered else _sym_t
+        def _st(sym, jp):
+            font = _sym2_t if sym == "☉" else _sym_t
+            return f'<font name="{font}">{sym}</font>{jp}'
+        _sign_row1_t = "　".join([_st("♈","牡羊座"),_st("♉","牡牛座"),_st("♊","双子座"),_st("♋","蟹座"),_st("♌","獅子座"),_st("♍","乙女座")])
+        _sign_row2_t = "　".join([_st("♎","天秤座"),_st("♏","蠍座"),_st("♐","射手座"),_st("♑","山羊座"),_st("♒","水瓶座"),_st("♓","魚座")])
+        _planet_row_t = "　".join([_st("☉","太陽"),_st("☽","月"),_st("☿","水星"),_st("♀","金星"),_st("♂","火星"),_st("♃","木星"),_st("♄","土星"),_st("♅","天王星"),_st("♆","海王星"),_st("♇","冥王星")])
         sign_legend_rows = [
             [Paragraph("ホロスコープの記号の見方", S('sl', 10, PURPLE_DARK, True, 'CENTER', sb=4, sa=4))],
-            [Paragraph("♈牡羊 ♉牡牛 ♊双子 ♋蟹  ♌獅子 ♍乙女  ♎天秤 ♏蠍  ♐射手 ♑山羊 ♒水瓶 ♓魚", S('sl2', 8, PURPLE_DARK, False, 'CENTER', sb=2, sa=2))],
-            [Paragraph("Sun=太陽 Moon=月 Me=水星 Ve=金星 Ma=火星 Jup=木星 Sat=土星 Ur=天王星 Ne=海王星 Pl=冥王星", S('sl3', 8, TEXT_GRAY, False, 'CENTER', sb=2, sa=2))],
+            [Paragraph(_sign_row1_t, S('sl2', 8, PURPLE_DARK, False, 'CENTER', sb=2, sa=2))],
+            [Paragraph(_sign_row2_t, S('sl2b', 8, PURPLE_DARK, False, 'CENTER', sb=2, sa=2))],
+            [Paragraph(_planet_row_t, S('sl3', 8, TEXT_GRAY, False, 'CENTER', sb=2, sa=2))],
             [Paragraph("▲マーク=トランジット（今日）の天体　●マーク=ネイタル（生まれた時）の天体", S('sl4', 8, TEXT_GRAY, False, 'CENTER', sb=2, sa=4))],
         ]
         sign_legend = Table(sign_legend_rows, colWidths=[165*mm])
@@ -830,10 +879,10 @@ def create_transit_pdf(natal_data, transit_data, aspects, outer_planets, chart_i
             Spacer(1, 4),
             img,
             Spacer(1, 6),
-            sign_legend,
-            Spacer(1, 6),
         ])
         story.append(chart_block)
+        story.append(sign_legend)
+        story.append(Spacer(1, 6))
         story.append(PageBreak())
 
     # --------------------------------------------------------
@@ -1143,10 +1192,19 @@ def create_compatibility_pdf(
     if chart_image_bytes:
         img = Image(chart_image_bytes, width=130 * mm, height=130 * mm)
         img.hAlign = 'CENTER'
+        _sym_c = 'Symbols' if _symbol_font_registered else 'JP'
+        _sym2_c = 'Symbols2' if _symbol2_font_registered else _sym_c
+        def _sc(sym, jp):
+            font = _sym2_c if sym == "☉" else _sym_c
+            return f'<font name="{font}">{sym}</font>{jp}'
+        _sign_row1_c = "　".join([_sc("♈","牡羊座"),_sc("♉","牡牛座"),_sc("♊","双子座"),_sc("♋","蟹座"),_sc("♌","獅子座"),_sc("♍","乙女座")])
+        _sign_row2_c = "　".join([_sc("♎","天秤座"),_sc("♏","蠍座"),_sc("♐","射手座"),_sc("♑","山羊座"),_sc("♒","水瓶座"),_sc("♓","魚座")])
+        _planet_row_c = "　".join([_sc("☉","太陽"),_sc("☽","月"),_sc("☿","水星"),_sc("♀","金星"),_sc("♂","火星"),_sc("♃","木星"),_sc("♄","土星"),_sc("♅","天王星"),_sc("♆","海王星"),_sc("♇","冥王星")])
         sign_legend_rows = [
             [Paragraph("ホロスコープの記号の見方", S('sl', 10, PURPLE_DARK, True, 'CENTER', sb=4, sa=4))],
-            [Paragraph("♈牡羊 ♉牡牛 ♊双子 ♋蟹  ♌獅子 ♍乙女  ♎天秤 ♏蠍  ♐射手 ♑山羊 ♒水瓶 ♓魚", S('sl2', 8, PURPLE_DARK, False, 'CENTER', sb=2, sa=2))],
-            [Paragraph("Sun=太陽 Moon=月 Me=水星 Ve=金星 Ma=火星 Jup=木星 Sat=土星 Ur=天王星 Ne=海王星 Pl=冥王星", S('sl3', 8, TEXT_GRAY, False, 'CENTER', sb=2, sa=4))],
+            [Paragraph(_sign_row1_c, S('sl2', 8, PURPLE_DARK, False, 'CENTER', sb=2, sa=2))],
+            [Paragraph(_sign_row2_c, S('sl2b', 8, PURPLE_DARK, False, 'CENTER', sb=2, sa=2))],
+            [Paragraph(_planet_row_c, S('sl3', 8, TEXT_GRAY, False, 'CENTER', sb=2, sa=4))],
         ]
         sign_legend = Table(sign_legend_rows, colWidths=[165*mm])
         sign_legend.setStyle(TableStyle([

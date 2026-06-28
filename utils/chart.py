@@ -1,7 +1,20 @@
 # utils/chart.py
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.font_manager as fm
+import os
 from utils.astro import split_sign_degree
+
+# Noto Sans Symbolsフォントをmatplotlibに登録
+_BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_SYMBOL_FONT_PATH = os.path.join(_BASE, 'fonts', 'NotoSansSymbols-VariableFont_wght.ttf')
+_SYMBOL2_FONT_PATH = os.path.join(_BASE, 'fonts', 'NotoSansSymbols2-Regular.ttf')
+_SYMBOL_PROP = None
+_SYMBOL2_PROP = None
+if os.path.exists(_SYMBOL_FONT_PATH):
+    _SYMBOL_PROP = fm.FontProperties(fname=_SYMBOL_FONT_PATH, size=10)
+if os.path.exists(_SYMBOL2_FONT_PATH):
+    _SYMBOL2_PROP = fm.FontProperties(fname=_SYMBOL2_FONT_PATH, size=10)
 
 def plot_horoscope(natal_longitudes, houses, transit_longitudes=None, time_unknown=False):
 
@@ -16,8 +29,8 @@ def plot_horoscope(natal_longitudes, houses, transit_longitudes=None, time_unkno
     }
 
     PLANET_LABELS = {
-        "太陽":"Sun","月":"Moon","水星":"Me","金星":"Ve","火星":"Ma",
-        "木星":"Jup","土星":"Sat","天王星":"Ur","海王星":"Ne","冥王星":"Pl"
+        "太陽":"☉","月":"☽","水星":"☿","金星":"♀","火星":"♂",
+        "木星":"♃","土星":"♄","天王星":"♅","海王星":"♆","冥王星":"♇"
     }
 
     PLANET_COLORS = {
@@ -57,7 +70,7 @@ def plot_horoscope(natal_longitudes, houses, transit_longitudes=None, time_unkno
     ax.set_aspect("equal")
     ax.axis("off")
     ax.set_xlim(-1.10, 1.10)
-    ax.set_ylim(-1.20, 1.10)
+    ax.set_ylim(-1.05, 1.10)
     fig.patch.set_facecolor("#f5f3ff")
     ax.set_facecolor("#f5f3ff")
 
@@ -169,12 +182,24 @@ def plot_horoscope(natal_longitudes, houses, transit_longitudes=None, time_unkno
         ax.annotate("", xy=(lx, ly), xytext=(item["px"], item["py"]),
                     arrowprops=dict(arrowstyle="-", color=item["color"],
                                    lw=0.7, alpha=0.4))
-        ax.text(lx, ly, item["label"],
-                ha="center", va="center",
-                fontsize=10, color=item["color"], fontweight="bold",
-                bbox=dict(boxstyle="round,pad=0.15", facecolor="white",
-                          edgecolor=item["color"], linewidth=0.8, alpha=0.95),
-                zorder=6)
+        # 太陽（☉）はNoto Sans Symbols 2、それ以外はNoto Sans Symbols
+        if item["label"] == "☉" and _SYMBOL2_PROP:
+            _fp = fm.FontProperties(fname=_SYMBOL2_FONT_PATH, size=11, weight="bold")
+        elif _SYMBOL_PROP:
+            _fp = fm.FontProperties(fname=_SYMBOL_FONT_PATH, size=11, weight="bold")
+        else:
+            _fp = None
+
+        txt_kwargs = dict(
+            ha="center", va="center",
+            fontsize=11, color=item["color"], fontweight="bold",
+            bbox=dict(boxstyle="round,pad=0.15", facecolor="white",
+                      edgecolor=item["color"], linewidth=0.8, alpha=0.95),
+            zorder=6,
+        )
+        if _fp:
+            txt_kwargs["fontproperties"] = _fp
+        ax.text(lx, ly, item["label"], **txt_kwargs)
 
     # トランジット
     if transit_longitudes:
@@ -182,26 +207,6 @@ def plot_horoscope(natal_longitudes, houses, transit_longitudes=None, time_unkno
             tx, ty = lon_to_xy(deg, 0.85)
             ax.plot(tx, ty, "^", color="blue", markersize=8, alpha=0.6, zorder=4)
 
-    # 凡例（英語略称＋星座略称＋度数）
-    row1, row2 = [], []
-    for i, name in enumerate(PLANET_ORDER):
-        if name not in natal_longitudes:
-            continue
-        sign, d = split_sign_degree(natal_longitudes[name])
-        sign_en = SIGN_SHORT.get(sign, sign[:3])
-        label = PLANET_LABELS.get(name, name)
-        entry = f"{label}:{sign_en}{d:.0f}"
-        if i < 5: row1.append(entry)
-        else: row2.append(entry)
-
-    ax.text(0, -1.06, "  |  ".join(row1), ha="center", va="center",
-            fontsize=13, color="#1a202c", fontweight="bold",
-            bbox=dict(boxstyle="round,pad=0.5", facecolor="white",
-                      edgecolor="#7c3aed", linewidth=2.0))
-    ax.text(0, -1.15, "  |  ".join(row2), ha="center", va="center",
-            fontsize=13, color="#1a202c", fontweight="bold",
-            bbox=dict(boxstyle="round,pad=0.5", facecolor="white",
-                      edgecolor="#7c3aed", linewidth=2.0))
-    # ※星座記号行は下のボックス（st.markdown）で日本語対応表を表示
+    # ※凡例はPDF/Streamlit側の日本語対応表で表示するため、チャート内には描画しない
 
     return fig
