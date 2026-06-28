@@ -88,8 +88,8 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
         pagesize=A4,
         rightMargin=18 * mm,
         leftMargin=18 * mm,
-        topMargin=15 * mm,
-        bottomMargin=15 * mm,
+        topMargin=12 * mm,
+        bottomMargin=12 * mm,
     )
 
     story = []
@@ -278,6 +278,7 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
             "本鑑定書は「占星術・数秘術・タロット」の3つの視点からお届けする総合鑑定書です。"
             "1ページ目のホロスコープはあなたの星の配置を示しています。"
             "次にキーワードと総合メッセージをご覧ください。"
+            "また「占い師からのひとこと」には、鑑定師があなたのホロスコープを見て感じたメッセージを込めています。"
             "その後、各天体・アスペクト・数秘術と順にお読みいただくと、"
             "あなたの全体像がより深く理解できます。"
             "最後のタロットは「今このときのあなたへのメッセージ」としてお受け取りください。",
@@ -371,6 +372,12 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
                 story.append(Paragraph(line, STYLE_BODY))
         story.append(Spacer(1, 8))
 
+    story.append(PageBreak())
+
+    # --------------------------------------------------------
+    # ★ 3ページ目：ASC（第一印象）
+    # --------------------------------------------------------
+    if not user_data.get("time_unknown"):
         section("第一印象（ASC）")
 
         asc_title = f"☺ アセンダント　{user_data.get('asc_sign', '')} {user_data.get('asc_deg', '')}"
@@ -769,8 +776,8 @@ def create_transit_pdf(natal_data, transit_data, aspects, outer_planets, chart_i
         pagesize=A4,
         rightMargin=20 * mm,
         leftMargin=20 * mm,
-        topMargin=18 * mm,
-        bottomMargin=18 * mm,
+        topMargin=12 * mm,
+        bottomMargin=12 * mm,
     )
     story = []
 
@@ -1100,8 +1107,8 @@ def create_compatibility_pdf(
         pagesize=A4,
         rightMargin=20 * mm,
         leftMargin=20 * mm,
-        topMargin=18 * mm,
-        bottomMargin=18 * mm,
+        topMargin=12 * mm,
+        bottomMargin=12 * mm,
     )
     story = []
 
