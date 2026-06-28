@@ -169,55 +169,115 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
         story.append(Spacer(1, 20))
 
     # --------------------------------------------------------
-    # ★ タイトル
     # --------------------------------------------------------
-    story.append(Paragraph("Luna 占星術", S('t1', 20, PURPLE_DARK, True, 'CENTER')))
-    story.append(Paragraph("ホロスコープ鑑定書", S('t2', 14, PURPLE_MID, True, 'CENTER')))
-    story.append(HRFlowable(width="100%", thickness=2, color=PURPLE_MID, spaceAfter=8))
+    # ★ 1ページ目：タイトル＋基本情報＋ホロスコープ（視覚的インパクト重視）
+    # --------------------------------------------------------
 
-    # --------------------------------------------------------
-    # ★ 基本情報
-    # --------------------------------------------------------
+    # タイトル（コンパクト）
+    story.append(Paragraph("Luna 占星術", S('t1', 16, PURPLE_DARK, True, 'CENTER', sb=4, sa=2)))
+    story.append(Paragraph("ホロスコープ鑑定書", S('t2', 11, PURPLE_MID, True, 'CENTER', sb=2, sa=4)))
+    story.append(HRFlowable(width="100%", thickness=2, color=PURPLE_MID, spaceAfter=6))
+
+    # 基本情報（コンパクト）
     info = [
         [
-            Paragraph("お名前", S('h', 10, PURPLE_DARK, True)),
-            Paragraph(user_data.get("name", ""), S('v')),
-            Paragraph("鑑定日", S('h', 10, PURPLE_DARK, True)),
-            Paragraph(user_data.get("reading_date", ""), S('v')),
+            Paragraph("お名前", S('h', 9, PURPLE_DARK, True)),
+            Paragraph(user_data.get("name", ""), S('v', 9)),
+            Paragraph("鑑定日", S('h', 9, PURPLE_DARK, True)),
+            Paragraph(user_data.get("reading_date", ""), S('v', 9)),
         ],
         [
-            Paragraph("生年月日", S('h', 10, PURPLE_DARK, True)),
-            Paragraph(user_data.get("birthday", ""), S('v')),
-            Paragraph("出生時刻", S('h', 10, PURPLE_DARK, True)),
+            Paragraph("生年月日", S('h', 9, PURPLE_DARK, True)),
+            Paragraph(user_data.get("birthday", ""), S('v', 9)),
+            Paragraph("出生時刻", S('h', 9, PURPLE_DARK, True)),
             Paragraph(
                 "不明（正午で計算）" if user_data.get("time_unknown") else user_data.get("birth_time", ""),
-                S('v', color=TEXT_GRAY) if user_data.get("time_unknown") else S('v')
+                S('v', 9, color=TEXT_GRAY) if user_data.get("time_unknown") else S('v', 9)
             ),
         ],
     ]
     t = Table(info, colWidths=[28 * mm, 62 * mm, 25 * mm, 45 * mm])
     t.setStyle(TableStyle([
         ('FONTNAME', (0, 0), (-1, -1), 'JP'),
-        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('FONTSIZE', (0, 0), (-1, -1), 9),
         ('BACKGROUND', (0, 0), (0, -1), PURPLE_LIGHT),
         ('BACKGROUND', (2, 0), (2, -1), PURPLE_LIGHT),
         ('BOX', (0, 0), (-1, -1), 1, PURPLE_BORDER),
         ('INNERGRID', (0, 0), (-1, -1), 0.5, PURPLE_BORDER),
-        ('TOPPADDING', (0, 0), (-1, -1), 5),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+        ('TOPPADDING', (0, 0), (-1, -1), 4),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
         ('LEFTPADDING', (0, 0), (-1, -1), 5),
     ]))
     story.append(t)
     story.append(Spacer(1, 8))
 
+    # ホロスコープ画像（大きく・1ページ目メイン）
+    if chart_image_bytes:
+        img = Image(chart_image_bytes, width=155 * mm, height=155 * mm)
+        img.hAlign = 'CENTER'
+        chart_title = "◆ 円形ホロスコープ（ソーラーチャート）" if user_data.get("time_unknown") else "◆ 円形ホロスコープ"
+        chart_block = [
+            Paragraph(chart_title, STYLE_H1),
+            Spacer(1, 4),
+            img,
+            Spacer(1, 6),
+        ]
+        if user_data.get("time_unknown"):
+            chart_block.insert(1, Paragraph(
+                "※ 出生時刻不明のため、太陽星座を第1ハウスとするソーラーチャートで表示しています。",
+                STYLE_NOTE,
+            ))
+        story.append(KeepTogether(chart_block))
+
+        # 星座・惑星記号の見方
+        _sym = 'Symbols' if _symbol_font_registered else 'JP'
+        _sym2 = 'Symbols2' if _symbol2_font_registered else _sym
+        def _s(sym, jp):
+            font = _sym2 if sym == "☉" else _sym
+            return f'<font name="{font}">{sym}</font>{jp}'
+        sign_row1 = "　".join([
+            _s("♈","牡羊座"), _s("♉","牡牛座"), _s("♊","双子座"), _s("♋","蟹座"),
+            _s("♌","獅子座"), _s("♍","乙女座"),
+        ])
+        sign_row2 = "　".join([
+            _s("♎","天秤座"), _s("♏","蠍座"), _s("♐","射手座"),
+            _s("♑","山羊座"), _s("♒","水瓶座"), _s("♓","魚座"),
+        ])
+        sign_legend_rows = [
+            [Paragraph("ホロスコープの記号の見方", S('sl', 10, PURPLE_DARK, True, 'CENTER', sb=4, sa=4))],
+            [Paragraph(sign_row1, S('sl2', 8, PURPLE_DARK, False, 'CENTER', sb=2, sa=2))],
+            [Paragraph(sign_row2, S('sl2b', 8, PURPLE_DARK, False, 'CENTER', sb=2, sa=2))],
+            [Paragraph(
+                "　".join([
+                    _s("☉","太陽"), _s("☽","月"), _s("☿","水星"), _s("♀","金星"), _s("♂","火星"),
+                    _s("♃","木星"), _s("♄","土星"), _s("♅","天王星"), _s("♆","海王星"), _s("♇","冥王星"),
+                ]),
+                S('sl3', 8, TEXT_GRAY, False, 'CENTER', sb=2, sa=4)
+            )],
+        ]
+        sign_legend = Table(sign_legend_rows, colWidths=[165*mm])
+        sign_legend.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,-1), PURPLE_LIGHT),
+            ('BOX', (0,0), (-1,-1), 0.5, PURPLE_BORDER),
+            ('LEFTPADDING', (0,0), (-1,-1), 10),
+            ('RIGHTPADDING', (0,0), (-1,-1), 10),
+        ]))
+        story.append(sign_legend)
+        story.append(Spacer(1, 6))
+
+    story.append(PageBreak())
+
     # --------------------------------------------------------
-    # ★ 鑑定書の読み方ガイド
+    # ★ 2ページ目：読み方ガイド＋キーワード＋総合メッセージ＋占い師メッセージ
     # --------------------------------------------------------
+
+    # 鑑定書の読み方ガイド（新テキスト）
     guide_rows = [
         [Paragraph("この鑑定書について", S('gt', 10, PURPLE_DARK, True, 'CENTER', sb=4, sa=4))],
         [Paragraph(
             "本鑑定書は「占星術・数秘術・タロット」の3つの視点からお届けする総合鑑定書です。"
-            "まず最初にキーワードと総合メッセージをご覧ください。"
+            "1ページ目のホロスコープはあなたの星の配置を示しています。"
+            "次にキーワードと総合メッセージをご覧ください。"
             "その後、各天体・アスペクト・数秘術と順にお読みいただくと、"
             "あなたの全体像がより深く理解できます。"
             "最後のタロットは「今このときのあなたへのメッセージ」としてお受け取りください。",
@@ -236,9 +296,7 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
     story.append(guide_table)
     story.append(Spacer(1, 8))
 
-    # --------------------------------------------------------
-    # ★ キーワードサマリー
-    # --------------------------------------------------------
+    # キーワードサマリー
     kw_asc     = user_data.get("kw_asc", "")
     kw_sun     = user_data.get("kw_sun", "")
     kw_moon    = user_data.get("kw_moon", "")
@@ -279,9 +337,7 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
         story.append(kw_table)
         story.append(Spacer(1, 12))
 
-    # --------------------------------------------------------
-    # ★ 総合メッセージ
-    # --------------------------------------------------------
+    # 総合メッセージ
     overall_first = user_data.get("overall_message", "")
     astrologer_top = user_data.get("astrologer_message", "")
 
@@ -290,7 +346,6 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
         story.append(Paragraph("◆ あなたへの総合メッセージ", STYLE_H1))
         story.append(Spacer(1, 4))
 
-    # ① 自動生成メッセージ
     if overall_first:
         story.append(Paragraph("【星が示すあなたのストーリー】", STYLE_H2))
         for line in overall_first.split("\n"):
@@ -303,66 +358,9 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
                 story.append(Paragraph(line, STYLE_BODY))
         story.append(Spacer(1, 8))
 
-    # --------------------------------------------------------
-    # ★ ホロスコープ画像
-    # --------------------------------------------------------
-    if chart_image_bytes:
-        img = Image(chart_image_bytes, width=140 * mm, height=140 * mm)
-        img.hAlign = 'CENTER'
-        chart_title = "◆ 円形ホロスコープ（ソーラーチャート）" if user_data.get("time_unknown") else "◆ 円形ホロスコープ"
-        chart_block = [
-            Paragraph(chart_title, STYLE_H1),
-            Spacer(1, 4),
-            img,
-            Spacer(1, 6),
-        ]
-        if user_data.get("time_unknown"):
-            chart_block.insert(1, Paragraph(
-                "※ 出生時刻不明のため、太陽星座を第1ハウスとするソーラーチャートで表示しています。",
-                STYLE_NOTE,
-            ))
-        story.append(KeepTogether(chart_block))
-
-        # 星座・惑星記号の見方（Symbolsフォントで記号＋日本語を併記）
-        _sym = 'Symbols' if _symbol_font_registered else 'JP'
-        _sym2 = 'Symbols2' if _symbol2_font_registered else _sym
-        def _s(sym, jp):
-            # ☉（太陽）はSymbols2を使用
-            font = _sym2 if sym == "☉" else _sym
-            return f'<font name="{font}">{sym}</font>{jp}'
-        sign_row1 = "　".join([
-            _s("♈","牡羊座"), _s("♉","牡牛座"), _s("♊","双子座"), _s("♋","蟹座"),
-            _s("♌","獅子座"), _s("♍","乙女座"),
-        ])
-        sign_row2 = "　".join([
-            _s("♎","天秤座"), _s("♏","蠍座"), _s("♐","射手座"),
-            _s("♑","山羊座"), _s("♒","水瓶座"), _s("♓","魚座"),
-        ])
-        sign_legend_rows = [
-            [Paragraph("ホロスコープの記号の見方", S('sl', 10, PURPLE_DARK, True, 'CENTER', sb=4, sa=4))],
-            [Paragraph(sign_row1, S('sl2', 8, PURPLE_DARK, False, 'CENTER', sb=2, sa=2))],
-            [Paragraph(sign_row2, S('sl2b', 8, PURPLE_DARK, False, 'CENTER', sb=2, sa=2))],
-            [Paragraph(
-                "　".join([
-                    _s("☉","太陽"), _s("☽","月"), _s("☿","水星"), _s("♀","金星"), _s("♂","火星"),
-                    _s("♃","木星"), _s("♄","土星"), _s("♅","天王星"), _s("♆","海王星"), _s("♇","冥王星"),
-                ]),
-                S('sl3', 8, TEXT_GRAY, False, 'CENTER', sb=2, sa=4)
-            )],
-        ]
-        sign_legend = Table(sign_legend_rows, colWidths=[165*mm])
-        sign_legend.setStyle(TableStyle([
-            ('BACKGROUND', (0,0), (-1,-1), PURPLE_LIGHT),
-            ('BOX', (0,0), (-1,-1), 0.5, PURPLE_BORDER),
-            ('LEFTPADDING', (0,0), (-1,-1), 10),
-            ('RIGHTPADDING', (0,0), (-1,-1), 10),
-        ]))
-        story.append(sign_legend)
-        story.append(Spacer(1, 6))
-
-    # 占い師からのメッセージ（ホロスコープの下）
+    # 占い師からのメッセージ
     if astrologer_top and astrologer_top.strip():
-        story.append(Spacer(1, 8))
+        story.append(Spacer(1, 4))
         story.append(HRFlowable(width="100%", thickness=0.5, color=PURPLE_BORDER, spaceBefore=4, spaceAfter=4))
         story.append(Paragraph("【占い師からのひとこと】", STYLE_H2))
         for line in astrologer_top.split("\n"):
@@ -373,12 +371,6 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
                 story.append(Paragraph(line, STYLE_BODY))
         story.append(Spacer(1, 8))
 
-    story.append(PageBreak())
-
-    # --------------------------------------------------------
-    # ★ ASC（第一印象）：出生時刻不明の場合は非表示
-    # --------------------------------------------------------
-    if not user_data.get("time_unknown"):
         section("第一印象（ASC）")
 
         asc_title = f"☺ アセンダント　{user_data.get('asc_sign', '')} {user_data.get('asc_deg', '')}"
@@ -419,7 +411,7 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
     section("主要天体")
 
     for sym, lbl, ks, kd, kh, km, khm in [
-        ("☀", "太陽（本質）", "sun_sign", "sun_deg", "sun_house", "sun_message", "sun_house_message"),
+        ("☉", "太陽（本質）", "sun_sign", "sun_deg", "sun_house", "sun_message", "sun_house_message"),
         ("☽", "月（感情）", "moon_sign", "moon_deg", "moon_house", "moon_message", "moon_house_message"),
         ("☿", "水星（思考）", "mercury_sign", "mercury_deg", "mercury_house", "mercury_message", "mercury_house_message"),
         ("♀", "金星（愛・好み）", "venus_sign", "venus_deg", "venus_house", "venus_message", "venus_house_message"),
@@ -913,7 +905,7 @@ def create_transit_pdf(natal_data, transit_data, aspects, outer_planets, chart_i
     t_sun_deg  = transit_data.get("sun_deg", "")
     t_moon_deg = transit_data.get("moon_deg", "")
 
-    story.append(Paragraph(f"☀ トランジット太陽：{t_sun} {t_sun_deg}", S('p', 10, PURPLE_MID, True, sb=2, sa=4)))
+    story.append(Paragraph(f"☉ トランジット太陽：{t_sun} {t_sun_deg}", S('p', 10, PURPLE_MID, True, sb=2, sa=4)))
     story.append(Paragraph(f"☽ トランジット月：{t_moon} {t_moon_deg}", S('p', 10, PURPLE_MID, True, sb=2, sa=8)))
 
     if flow_title:
@@ -1234,7 +1226,7 @@ def create_compatibility_pdf(
             Paragraph(name1, S('h', 10, PURPLE_DARK, True)),
             Paragraph(name2, S('h', 10, PURPLE_DARK, True)),
         ],
-        [Paragraph("☀ 太陽", STYLE_BODY), Paragraph(sun_sign1, STYLE_BODY), Paragraph(sun_sign2, STYLE_BODY)],
+        [Paragraph("☉ 太陽", STYLE_BODY), Paragraph(sun_sign1, STYLE_BODY), Paragraph(sun_sign2, STYLE_BODY)],
         [Paragraph("☽ 月", STYLE_BODY), Paragraph(moon_sign1, STYLE_BODY), Paragraph(moon_sign2, STYLE_BODY)],
         [Paragraph("♀ 金星", STYLE_BODY), Paragraph(venus_sign1, STYLE_BODY), Paragraph(venus_sign2, STYLE_BODY)],
         [Paragraph("♂ 火星", STYLE_BODY), Paragraph(mars_sign1, STYLE_BODY), Paragraph(mars_sign2, STYLE_BODY)],
