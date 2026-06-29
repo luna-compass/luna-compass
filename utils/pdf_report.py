@@ -18,8 +18,9 @@ _BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # 通常フォント候補
 _FONT_PATHS = [
-    os.path.join(_BASE, 'fonts', 'NotoSansJP-VariableFont_wght.ttf'),
+    os.path.join(_BASE, 'fonts', 'NotoSansJP-Regular.ttf'),
     os.path.join(_BASE, 'fonts', 'gothic.ttc'),
+    os.path.join(_BASE, 'fonts', 'NotoSansJP-VariableFont_wght.ttf'),
     '/usr/share/fonts/opentype/ipafont-gothic/ipag.ttf',
     '/usr/share/fonts/truetype/fonts-japanese-gothic.ttf',
 ]
@@ -88,8 +89,11 @@ TEXT_GRAY     = colors.HexColor("#6b7280")
 # スタイル
 # -----------------------------
 def S(name, size=10, color=TEXT_DARK, bold=False, align='LEFT', sb=6, sa=6):
+    # パラメータからユニークなスタイル名を生成してスタイル衝突を防ぐ
+    color_hex = color.hexval() if hasattr(color, 'hexval') else str(color)
+    unique_name = f"{name}_{size}_{color_hex}_{bold}_{align}_{sb}_{sa}"
     return ParagraphStyle(
-        name,
+        unique_name,
         fontName='JPB' if bold else 'JP',
         fontSize=size,
         textColor=color,
@@ -228,8 +232,6 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
     ]
     t = Table(info, colWidths=[28 * mm, 62 * mm, 25 * mm, 45 * mm])
     t.setStyle(TableStyle([
-        ('FONTNAME', (0, 0), (-1, -1), 'JP'),
-        ('FONTSIZE', (0, 0), (-1, -1), 9),
         ('BACKGROUND', (0, 0), (0, -1), PURPLE_LIGHT),
         ('BACKGROUND', (2, 0), (2, -1), PURPLE_LIGHT),
         ('BOX', (0, 0), (-1, -1), 1, PURPLE_BORDER),
@@ -558,7 +560,7 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
                 "不定": "強烈なエネルギーが四方向から交差するグランドクロスです。大きな試練と同時に、大きな成長の機会があります。",
             }.get(mode, "")
             rows = [
-                [Paragraph(f"✚ グランドクロス（{mode}モード）", S('gc', 11, PURPLE_MID, True, sb=4, sa=4))],
+                [Paragraph(f"■ グランドクロス（{mode}モード）", S('gc', 11, PURPLE_MID, True, sb=4, sa=4))],
                 [Paragraph(f"天体：{planets_str}", STYLE_BODY)],
                 [Paragraph(f"星座：{signs_str}", STYLE_BODY)],
                 [Spacer(1, 4)],
@@ -583,21 +585,25 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
     # --------------------------------------------------------
     section("数秘術")
 
-    def _num_cell(label, value):
-        return [
-            Paragraph(label, S('nl', 9, PURPLE_DARK, True, 'CENTER', sb=2, sa=2)),
-            Paragraph(str(value), S('nv', 16, PURPLE_MID, True, 'CENTER', sb=2, sa=2)),
-        ]
+    lp_val = str(user_data.get("life_path", ""))
+    bd_val = str(user_data.get("birthday_num", ""))
+    rl_val = str(user_data.get("ruler_num", ""))
 
-    nd = [[
-        _num_cell("ライフパス", user_data.get("life_path", "")),
-        _num_cell("バースデー", user_data.get("birthday_num", "")),
-        _num_cell("ルーラー",   user_data.get("ruler_num", "")),
-    ]]
+    nd = [
+        [
+            Paragraph("ライフパス", S('nl1', 9, PURPLE_DARK, True, 'CENTER', sb=2, sa=2)),
+            Paragraph("バースデー", S('nl2', 9, PURPLE_DARK, True, 'CENTER', sb=2, sa=2)),
+            Paragraph("ルーラー",   S('nl3', 9, PURPLE_DARK, True, 'CENTER', sb=2, sa=2)),
+        ],
+        [
+            Paragraph(lp_val, S('nv1', 16, PURPLE_MID, True, 'CENTER', sb=2, sa=2)),
+            Paragraph(bd_val, S('nv2', 16, PURPLE_MID, True, 'CENTER', sb=2, sa=2)),
+            Paragraph(rl_val, S('nv3', 16, PURPLE_MID, True, 'CENTER', sb=2, sa=2)),
+        ],
+    ]
 
     nt = Table(nd, colWidths=[40*mm, 40*mm, 40*mm])
     nt.setStyle(TableStyle([
-        ('FONTNAME',      (0,0), (-1,-1), 'JP'),
         ('ALIGN',         (0,0), (-1,-1), 'CENTER'),
         ('VALIGN',        (0,0), (-1,-1), 'MIDDLE'),
         ('BACKGROUND',    (0,0), (-1,-1), PURPLE_LIGHT),
@@ -619,7 +625,7 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
 
     story.append(Spacer(1, 10))
     story.append(Paragraph(
-        f"★ ライフパスナンバー {lp_num}　～人生のテーマ・使命～",
+        f"■ ライフパスナンバー {lp_num}　～人生のテーマ・使命～",
         S('lpt', 14, TEXT_DARK, True, sb=0, sa=2)
     ))
     story.append(Paragraph(
@@ -657,7 +663,7 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
         bd_block = [
             Spacer(1, 10),
             Paragraph(
-                f"◎ バースデーナンバー {bd_num}　～生まれ持った才能～",
+                f"■ バースデーナンバー {bd_num}　～生まれ持った才能～",
                 S('bdt', 14, TEXT_DARK, True, sb=0, sa=2)
             ),
             Paragraph(
@@ -696,7 +702,7 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
         rl_block = [
             Spacer(1, 10),
             Paragraph(
-                f"◇ ルーラーナンバー {rl_num}　～生まれた年の使命～",
+                f"■ ルーラーナンバー {rl_num}　～生まれた年の使命～",
                 S('rlt', 14, TEXT_DARK, True, sb=0, sa=2)
             ),
             Paragraph(
