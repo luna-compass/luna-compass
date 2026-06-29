@@ -151,7 +151,10 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
 
         content = []
         # ハウス表示：time_unknownのとき非表示
-        header = f"{symbol} {label}　{sign} {deg}"
+        # 惑星記号にSymbolsフォントを適用
+        _sym_f = 'Symbols2' if _symbol2_font_registered and symbol == "☉" else ('Symbols' if _symbol_font_registered else 'JP')
+        symbol_html = f'<font name="{_sym_f}">{symbol}</font>'
+        header = f"{symbol_html} {label}　{sign} {deg}"
         if house and not time_unknown:
             header += f"　{house}ハウス"
         content.append(Paragraph(
@@ -939,8 +942,10 @@ def create_transit_pdf(natal_data, transit_data, aspects, outer_planets, chart_i
     t_sun_deg  = transit_data.get("sun_deg", "")
     t_moon_deg = transit_data.get("moon_deg", "")
 
-    story.append(Paragraph(f"☉ トランジット太陽：{t_sun} {t_sun_deg}", S('p', 10, PURPLE_MID, True, sb=2, sa=4)))
-    story.append(Paragraph(f"☽ トランジット月：{t_moon} {t_moon_deg}", S('p', 10, PURPLE_MID, True, sb=2, sa=8)))
+    _sym2_t2 = 'Symbols2' if _symbol2_font_registered else ('Symbols' if _symbol_font_registered else 'JP')
+    _sym_t2 = 'Symbols' if _symbol_font_registered else 'JP'
+    story.append(Paragraph(f'<font name="{_sym2_t2}">☉</font> トランジット太陽：{t_sun} {t_sun_deg}', S('p', 10, PURPLE_MID, True, sb=2, sa=4)))
+    story.append(Paragraph(f'<font name="{_sym_t2}">☽</font> トランジット月：{t_moon} {t_moon_deg}', S('p', 10, PURPLE_MID, True, sb=2, sa=8)))
 
     if flow_title:
         story.append(Paragraph(flow_title, STYLE_H3))
@@ -1078,7 +1083,8 @@ def create_transit_pdf(natal_data, transit_data, aspects, outer_planets, chart_i
         p_deg  = op.get("deg", "")
         p_msg  = op.get("message", "")
 
-        rows = [[Paragraph(f"♃ {p_name}：{p_sign} {p_deg}", S('p', 10, PURPLE_MID, True, sb=4, sa=4))]]
+        _sym_op = 'Symbols' if _symbol_font_registered else 'JP'
+        rows = [[Paragraph(f'<font name="{_sym_op}">♃</font> {p_name}：{p_sign} {p_deg}', S('p', 10, PURPLE_MID, True, sb=4, sa=4))]]
         if p_msg:
             for line in p_msg.split("\n"):
                 line = line.strip()
