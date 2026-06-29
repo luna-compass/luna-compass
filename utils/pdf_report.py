@@ -15,16 +15,43 @@ import os
 # フォント登録
 # -----------------------------
 _BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# 通常フォント候補
 _FONT_PATHS = [
+    os.path.join(_BASE, 'fonts', 'NotoSansJP-VariableFont_wght.ttf'),
     os.path.join(_BASE, 'fonts', 'gothic.ttc'),
     '/usr/share/fonts/opentype/ipafont-gothic/ipag.ttf',
     '/usr/share/fonts/truetype/fonts-japanese-gothic.ttf',
 ]
+# 太字フォント候補（Bold専用ファイルがあれば優先）
+_FONT_BOLD_PATHS = [
+    os.path.join(_BASE, 'fonts', 'NotoSansJP-Bold.ttf'),
+    os.path.join(_BASE, 'fonts', 'NotoSansJP_Bold.ttf'),
+    os.path.join(_BASE, 'fonts', 'gothic-bold.ttc'),
+    '/usr/share/fonts/opentype/ipafont-gothic/ipagp.ttf',
+]
+
+_registered_font_path = None
 for _path in _FONT_PATHS:
     if os.path.exists(_path):
         pdfmetrics.registerFont(TTFont('JP', _path))
-        pdfmetrics.registerFont(TTFont('JPB', _path))
+        _registered_font_path = _path
         break
+
+# Bold用フォント：専用ファイルがあれば使い、なければ通常フォントで代用
+_bold_registered = False
+for _bpath in _FONT_BOLD_PATHS:
+    if os.path.exists(_bpath):
+        pdfmetrics.registerFont(TTFont('JPB', _bpath))
+        _bold_registered = True
+        break
+if not _bold_registered and _registered_font_path:
+    # 通常フォントを JPB としても登録（同名衝突を避けるため alias を使用）
+    from reportlab.pdfbase.ttfonts import TTFont as _TTFont
+    try:
+        pdfmetrics.registerFont(_TTFont('JPB', _registered_font_path))
+    except Exception:
+        pass
 
 # Noto Sans Symbols（占星術記号用）
 _SYMBOL_FONT_PATHS = [
@@ -380,7 +407,7 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
     if not user_data.get("time_unknown"):
         section("第一印象（ASC）")
 
-        asc_title = f"☺ アセンダント　{user_data.get('asc_sign', '')} {user_data.get('asc_deg', '')}"
+        asc_title = f"ASC アセンダント　{user_data.get('asc_sign', '')} {user_data.get('asc_deg', '')}"
         asc_msg = user_data.get("asc_message", "")
 
         asc_content = []
@@ -589,7 +616,7 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
 
     story.append(Spacer(1, 10))
     story.append(Paragraph(
-        f"🌟 ライフパスナンバー {lp_num}　～人生のテーマ・使命～",
+        f"★ ライフパスナンバー {lp_num}　～人生のテーマ・使命～",
         S('lpt', 14, TEXT_DARK, True, sb=0, sa=2)
     ))
     story.append(Paragraph(
@@ -627,7 +654,7 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
         bd_block = [
             Spacer(1, 10),
             Paragraph(
-                f"🎂 バースデーナンバー {bd_num}　～生まれ持った才能～",
+                f"◎ バースデーナンバー {bd_num}　～生まれ持った才能～",
                 S('bdt', 14, TEXT_DARK, True, sb=0, sa=2)
             ),
             Paragraph(
@@ -666,7 +693,7 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
         rl_block = [
             Spacer(1, 10),
             Paragraph(
-                f"👑 ルーラーナンバー {rl_num}　～生まれた年の使命～",
+                f"◇ ルーラーナンバー {rl_num}　～生まれた年の使命～",
                 S('rlt', 14, TEXT_DARK, True, sb=0, sa=2)
             ),
             Paragraph(
@@ -695,7 +722,7 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
     # --------------------------------------------------------
     tarot_data = user_data.get("tarot_message", {})
     if tarot_data and isinstance(tarot_data, dict):
-        section("今日のあなたへのメッセージ 🔮")
+        section("今日のあなたへのメッセージ")
 
         from PIL import Image as PILImage
         import io as _io
@@ -991,7 +1018,7 @@ def create_transit_pdf(natal_data, transit_data, aspects, outer_planets, chart_i
                 "混合": "今の天体の流れがあなたのチャートと大きなトラインを形成しています。",
             }.get(elem, "")
             rows = [
-                [Paragraph(f"🔺 グランドトライン（{elem}のエレメント）", S('gt', 11, PURPLE_MID, True, sb=4, sa=4))],
+                [Paragraph(f"▲ グランドトライン（{elem}のエレメント）", S('gt', 11, PURPLE_MID, True, sb=4, sa=4))],
                 [Paragraph(f"天体：{planets_str}", STYLE_BODY)],
                 [Spacer(1, 4)],
                 [Paragraph(elem_msg, STYLE_BODY)],
