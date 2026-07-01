@@ -407,6 +407,57 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
     story.append(PageBreak())
 
     # --------------------------------------------------------
+    # ★ タロットメッセージ（「今知りたい答え」を早めに渡す）
+    # --------------------------------------------------------
+    tarot_data = user_data.get("tarot_message", {})
+    if tarot_data and isinstance(tarot_data, dict):
+        section("今日のあなたへのメッセージ")
+
+        from PIL import Image as PILImage
+        import io as _io
+
+        card_img_path = tarot_data.get("image", "")
+        card_name = tarot_data.get("name", "")
+        card_position = tarot_data.get("position", "")
+        card_msg = tarot_data.get("message", "")
+        is_reversed = tarot_data.get("is_reversed", False)
+
+        # カード画像（PDF用にリサイズして軽量化）
+        if card_img_path and os.path.exists(card_img_path):
+            try:
+                pil_img = PILImage.open(card_img_path).convert("RGB")
+                if is_reversed:
+                    pil_img = pil_img.rotate(180)
+                # PDF埋め込み用に最大300×500pxにリサイズ
+                pil_img.thumbnail((300, 500), PILImage.LANCZOS)
+                img_buf = _io.BytesIO()
+                pil_img.save(img_buf, format="JPEG", quality=75, optimize=True)
+                img_buf.seek(0)
+                card_image = Image(img_buf, width=70 * mm, height=115 * mm)
+                card_image.hAlign = 'CENTER'
+                story.append(card_image)
+                story.append(Spacer(1, 16))
+            except Exception:
+                pass
+
+        story.append(Paragraph(
+            f"{card_name}（{card_position}）",
+            S('tm', 12, PURPLE_MID, True, align='CENTER', sb=4, sa=4),
+        ))
+
+        if card_msg:
+            for line in card_msg.split("\n"):
+                line = line.strip()
+                if not line:
+                    story.append(Spacer(1, 4))
+                elif line.startswith("【"):
+                    story.append(Paragraph(line, S('tmh', 10, PURPLE_MID, True, align='LEFT', sb=4, sa=2)))
+                else:
+                    story.append(Paragraph(line, S('tmm', 10, TEXT_DARK, align='LEFT', sb=0, sa=3)))
+
+        story.append(PageBreak())
+
+    # --------------------------------------------------------
     # ★ 3ページ目：ASC（第一印象）
     # --------------------------------------------------------
     if not user_data.get("time_unknown"):
@@ -445,13 +496,29 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
         story.append(PageBreak())
 
     # --------------------------------------------------------
-    # ★ 主要天体
+    # ★ 太陽・月（性格の核）
     # --------------------------------------------------------
-    section("主要天体")
+    section("太陽・月")
 
     for sym, lbl, ks, kd, kh, km, khm in [
         ("☉", "太陽（本質）", "sun_sign", "sun_deg", "sun_house", "sun_message", "sun_house_message"),
         ("☽", "月（感情）", "moon_sign", "moon_deg", "moon_house", "moon_message", "moon_house_message"),
+    ]:
+        planet_row(
+            sym, lbl,
+            user_data.get(ks, ""),
+            user_data.get(kd, ""),
+            user_data.get(kh, ""),
+            user_data.get(km, ""),
+            user_data.get(khm, ""),
+        )
+
+    # --------------------------------------------------------
+    # ★ 水星・金星・火星（考え方・恋愛・行動力）
+    # --------------------------------------------------------
+    section("水星・金星・火星")
+
+    for sym, lbl, ks, kd, kh, km, khm in [
         ("☿", "水星（思考）", "mercury_sign", "mercury_deg", "mercury_house", "mercury_message", "mercury_house_message"),
         ("♀", "金星（愛・好み）", "venus_sign", "venus_deg", "venus_house", "venus_message", "venus_house_message"),
         ("♂", "火星（行動）", "mars_sign", "mars_deg", "mars_house", "mars_message", "mars_house_message"),
@@ -465,28 +532,7 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
             user_data.get(khm, ""),
         )
 
-    # --------------------------------------------------------
-    # ★ 外惑星
-    # --------------------------------------------------------
-    section("外惑星")
-
-    for sym, lbl, ks, kd, kh, km, khm in [
-        ("♃", "木星（発展）", "jupiter_sign", "jupiter_deg", "jupiter_house", "jupiter_message", "jupiter_house_message"),
-        ("♄", "土星（課題）", "saturn_sign", "saturn_deg", "saturn_house", "saturn_message", "saturn_house_message"),
-        ("♅", "天王星（改革）", "uranus_sign", "uranus_deg", "uranus_house", "uranus_message", "uranus_house_message"),
-        ("♆", "海王星（直感）", "neptune_sign", "neptune_deg", "neptune_house", "neptune_message", "neptune_house_message"),
-        ("♇", "冥王星（変容）", "pluto_sign", "pluto_deg", "pluto_house", "pluto_message", "pluto_house_message"),
-    ]:
-        planet_row(
-            sym, lbl,
-            user_data.get(ks, ""),
-            user_data.get(kd, ""),
-            user_data.get(kh, ""),
-            user_data.get(km, ""),
-            user_data.get(khm, ""),
-        )
-
-    story.append(PageBreak())    
+    story.append(PageBreak())
 
     # --------------------------------------------------------
     # ★ アスペクト
@@ -725,65 +771,70 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
 
     story.append(PageBreak())
 
+    # --------------------------------------------------------
+    # ★ 外惑星（資料編）の前置き
+    # --------------------------------------------------------
+    outer_intro_rows = [
+        [Paragraph(
+            "ここからは補足です",
+            S('oi_t', 11, PURPLE_DARK, True, 'CENTER', sb=2, sa=4)
+        )],
+        [Paragraph(
+            "木星から冥王星までは動きがゆっくりで、同世代の人と近い配置になりやすい天体です。"
+            "ここまでの内容で十分にあなたらしさは掴めていますので、"
+            "「もっと詳しく知りたい」という方は参考としてご覧ください。",
+            S('oi_b', 9, TEXT_DARK, False, 'CENTER', sb=0, sa=2)
+        )],
+    ]
+    outer_intro = Table(outer_intro_rows, colWidths=[165 * mm])
+    outer_intro.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, -1), PURPLE_LIGHT),
+        ('BOX', (0, 0), (-1, -1), 0.5, PURPLE_BORDER),
+        ('LEFTPADDING', (0, 0), (-1, -1), 14),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 14),
+        ('TOPPADDING', (0, 0), (0, 0), 10),
+        ('BOTTOMPADDING', (0, -1), (-1, -1), 10),
+    ]))
+    story.append(outer_intro)
+    story.append(Spacer(1, 10))
 
     # --------------------------------------------------------
-    # ★ タロットメッセージ
+    # ★ 外惑星（興味がある人向けの資料編）
     # --------------------------------------------------------
-    tarot_data = user_data.get("tarot_message", {})
-    if tarot_data and isinstance(tarot_data, dict):
-        section("今日のあなたへのメッセージ")
+    section("外惑星")
 
-        from PIL import Image as PILImage
-        import io as _io
+    for sym, lbl, ks, kd, kh, km, khm in [
+        ("♃", "木星（発展）", "jupiter_sign", "jupiter_deg", "jupiter_house", "jupiter_message", "jupiter_house_message"),
+        ("♄", "土星（課題）", "saturn_sign", "saturn_deg", "saturn_house", "saturn_message", "saturn_house_message"),
+        ("♅", "天王星（改革）", "uranus_sign", "uranus_deg", "uranus_house", "uranus_message", "uranus_house_message"),
+        ("♆", "海王星（直感）", "neptune_sign", "neptune_deg", "neptune_house", "neptune_message", "neptune_house_message"),
+        ("♇", "冥王星（変容）", "pluto_sign", "pluto_deg", "pluto_house", "pluto_message", "pluto_house_message"),
+    ]:
+        planet_row(
+            sym, lbl,
+            user_data.get(ks, ""),
+            user_data.get(kd, ""),
+            user_data.get(kh, ""),
+            user_data.get(km, ""),
+            user_data.get(khm, ""),
+        )
 
-        card_img_path = tarot_data.get("image", "")
-        card_name = tarot_data.get("name", "")
-        card_position = tarot_data.get("position", "")
-        card_msg = tarot_data.get("message", "")
-        is_reversed = tarot_data.get("is_reversed", False)
-
-        # カード画像（PDF用にリサイズして軽量化）
-        if card_img_path and os.path.exists(card_img_path):
-            try:
-                pil_img = PILImage.open(card_img_path).convert("RGB")
-                if is_reversed:
-                    pil_img = pil_img.rotate(180)
-                # PDF埋め込み用に最大300×500pxにリサイズ
-                pil_img.thumbnail((300, 500), PILImage.LANCZOS)
-                img_buf = _io.BytesIO()
-                pil_img.save(img_buf, format="JPEG", quality=75, optimize=True)
-                img_buf.seek(0)
-                card_image = Image(img_buf, width=70 * mm, height=115 * mm)
-                card_image.hAlign = 'CENTER'
-                story.append(card_image)
-                story.append(Spacer(1, 16))
-            except Exception:
-                pass
-
-        story.append(Paragraph(
-            f"{card_name}（{card_position}）",
-            S('tm', 12, PURPLE_MID, True, align='CENTER', sb=4, sa=4),
-        ))
-
-        if card_msg:
-            for line in card_msg.split("\n"):
-                line = line.strip()
-                if not line:
-                    story.append(Spacer(1, 4))
-                elif line.startswith("【"):
-                    story.append(Paragraph(line, S('tmh', 10, PURPLE_MID, True, align='LEFT', sb=4, sa=2)))
-                else:
-                    story.append(Paragraph(line, S('tmm', 10, TEXT_DARK, align='LEFT', sb=0, sa=3)))
+    # 最後のカード直後の余白（Spacer 20mm）を詰めて、フッターが同一ページに収まりやすくする
+    if story and isinstance(story[-1], Spacer):
+        story.pop()
+        story.append(Spacer(1, 4))
 
     # --------------------------------------------------------
     # ★ フッター
     # --------------------------------------------------------
-    story.append(Spacer(1, 8))
-    story.append(HRFlowable(width="100%", thickness=1, color=PURPLE_BORDER))
-    story.append(Paragraph(
-        "Luna 占星術　Luna-compass",
-        S('ft', 8, TEXT_GRAY, align='CENTER', sb=4, sa=0),
-    ))
+    story.append(KeepTogether([
+        Spacer(1, 8),
+        HRFlowable(width="100%", thickness=1, color=PURPLE_BORDER),
+        Paragraph(
+            "Luna 占星術　Luna-compass",
+            S('ft', 8, TEXT_GRAY, align='CENTER', sb=4, sa=0),
+        ),
+    ]))
 
     # --------------------------------------------------------
     # ★ PDF 出力
