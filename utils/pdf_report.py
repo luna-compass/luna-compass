@@ -365,11 +365,11 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
             ('BOX', (0, 0), (-1, -1), 0.5, PURPLE_MID),
             ('LEFTPADDING', (0, 0), (-1, -1), 16),
             ('RIGHTPADDING', (0, 0), (-1, -1), 16),
-            ('TOPPADDING', (0, 0), (-1, -1), 6),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+            ('TOPPADDING', (0, 0), (-1, -1), 3),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
         ]))
         story.append(kw_table)
-        story.append(Spacer(1, 12))
+        story.append(Spacer(1, 8))
 
     # 総合メッセージ
     overall_first = user_data.get("overall_message", "")
@@ -494,7 +494,7 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
         ]))
 
         story.append(asc_card)
-        story.append(PageBreak())
+        story.append(Spacer(1, 10))
 
     # --------------------------------------------------------
     # ★ 太陽・月（性格の核）
@@ -574,10 +574,10 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
         for a in aspects:
             story.append(Paragraph(
                 f"◇ {a.get('p1', '')} × {a.get('p2', '')}：{a.get('type', '')}",
-                STYLE_H2,
+                S('asp_h', 11, PURPLE_MID, True, 'LEFT', sb=5, sa=2),
             ))
             story.append(Paragraph(a.get("message", ""), STYLE_BODY))
-            story.append(Spacer(1, 6))
+            story.append(Spacer(1, 2))
 
         # --------------------------------------------------------
         # ★ グランドトライン・グランドクロス（アスペクトの一種として同セクション内に）
@@ -663,6 +663,29 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
     # ★ 数秘術
     # --------------------------------------------------------
     section("数秘術")
+
+    # 数秘術の説明文（一般の方向けの補足）
+    numerology_intro_rows = [
+        [Paragraph(
+            "数秘術とは、生年月日から導き出される数字であなたを読み解く占術です。"
+            "星占いとは違う角度から、あなたの人生のテーマや才能を紐解くことができます。",
+            S('ni_b', 9, TEXT_DARK, False, 'LEFT', sb=0, sa=8)
+        )],
+        [Paragraph("ライフパス：人生全体のテーマ・使命", S('ni_l1', 8, TEXT_GRAY, False, 'LEFT', sb=0, sa=3))],
+        [Paragraph("バースデー：生まれ持った才能", S('ni_l2', 8, TEXT_GRAY, False, 'LEFT', sb=0, sa=3))],
+        [Paragraph("ルーラー：生まれた年が示す使命", S('ni_l3', 8, TEXT_GRAY, False, 'LEFT', sb=0, sa=0))],
+    ]
+    numerology_intro = Table(numerology_intro_rows, colWidths=[165 * mm])
+    numerology_intro.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, -1), PURPLE_LIGHT),
+        ('BOX', (0, 0), (-1, -1), 0.5, PURPLE_BORDER),
+        ('LEFTPADDING', (0, 0), (-1, -1), 14),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 14),
+        ('TOPPADDING', (0, 0), (0, 0), 10),
+        ('BOTTOMPADDING', (0, -1), (-1, -1), 10),
+    ]))
+    story.append(numerology_intro)
+    story.append(Spacer(1, 12))
 
     lp_val = str(user_data.get("life_path", ""))
     bd_val = str(user_data.get("birthday_num", ""))
