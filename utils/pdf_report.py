@@ -535,11 +535,40 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
     story.append(PageBreak())
 
     # --------------------------------------------------------
-    # ★ アスペクト
+    # ★ アスペクト（特別なパターンもここに含める）
     # --------------------------------------------------------
     aspects = user_data.get("aspects", [])
-    if aspects:
+    grand_trines = user_data.get("grand_trines", [])
+    grand_crosses = user_data.get("grand_crosses", [])
+
+    if aspects or grand_trines or grand_crosses:
         section("アスペクト（天体の関係性）")
+
+        # アスペクトの説明文＋凡例（一般の方向けの補足）
+        aspect_intro_rows = [
+            [Paragraph(
+                "アスペクトとは、天体同士の関係性を表すものです。"
+                "一つひとつの天体の意味だけでなく、天体同士がどのように影響し合うかを見ることで、"
+                "あなたらしさや才能、課題をより深く読み解くことができます。",
+                S('ai_b', 9, TEXT_DARK, False, 'LEFT', sb=0, sa=8)
+            )],
+            [Paragraph("トライン：調和・才能", S('ai_l1', 8, TEXT_GRAY, False, 'LEFT', sb=0, sa=3))],
+            [Paragraph("セクスタイル：協力・チャンス", S('ai_l2', 8, TEXT_GRAY, False, 'LEFT', sb=0, sa=3))],
+            [Paragraph("スクエア：課題・成長", S('ai_l3', 8, TEXT_GRAY, False, 'LEFT', sb=0, sa=3))],
+            [Paragraph("オポジション：バランスを学ぶ", S('ai_l4', 8, TEXT_GRAY, False, 'LEFT', sb=0, sa=3))],
+            [Paragraph("コンジャンクション：強いエネルギー", S('ai_l5', 8, TEXT_GRAY, False, 'LEFT', sb=0, sa=0))],
+        ]
+        aspect_intro = Table(aspect_intro_rows, colWidths=[165 * mm])
+        aspect_intro.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, -1), PURPLE_LIGHT),
+            ('BOX', (0, 0), (-1, -1), 0.5, PURPLE_BORDER),
+            ('LEFTPADDING', (0, 0), (-1, -1), 14),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 14),
+            ('TOPPADDING', (0, 0), (0, 0), 10),
+            ('BOTTOMPADDING', (0, -1), (-1, -1), 10),
+        ]))
+        story.append(aspect_intro)
+        story.append(Spacer(1, 10))
 
         for a in aspects:
             story.append(Paragraph(
@@ -549,14 +578,17 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
             story.append(Paragraph(a.get("message", ""), STYLE_BODY))
             story.append(Spacer(1, 6))
 
-    # --------------------------------------------------------
-    # ★ グランドトライン・グランドクロス
-    # --------------------------------------------------------
-    grand_trines = user_data.get("grand_trines", [])
-    grand_crosses = user_data.get("grand_crosses", [])
-
-    if grand_trines or grand_crosses:
-        section("特別なパターン")
+        # --------------------------------------------------------
+        # ★ グランドトライン・グランドクロス（アスペクトの一種として同セクション内に）
+        # --------------------------------------------------------
+        if grand_trines or grand_crosses:
+            story.append(Spacer(1, 6))
+            story.append(Paragraph("◆ 特別なパターン", STYLE_H1))
+            story.append(Paragraph(
+                "複数のアスペクトが組み合わさり、大きな図形を描く特別な配置です。",
+                STYLE_NOTE
+            ))
+            story.append(Spacer(1, 6))
 
         for gt in grand_trines:
             elem = gt.get("element", "")
