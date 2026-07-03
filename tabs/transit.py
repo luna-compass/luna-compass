@@ -58,8 +58,15 @@ def get_aspects_transit(natal_planets, transit_planets):
                         "type": asp_name,
                         "orb": abs(diff - asp_angle)
                     })
-    # オーブが小さい順（正確な順）にソート
-    aspects.sort(key=lambda x: x["orb"])
+    # アスペクトの種類（影響の強い順）→ 同種内はオーブが小さい順にソート
+    _asp_priority = {
+        "コンジャンクション": 0,
+        "オポジション": 1,
+        "スクエア": 2,
+        "トライン": 3,
+        "セクスタイル": 4,
+    }
+    aspects.sort(key=lambda x: (_asp_priority.get(x["type"], 9), x["orb"]))
     return aspects
 
 
@@ -480,7 +487,7 @@ def show(tab, user_info):
                 return cleaned.strip()
 
             transit_data_pdf = {
-                "transit_date": str(transit_date),
+                "transit_date": f"{transit_date.year}年{transit_date.month:02d}月{transit_date.day:02d}日",
                 "sun_sign": t_sun_sign,
                 "sun_deg": f"{t_sun_deg:.1f}°",
                 "moon_sign": t_moon_sign,

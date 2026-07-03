@@ -337,7 +337,28 @@ def detect_grand_cross(planets: dict, orb: float = 8.0) -> list:
                             "signs": [s1, s2, s3, s4],
                         })
 
-    return results
+    # 3天体以上を共有する十字は同一のグランドクロスとみなして統合する
+    # （例：月と金星がコンジャンクションの場合、ほぼ同じ十字が2つ検出されるのを防ぐ）
+    merged = []
+    for r in results:
+        target = None
+        for m in merged:
+            if r["mode"] == m["mode"] and len(set(r["planets"]) & set(m["planets"])) >= 3:
+                target = m
+                break
+        if target is None:
+            merged.append({
+                "planets": list(r["planets"]),
+                "mode": r["mode"],
+                "signs": list(r["signs"]),
+            })
+        else:
+            for p, s in zip(r["planets"], r["signs"]):
+                if p not in target["planets"]:
+                    target["planets"].append(p)
+                    target["signs"].append(s)
+
+    return merged
 
 
 def detect_special_patterns(natal: dict, transit: dict = None) -> dict:

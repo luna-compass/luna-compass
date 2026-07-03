@@ -460,11 +460,39 @@ def _render(container):
             fig.savefig(chart_buf, format="png", dpi=150, bbox_inches="tight")
             chart_buf.seek(0)
 
+            def _pdf_clean(text):
+                """PDFフォント（NotoSansJP）に無い絵文字を除去（Web表示はそのまま）"""
+                import re as _re
+                return _re.sub(r'[\U0001F000-\U0001FAFF\u2600-\u27BF\u2B00-\u2BFF\uFE0F\u200D]', '', str(text)).strip()
+
+            # 月の相性（Web表示と同じ内容をPDFにも収録）
+            _moon_note_lines = []
+            if moon_aspect and ASPECT_COMPAT.get(moon_aspect):
+                _ai = ASPECT_COMPAT[moon_aspect]
+                _moon_note_lines.append(f"{_pdf_clean(_ai[0])}：{_ai[1]}")
+            if moon_compat:
+                _moon_note_lines.append(f"感情面：{moon_compat[1]}")
+            _moon_note = "\n".join(_moon_note_lines) if _moon_note_lines else "お互いの感情のリズムを知ることが、安心感を育てる鍵になります。"
+
+            # 金星×火星の相性（両方向）
+            def _vm_note(aspect, fallback):
+                if aspect and ASPECT_COMPAT.get(aspect):
+                    _ai = ASPECT_COMPAT[aspect]
+                    return f"{_pdf_clean(_ai[0])}：{_ai[1]}"
+                return fallback
+
             compat_note = (
-                f"【エレメント相性】{compat_info[0] if compat_info else '—'}\n"
+                f"【エレメント相性】{_pdf_clean(compat_info[0]) if compat_info else '—'}\n"
                 f"{compat_info[1] if compat_info else ''}\n\n"
                 f"【太陽の相性】{disp1}（{sun_sign1}）× {disp2}（{sun_sign2}）\n"
                 f"{sun_msg}\n\n"
+                f"【月の相性】{disp1}（{moon_sign1}）× {disp2}（{moon_sign2}）\n"
+                f"{_moon_note}\n\n"
+                f"【金星×火星の相性】惹かれ合うポイント\n"
+                f"◇ {disp1}の金星（{venus_sign1}）× {disp2}の火星（{mars_sign2}）\n"
+                f"{_vm_note(vm_aspect1, '直接的なアスペクトはありませんが、それぞれの愛情表現が個性的に輝きます。')}\n"
+                f"◇ {disp2}の金星（{venus_sign2}）× {disp1}の火星（{mars_sign1}）\n"
+                f"{_vm_note(vm_aspect2, '直接的なアスペクトはありませんが、それぞれの魅力が独自に輝きます。')}\n\n"
                 f"【総合】{overall}"
             )
 
@@ -525,7 +553,7 @@ def _render(container):
                 name2=disp2, birthday2=bday2,
                 sun_sign2=sun_sign2, moon_sign2=moon_sign2,
                 venus_sign2=venus_sign2, mars_sign2=mars_sign2,
-                overall=overall,
+                overall=_pdf_clean(overall),
                 compat_note=compat_note,
                 chart_image_bytes=chart_buf,
                 overall_data={
@@ -533,8 +561,8 @@ def _render(container):
                     "grand_crosses": gc_combined,
                     "num_lp1": lp1, "num_bd1": bd1, "num_rl1": rl1,
                     "num_lp2": lp2, "num_bd2": bd2, "num_rl2": rl2,
-                    "num_lp_msg": lp_msg, "num_bd_msg": bd_msg,
-                    "num_rl_msg": rl_msg, "num_overall": num_overall,
+                    "num_lp_msg": _pdf_clean(lp_msg), "num_bd_msg": _pdf_clean(bd_msg),
+                    "num_rl_msg": _pdf_clean(rl_msg), "num_overall": _pdf_clean(num_overall),
                     "name1": disp1, "name2": disp2,
                 },
             )

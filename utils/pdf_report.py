@@ -1352,6 +1352,7 @@ def create_compatibility_pdf(
             [Paragraph(_sign_row1_c, S('sl2', 8, PURPLE_DARK, False, 'CENTER', sb=2, sa=2))],
             [Paragraph(_sign_row2_c, S('sl2b', 8, PURPLE_DARK, False, 'CENTER', sb=2, sa=2))],
             [Paragraph(_planet_row_c, S('sl3', 8, TEXT_GRAY, False, 'CENTER', sb=2, sa=4))],
+            [Paragraph(f"●マーク={name1}の天体    ▲マーク={name2}の天体", S('sl4', 8, TEXT_GRAY, False, 'CENTER', sb=2, sa=4))],
         ]
         sign_legend = Table(sign_legend_rows, colWidths=[165*mm])
         sign_legend.setStyle(TableStyle([
@@ -1524,11 +1525,21 @@ def create_compatibility_pdf(
         story.append(num_table)
         story.append(Spacer(1, 10))
 
+        # 同一メッセージが複数カテゴリに出る場合は、2件目以降をカテゴリ別の言い回しに差し替える
+        _num_alt = {
+            "ライフパスの相性（人生テーマ）": "人生のテーマが異なる2人。互いの歩む道を尊重し合うことで、1人では見えない景色が見えてくる相性です。",
+            "バースデーの相性（才能・個性）": "持って生まれた才能が異なる2人。違う個性の掛け合わせが、新しい可能性を生み出します。",
+            "ルーラーの相性（使命・エネルギー）": "使命のエネルギーが異なる2人。得意な役割を分担することで、お互いの世界が大きく広がります。",
+        }
+        _seen_num_msgs = set()
         for label, msg in [
             ("ライフパスの相性（人生テーマ）", num_lp_msg),
             ("バースデーの相性（才能・個性）", num_bd_msg),
             ("ルーラーの相性（使命・エネルギー）", num_rl_msg),
         ]:
+            if msg and msg in _seen_num_msgs and label in _num_alt:
+                msg = _num_alt[label]
+            _seen_num_msgs.add(msg)
             story.append(Paragraph(f"◇ {label}", STYLE_H3))
             story.append(Paragraph(msg, STYLE_BODY))
             story.append(Spacer(1, 6))
