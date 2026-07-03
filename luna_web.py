@@ -278,3 +278,9 @@ elif st.session_state["menu_selected"] == "iching":
 
     from tabs import iching
     iching.show_direct()
+
+# ---------- 四柱推命(開発中) ----------
+elif st.session_state["menu_selected"] == "shichusuimei":
+
+    from tabs import shichusuimei
+    shichusuimei.show_direct()

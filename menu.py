@@ -194,6 +194,30 @@ def show():
             key="menu_btn_iching"
         )
 
+    # ===== 四柱推命カード（開発中） =====
+    st.markdown("""
+    <div class='menu-grid'>
+        <div class='menu-card'>
+            <div class='menu-card-top'>
+                <div class='menu-card-icon'>🏮</div>
+                <div class='menu-card-title'>四柱推命</div>
+            </div>
+            <div class='menu-card-desc'>生年月日と出生時刻から命式（四柱・蔵干・通変星・五行バランス）を算出します。東洋の視点からあなたを読み解きます。</div>
+            <div class='menu-badge'>🛠 開発中</div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("<div style='margin-bottom:8px'></div>", unsafe_allow_html=True)
+    col_l5, col_c5, col_r5 = st.columns([1, 4, 1])
+    with col_c5:
+        btn_shichu = st.button(
+            "🏮 命式を出す",
+            use_container_width=True,
+            type="primary",
+            key="menu_btn_shichu"
+        )
+
     if btn_general:
         st.session_state["menu_selected"] = "general"
         st.rerun()
@@ -210,6 +234,10 @@ def show():
         st.session_state["menu_selected"] = "iching"
         st.rerun()
 
+    if btn_shichu:
+        st.session_state["menu_selected"] = "shichusuimei"
+        st.rerun()
+
     # 将来追加予定メニュー（予告）
     st.markdown("""
     <div style='text-align:center; margin-top:28px;'>
@@ -217,8 +245,6 @@ def show():
         <span class='menu-badge-coming'>🔢 数秘術単独鑑定</span>
         <span style='margin:0 4px'></span>
         <span class='menu-badge-coming'>📅 今日の運勢</span>
-        <span style='margin:0 4px'></span>
-        <span class='menu-badge-coming'>🏮 四柱推命</span>
     </div>
     """, unsafe_allow_html=True)
 
