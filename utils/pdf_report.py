@@ -267,11 +267,11 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
         def _s(sym, jp):
             font = _sym2 if sym == "☉" else _sym
             return f'<font name="{font}">{sym}</font>{jp}'
-        sign_row1 = "　".join([
+        sign_row1 = "\u00A0\u00A0\u00A0\u00A0".join([
             _s("♈","牡羊座"), _s("♉","牡牛座"), _s("♊","双子座"), _s("♋","蟹座"),
             _s("♌","獅子座"), _s("♍","乙女座"),
         ])
-        sign_row2 = "　".join([
+        sign_row2 = "\u00A0\u00A0\u00A0\u00A0".join([
             _s("♎","天秤座"), _s("♏","蠍座"), _s("♐","射手座"),
             _s("♑","山羊座"), _s("♒","水瓶座"), _s("♓","魚座"),
         ])
@@ -280,7 +280,7 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
             [Paragraph(sign_row1, S('sl2', 8, PURPLE_DARK, False, 'CENTER', sb=2, sa=2))],
             [Paragraph(sign_row2, S('sl2b', 8, PURPLE_DARK, False, 'CENTER', sb=2, sa=2))],
             [Paragraph(
-                "　".join([
+                "\u00A0\u00A0\u00A0\u00A0".join([
                     _s("☉","太陽"), _s("☽","月"), _s("☿","水星"), _s("♀","金星"), _s("♂","火星"),
                     _s("♃","木星"), _s("♄","土星"), _s("♅","天王星"), _s("♆","海王星"), _s("♇","冥王星"),
                 ]),
@@ -999,15 +999,15 @@ def create_transit_pdf(natal_data, transit_data, aspects, outer_planets, chart_i
         def _st(sym, jp):
             font = _sym2_t if sym == "☉" else _sym_t
             return f'<font name="{font}">{sym}</font>{jp}'
-        _sign_row1_t = "　".join([_st("♈","牡羊座"),_st("♉","牡牛座"),_st("♊","双子座"),_st("♋","蟹座"),_st("♌","獅子座"),_st("♍","乙女座")])
-        _sign_row2_t = "　".join([_st("♎","天秤座"),_st("♏","蠍座"),_st("♐","射手座"),_st("♑","山羊座"),_st("♒","水瓶座"),_st("♓","魚座")])
-        _planet_row_t = "　".join([_st("☉","太陽"),_st("☽","月"),_st("☿","水星"),_st("♀","金星"),_st("♂","火星"),_st("♃","木星"),_st("♄","土星"),_st("♅","天王星"),_st("♆","海王星"),_st("♇","冥王星")])
+        _sign_row1_t = "\u00A0\u00A0\u00A0\u00A0".join([_st("♈","牡羊座"),_st("♉","牡牛座"),_st("♊","双子座"),_st("♋","蟹座"),_st("♌","獅子座"),_st("♍","乙女座")])
+        _sign_row2_t = "\u00A0\u00A0\u00A0\u00A0".join([_st("♎","天秤座"),_st("♏","蠍座"),_st("♐","射手座"),_st("♑","山羊座"),_st("♒","水瓶座"),_st("♓","魚座")])
+        _planet_row_t = "\u00A0\u00A0\u00A0\u00A0".join([_st("☉","太陽"),_st("☽","月"),_st("☿","水星"),_st("♀","金星"),_st("♂","火星"),_st("♃","木星"),_st("♄","土星"),_st("♅","天王星"),_st("♆","海王星"),_st("♇","冥王星")])
         sign_legend_rows = [
             [Paragraph("ホロスコープの記号の見方", S('sl', 10, PURPLE_DARK, True, 'CENTER', sb=4, sa=4))],
             [Paragraph(_sign_row1_t, S('sl2', 8, PURPLE_DARK, False, 'CENTER', sb=2, sa=2))],
             [Paragraph(_sign_row2_t, S('sl2b', 8, PURPLE_DARK, False, 'CENTER', sb=2, sa=2))],
             [Paragraph(_planet_row_t, S('sl3', 8, TEXT_GRAY, False, 'CENTER', sb=2, sa=2))],
-            [Paragraph("▲マーク=トランジット（今日）の天体　●マーク=ネイタル（生まれた時）の天体", S('sl4', 8, TEXT_GRAY, False, 'CENTER', sb=2, sa=4))],
+            [Paragraph("▲マーク=トランジット（今日）の天体\u00A0\u00A0\u00A0\u00A0●マーク=ネイタル（生まれた時）の天体", S('sl4', 8, TEXT_GRAY, False, 'CENTER', sb=2, sa=4))],
         ]
         sign_legend = Table(sign_legend_rows, colWidths=[165*mm])
         sign_legend.setStyle(TableStyle([
@@ -1080,7 +1080,7 @@ def create_transit_pdf(natal_data, transit_data, aspects, outer_planets, chart_i
         "コンジャンクション": "●",
         "トライン": "△",
         "スクエア": "□",
-        "セクスタイル": "✦",
+        "セクスタイル": "☆",
         "オポジション": "○",
     }
 
@@ -1197,7 +1197,9 @@ def create_transit_pdf(natal_data, transit_data, aspects, outer_planets, chart_i
         p_msg  = op.get("message", "")
 
         _sym_op = 'Symbols' if _symbol_font_registered else 'JP'
-        rows = [[Paragraph(f'<font name="{_sym_op}">♃</font> {p_name}：{p_sign} {p_deg}', S('p', 10, PURPLE_MID, True, sb=4, sa=4))]]
+        _op_syms = {"木星": "♃", "土星": "♄", "天王星": "♅", "海王星": "♆", "冥王星": "♇"}
+        _op_sym = _op_syms.get(p_name, "♃")
+        rows = [[Paragraph(f'<font name="{_sym_op}">{_op_sym}</font> {p_name}：{p_sign} {p_deg}', S('p', 10, PURPLE_MID, True, sb=4, sa=4))]]
         if p_msg:
             for line in p_msg.split("\n"):
                 line = line.strip()
@@ -1342,9 +1344,9 @@ def create_compatibility_pdf(
         def _sc(sym, jp):
             font = _sym2_c if sym == "☉" else _sym_c
             return f'<font name="{font}">{sym}</font>{jp}'
-        _sign_row1_c = "　".join([_sc("♈","牡羊座"),_sc("♉","牡牛座"),_sc("♊","双子座"),_sc("♋","蟹座"),_sc("♌","獅子座"),_sc("♍","乙女座")])
-        _sign_row2_c = "　".join([_sc("♎","天秤座"),_sc("♏","蠍座"),_sc("♐","射手座"),_sc("♑","山羊座"),_sc("♒","水瓶座"),_sc("♓","魚座")])
-        _planet_row_c = "　".join([_sc("☉","太陽"),_sc("☽","月"),_sc("☿","水星"),_sc("♀","金星"),_sc("♂","火星"),_sc("♃","木星"),_sc("♄","土星"),_sc("♅","天王星"),_sc("♆","海王星"),_sc("♇","冥王星")])
+        _sign_row1_c = "\u00A0\u00A0\u00A0\u00A0".join([_sc("♈","牡羊座"),_sc("♉","牡牛座"),_sc("♊","双子座"),_sc("♋","蟹座"),_sc("♌","獅子座"),_sc("♍","乙女座")])
+        _sign_row2_c = "\u00A0\u00A0\u00A0\u00A0".join([_sc("♎","天秤座"),_sc("♏","蠍座"),_sc("♐","射手座"),_sc("♑","山羊座"),_sc("♒","水瓶座"),_sc("♓","魚座")])
+        _planet_row_c = "\u00A0\u00A0\u00A0\u00A0".join([_sc("☉","太陽"),_sc("☽","月"),_sc("☿","水星"),_sc("♀","金星"),_sc("♂","火星"),_sc("♃","木星"),_sc("♄","土星"),_sc("♅","天王星"),_sc("♆","海王星"),_sc("♇","冥王星")])
         sign_legend_rows = [
             [Paragraph("ホロスコープの記号の見方", S('sl', 10, PURPLE_DARK, True, 'CENTER', sb=4, sa=4))],
             [Paragraph(_sign_row1_c, S('sl2', 8, PURPLE_DARK, False, 'CENTER', sb=2, sa=2))],
@@ -1380,7 +1382,7 @@ def create_compatibility_pdf(
             Paragraph(name2, S('h', 10, PURPLE_DARK, True)),
         ],
         [Paragraph("☉ 太陽", STYLE_BODY), Paragraph(sun_sign1, STYLE_BODY), Paragraph(sun_sign2, STYLE_BODY)],
-        [Paragraph("☽ 月", STYLE_BODY), Paragraph(moon_sign1, STYLE_BODY), Paragraph(moon_sign2, STYLE_BODY)],
+        [Paragraph('<font name="' + ('Symbols' if _symbol_font_registered else 'JP') + '">☽</font> 月', STYLE_BODY), Paragraph(moon_sign1, STYLE_BODY), Paragraph(moon_sign2, STYLE_BODY)],
         [Paragraph("♀ 金星", STYLE_BODY), Paragraph(venus_sign1, STYLE_BODY), Paragraph(venus_sign2, STYLE_BODY)],
         [Paragraph("♂ 火星", STYLE_BODY), Paragraph(mars_sign1, STYLE_BODY), Paragraph(mars_sign2, STYLE_BODY)],
     ]
@@ -1402,6 +1404,8 @@ def create_compatibility_pdf(
     section("相性鑑定")
     for line in compat_note.split("\n"):
         line = line.strip()
+        if line.startswith("【総合】"):
+            continue  # 末尾の「総合相性メッセージ」と重複するためスキップ
         if not line:
             story.append(Spacer(1, 4))
         elif line.startswith("【"):
