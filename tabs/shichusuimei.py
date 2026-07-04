@@ -66,6 +66,15 @@ def show_direct():
             horizontal=True,
         )
 
+        yako = st.checkbox(
+            "夜子時：23時台生まれを翌日の日柱として扱う",
+            value=False,
+            key="yako_shichu",
+            help="流派によって23時〜24時生まれの日柱の取り方が異なります。"
+                 "オフ（標準）では当日の日柱、オンでは翌日の日柱として計算します。"
+                 "23時台以外の出生時刻には影響しません。",
+        )
+
         col_t1, col_t2 = st.columns(2)
         with col_t1:
             birth_hour = st.number_input(
@@ -83,7 +92,7 @@ def show_direct():
         minute = 0 if time_unknown else int(birth_minute)
         birth = datetime.datetime(birthday.year, birthday.month, birthday.day, hour, minute)
 
-        m = build_meishiki(birth)
+        m = build_meishiki(birth, yako_next_day=yako)
 
         # 節入り境界警告(時刻不明時は時刻由来の判定自体が曖昧なので常に注意書き)
         if m["節入り境界警告"] and not time_unknown:
@@ -261,7 +270,7 @@ def show_direct():
 
         # 大運
         st.markdown("<div class='luna-section-title'>◆ 大運（10年ごとの運気の流れ）</div>", unsafe_allow_html=True)
-        d = calc_daiun(birth, gender)
+        d = calc_daiun(birth, gender, yako_next_day=yako)
         ry, rm = d["立運"]
         st.markdown(
             f"<div class='luna-message'>大運は <b>{d['順逆']}</b>、"
@@ -284,7 +293,7 @@ def show_direct():
 
         # 年運(今年から10年)
         st.markdown("<div class='luna-section-title'>◆ 年運（今年からの10年）</div>", unsafe_allow_html=True)
-        nenun = calc_nenun(birth, gender, start_year=datetime.date.today().year, n_years=10)
+        nenun = calc_nenun(birth, gender, start_year=datetime.date.today().year, n_years=10, yako_next_day=yako)
         nenun_rows = [
             {
                 "西暦": f"{x['西暦']}年",

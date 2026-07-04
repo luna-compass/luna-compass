@@ -202,8 +202,15 @@ def month_pillar(month_shi, year_kan):
     offset = shi_order.index(month_shi)
     return JIKKAN[(tora_idx + offset) % 10], month_shi
 
-def day_pillar(birth):
-    delta = (birth.date() - DAY_ANCHOR.date()).days
+def _effective_date(birth, yako_next_day=False):
+    """日柱計算に使う日付。夜子時オプション有効時は23時台を翌日扱いにする。"""
+    if yako_next_day and birth.hour == 23:
+        return birth.date() + timedelta(days=1)
+    return birth.date()
+
+def day_pillar(birth, yako_next_day=False):
+    """日柱。yako_next_day=True で23時台生まれを翌日として扱う(夜子時)。"""
+    delta = (_effective_date(birth, yako_next_day) - DAY_ANCHOR.date()).days
     return _kanshi(delta % 60)
 
 def hour_pillar(birth, day_kan):
@@ -234,12 +241,13 @@ def tsuhensei(nikkan, target_kan):
     return "?"
 
 
-def build_meishiki(birth: datetime):
-    """命式一式を dict で返す。birth は JST naive datetime。"""
+def build_meishiki(birth: datetime, yako_next_day=False):
+    """命式一式を dict で返す。birth は JST naive datetime。
+    yako_next_day=True で23時台生まれの日柱を翌日として扱う(夜子時)。"""
     month_shi, setsu_year, boundary_gap, setsu_name = find_setsu(birth)
     y_kan, y_shi = year_pillar(setsu_year)
     m_kan, m_shi = month_pillar(month_shi, y_kan)
-    d_kan, d_shi = day_pillar(birth)
+    d_kan, d_shi = day_pillar(birth, yako_next_day)
     h_kan, h_shi = hour_pillar(birth, d_kan)
 
     pillars = {
@@ -267,7 +275,7 @@ def build_meishiki(birth: datetime):
     juniun_map = {name: juniun(d_kan, shi) for name, (kan, shi) in pillars.items()}
 
     # 空亡(日柱の旬から)
-    day_delta = (birth.date() - DAY_ANCHOR.date()).days
+    day_delta = (_effective_date(birth, yako_next_day) - DAY_ANCHOR.date()).days
     kubo_pair = kubo(day_delta % 60)
     # 命式中で空亡に当たる柱
     kubo_hit = [name for name, (kan, shi) in pillars.items()
@@ -319,7 +327,7 @@ def _neighbor_terms(birth):
                 prev_t = t
     return prev_t, next_t
 
-def calc_daiun(birth, gender, n_cycles=10):
+def calc_daiun(birth, gender, n_cycles=10, yako_next_day=False):
     """大運を計算する。
 
     gender: "男" or "女"
@@ -332,7 +340,7 @@ def calc_daiun(birth, gender, n_cycles=10):
     【流派メモ】立運は「節入りまでの日数÷3(1日=4ヶ月)」で算出。
     端数の丸めは流派差があるため、月数は round() で処理している。
     """
-    m = build_meishiki(birth)
+    m = build_meishiki(birth, yako_next_day)
     y_kan, _ = m["四柱"]["年柱"]
     d_kan = m["日干"]
     m_kan, m_shi = m["四柱"]["月柱"]
@@ -356,7 +364,7 @@ def calc_daiun(birth, gender, n_cycles=10):
 
     # 大運の干支: 月柱から順行/逆行
     base_idx = _kanshi_index(m_kan, m_shi)
-    day_delta = (birth.date() - DAY_ANCHOR.date()).days
+    day_delta = (_effective_date(birth, yako_next_day) - DAY_ANCHOR.date()).days
     kubo_pair = kubo(day_delta % 60)
     daiun_list = []
     for i in range(1, n_cycles + 1):
@@ -415,19 +423,19 @@ def getsurei(nikkan, month_shi):
         state = "死"
     return state, state in ("旺", "相")
 
-def calc_nenun(birth, gender, start_year=None, n_years=10):
+def calc_nenun(birth, gender, start_year=None, n_years=10, yako_next_day=False):
     """年運(歳運)を計算する。
 
     各年について: 年干支(立春基準)・通変星・十二運・納音・
     空亡該当・その年に属する大運 を返す。
     ※各年の年齢は「その年に迎える満年齢」の目安表示。
     """
-    m = build_meishiki(birth)
+    m = build_meishiki(birth, yako_next_day)
     d_kan = m["日干"]
-    day_delta = (birth.date() - DAY_ANCHOR.date()).days
+    day_delta = (_effective_date(birth, yako_next_day) - DAY_ANCHOR.date()).days
     kubo_pair = kubo(day_delta % 60)
 
-    daiun = calc_daiun(birth, gender)
+    daiun = calc_daiun(birth, gender, yako_next_day=yako_next_day)
     ritsuun_y = daiun["立運"][0]
 
     if start_year is None:
