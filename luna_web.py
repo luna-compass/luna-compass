@@ -284,3 +284,9 @@ elif st.session_state["menu_selected"] == "shichusuimei":
 
     from tabs import shichusuimei
     shichusuimei.show_direct()
+
+# ---------- 今年の運勢 ----------
+elif st.session_state["menu_selected"] == "kotoshi":
+
+    from tabs import kotoshi_unsei
+    kotoshi_unsei.show_direct()

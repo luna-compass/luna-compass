@@ -1920,3 +1920,190 @@ def create_shichusuimei_pdf(user_data, shichu):
     doc.build(story)
     buf.seek(0)
     return buf
+
+
+# ============================================================
+# 今年の運勢 レポートPDF生成
+# ============================================================
+def create_kotoshi_pdf(user_data, kotoshi):
+    """今年の運勢レポートPDF(軽量版)を生成する。
+
+    user_data: {"name", "birthday", "reading_date", "gender"}
+    kotoshi: {
+        "year": 対象年(int, 立春基準),
+        "nikkan": 日干(str),
+        "nen": calc_nenun() の1年分dict,
+        "current_daiun": 現在の大運dict または None,
+        "getsuun": calc_getsuun() の戻り値(12ヶ月),
+        "messages": {"year_star": 通変星メッセージdict, "kubo": 空亡総論str},
+    }
+    """
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(
+        buf, pagesize=A4,
+        rightMargin=18 * mm, leftMargin=18 * mm,
+        topMargin=12 * mm, bottomMargin=12 * mm,
+    )
+    story = []
+
+    def section(title):
+        story.append(Spacer(1, 8))
+        sec_rows = [[Paragraph(f"◆ {title}", S('sec', 13, colors.white, True, sb=0, sa=0))]]
+        sec_table = Table(sec_rows, colWidths=[165*mm])
+        sec_table.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,-1), PURPLE_DARK),
+            ('LEFTPADDING', (0,0), (-1,-1), 14),
+            ('RIGHTPADDING', (0,0), (-1,-1), 14),
+            ('TOPPADDING', (0,0), (-1,-1), 10),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 10),
+        ]))
+        story.append(sec_table)
+        story.append(Spacer(1, 10))
+
+    def message_card(title, msg):
+        content = [Paragraph(title, S('p', 11, PURPLE_MID, True, sb=6, sa=10))]
+        if msg:
+            for line in msg.split("\n"):
+                line = line.strip()
+                if not line:
+                    content.append(Spacer(1, 5))
+                elif line.startswith("【"):
+                    content.append(Paragraph(line, STYLE_H3))
+                else:
+                    content.append(Paragraph(line, STYLE_BODY))
+        rows = [[item] for item in content]
+        card = Table(rows, colWidths=[165*mm])
+        card.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,-1), PURPLE_LIGHT),
+            ('LINEBEFORE', (0,0), (0,-1), 0.5, PURPLE_MID),
+            ('LINEAFTER', (0,0), (0,-1), 0.5, PURPLE_MID),
+            ('LINEABOVE', (0,0), (-1,0), 0.5, PURPLE_MID),
+            ('LINEBELOW', (0,-1), (-1,-1), 0.5, PURPLE_MID),
+            ('LEFTPADDING', (0,0), (-1,-1), 14),
+            ('RIGHTPADDING', (0,0), (-1,-1), 14),
+            ('TOPPADDING', (0,0), (0,0), 12),
+            ('BOTTOMPADDING', (0,-1), (-1,-1), 12),
+            ('TOPPADDING', (0,1), (-1,-1), 2),
+            ('BOTTOMPADDING', (0,0), (-1,-2), 2),
+        ]))
+        story.append(card)
+        story.append(Spacer(1, 14))
+
+    def C(text, size=9, color=TEXT_DARK, bold=False, align='CENTER'):
+        return Paragraph(text, S('cell', size, color, bold, align, sb=0, sa=0))
+
+    year = kotoshi["year"]
+    nen = kotoshi["nen"]
+    nikkan = kotoshi["nikkan"]
+    msgs = kotoshi.get("messages", {})
+
+    # --------------------------------------------------------
+    # タイトル + 基本情報
+    # --------------------------------------------------------
+    story.append(Paragraph("Luna 今年の運勢", S('t1', 16, PURPLE_DARK, True, 'CENTER', sb=4, sa=2)))
+    story.append(Paragraph(f"{year}年（{nen['干支']}）運勢レポート",
+                           S('t2', 11, PURPLE_MID, True, 'CENTER', sb=2, sa=4)))
+    story.append(HRFlowable(width="100%", thickness=2, color=PURPLE_MID, spaceAfter=6))
+
+    info = [[
+        Paragraph("お名前", S('h', 9, PURPLE_DARK, True)),
+        Paragraph(user_data.get("name", ""), S('v', 9)),
+        Paragraph("生年月日", S('h', 9, PURPLE_DARK, True)),
+        Paragraph(user_data.get("birthday", ""), S('v', 9)),
+        Paragraph("鑑定日", S('h', 9, PURPLE_DARK, True)),
+        Paragraph(user_data.get("reading_date", ""), S('v', 9)),
+    ]]
+    t = Table(info, colWidths=[20*mm, 35*mm, 22*mm, 38*mm, 18*mm, 32*mm])
+    t.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (0, -1), PURPLE_LIGHT),
+        ('BACKGROUND', (2, 0), (2, -1), PURPLE_LIGHT),
+        ('BACKGROUND', (4, 0), (4, -1), PURPLE_LIGHT),
+        ('BOX', (0, 0), (-1, -1), 1, PURPLE_BORDER),
+        ('INNERGRID', (0, 0), (-1, -1), 0.5, PURPLE_BORDER),
+        ('TOPPADDING', (0, 0), (-1, -1), 4),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ('LEFTPADDING', (0, 0), (-1, -1), 5),
+    ]))
+    story.append(t)
+    story.append(Spacer(1, 6))
+
+    story.append(Paragraph(
+        "本レポートは四柱推命による年運・月運レポートです。年と月の切り替わりは節入り（立春など）基準です。"
+        "今年一年のテーマ、いま歩んでいる大運、そして月ごとの流れを収めています。",
+        STYLE_BODY))
+
+    # --------------------------------------------------------
+    # 今年のテーマ
+    # --------------------------------------------------------
+    section(f"{year}年　あなたの一年のテーマ")
+    rel = "、".join(nen["命式との関係"]) or "大きな衝突のない穏やかな巡り"
+    theme = (f"あなたの日干は<b>{nikkan}</b>。今年{year}年（{nen['干支']}）は、"
+             f"<b>{nen['通変星']}</b>・<b>{nen['十二運']}</b>の一年です。")
+    story.append(Paragraph(theme, STYLE_BODY))
+    story.append(Paragraph(f"命式との関係: {rel}", STYLE_BODY))
+    story.append(Spacer(1, 6))
+
+    ys = msgs.get("year_star", {})
+    if ys:
+        message_card(f"今年の星: {ys.get('title', nen['通変星'])}", ys.get("message", ""))
+
+    if nen["空亡"]:
+        kubo_msg = msgs.get("kubo", "")
+        message_card("今年は空亡（天中殺）の年です",
+                     "新しく始めるより、学び直しと内面の充実に向く一年です。\n" + kubo_msg)
+
+    # 現在の大運
+    cur = kotoshi.get("current_daiun")
+    if cur:
+        message_card(
+            f"いま歩んでいる大運: {cur['干支']}（{cur['通変星']}・{cur['十二運']}）",
+            f"{cur['開始年齢']}歳からの10年は{cur['干支']}の大運です。\n"
+            "今年の運気は、この大きな流れの中で巡っています。")
+
+    # --------------------------------------------------------
+    # 月ごとの流れ
+    # --------------------------------------------------------
+    section("月ごとの流れ")
+    grows = [[Paragraph(h, S('gh', 9, colors.white, True, 'CENTER', sb=0, sa=0))
+              for h in ["月", "節入り", "干支", "通変星", "十二運", "空亡", "命式との関係"]]]
+    for x in kotoshi["getsuun"]:
+        grows.append([
+            C(f"{x['暦月目安']}({x['節月']})", 9, PURPLE_DARK, True),
+            C(f"{x['節入り']}〜", 8),
+            C(x["干支"], 10, TEXT_DARK, True),
+            C(x["通変星"]),
+            C(x["十二運"]),
+            C("○" if x["空亡"] else "", 9, GOLD, True),
+            C("、".join(x["命式との関係"]) or "-", 8, TEXT_DARK, False, 'LEFT'),
+        ])
+    gt = Table(grows, colWidths=[22*mm, 16*mm, 18*mm, 18*mm, 16*mm, 10*mm, 65*mm])
+    gt.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), PURPLE_DARK),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, PURPLE_LIGHT]),
+        ('BOX', (0, 0), (-1, -1), 1, PURPLE_BORDER),
+        ('INNERGRID', (0, 0), (-1, -1), 0.5, PURPLE_BORDER),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('TOPPADDING', (0, 0), (-1, -1), 4),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+    ]))
+    story.append(gt)
+    story.append(Paragraph(
+        "※ 空亡○の月は無理をせず、整える時間に。冲・刑のある月は変化が起きやすいので、余裕を持った計画を。",
+        STYLE_NOTE))
+
+    # --------------------------------------------------------
+    # 結び + フッター
+    # --------------------------------------------------------
+    story.append(KeepTogether([
+        Spacer(1, 10),
+        Paragraph(
+            f"{year}年が、あなたにとって実り多き一年になりますように。",
+            S('close', 9, PURPLE_MID, False, 'CENTER', sb=4, sa=6)),
+        HRFlowable(width="100%", thickness=1, color=PURPLE_BORDER),
+        Paragraph("Luna 四柱推命　Luna-compass",
+                  S('ft', 8, TEXT_GRAY, align='CENTER', sb=4, sa=0)),
+    ]))
+
+    doc.build(story)
+    buf.seek(0)
+    return buf

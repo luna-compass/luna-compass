@@ -218,6 +218,30 @@ def show():
             key="menu_btn_shichu"
         )
 
+    # ===== 今年の運勢カード =====
+    st.markdown("""
+    <div class='menu-grid'>
+        <div class='menu-card'>
+            <div class='menu-card-top'>
+                <div class='menu-card-icon'>📅</div>
+                <div class='menu-card-title'>今年の運勢</div>
+            </div>
+            <div class='menu-card-desc'>四柱推命で今年一年のテーマと、月ごとの運気の流れを読み解きます。節入り基準の本格的な年運・月運です。</div>
+            <div class='menu-badge'>✨ 今すぐ見られる</div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("<div style='margin-bottom:8px'></div>", unsafe_allow_html=True)
+    col_l6, col_c6, col_r6 = st.columns([1, 4, 1])
+    with col_c6:
+        btn_kotoshi = st.button(
+            "📅 今年の運勢を見る",
+            use_container_width=True,
+            type="primary",
+            key="menu_btn_kotoshi"
+        )
+
     if btn_general:
         st.session_state["menu_selected"] = "general"
         st.rerun()
@@ -236,6 +260,10 @@ def show():
 
     if btn_shichu:
         st.session_state["menu_selected"] = "shichusuimei"
+        st.rerun()
+
+    if btn_kotoshi:
+        st.session_state["menu_selected"] = "kotoshi"
         st.rerun()
 
     # 将来追加予定メニュー（予告）

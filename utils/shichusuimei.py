@@ -467,6 +467,44 @@ def calc_nenun(birth, gender, start_year=None, n_years=10, yako_next_day=False):
     return result
 
 
+def calc_getsuun(birth, year, yako_next_day=False):
+    """月運(指定年の12節月の運気)を計算する。
+
+    year は立春基準の年(例: 2026 → 2026年立春〜2027年立春前)。
+    各月について: 節月・節入り日・干支・通変星・十二運・空亡・命式との関係 を返す。
+    """
+    m = build_meishiki(birth, yako_next_day)
+    d_kan = m["日干"]
+    day_delta = (_effective_date(birth, yako_next_day) - DAY_ANCHOR.date()).days
+    kubo_pair = kubo(day_delta % 60)
+
+    # その年の年干から五虎遁で寅月の月干を決める
+    y_kan, _ = _kanshi((year - 4) % 60)
+    tora_idx = JIKKAN.index(GOKOTON[y_kan])
+    shi_order = ["寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥", "子", "丑"]
+
+    # 各節月の節入り時刻(JST)
+    setsu_map = {shi: (deg, name, mo) for deg, shi, name, mo in SETSU}
+
+    result = []
+    for i, shi in enumerate(shi_order):
+        deg, setsu_name, approx_month = setsu_map[shi]
+        term_year = year + 1 if shi == "丑" else year  # 小寒のみ翌暦年
+        term = solar_term_jst(term_year, deg, approx_month)
+        kan = JIKKAN[(tora_idx + i) % 10]
+        result.append({
+            "節月": f"{shi}月",
+            "暦月目安": f"{term.month}月",
+            "節入り": f"{term.month}/{term.day}",
+            "干支": f"{kan}{shi}",
+            "通変星": tsuhensei(d_kan, kan),
+            "十二運": juniun(d_kan, shi),
+            "空亡": shi in kubo_pair,
+            "命式との関係": kankei_with_meishiki(m["四柱"], kan, shi),
+        })
+    return result
+
+
 # ============================================================
 # 干支の関係(干合・支合・三合・刑・冲・害・破)
 # ============================================================
