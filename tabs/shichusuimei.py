@@ -10,6 +10,7 @@ import datetime
 import streamlit as st
 
 from utils.shichusuimei import (build_meishiki, calc_daiun, calc_kakukyoku, calc_nenun,
+                                calc_shinjaku, calc_tokubetsu_kakukyoku,
                                 detect_kankei, detect_shinsatsu,
                                 getsurei, natchin, KAN_GOGYO, SHI_GOGYO, ZOKAN)
 from utils.messages_loader import get_message
@@ -195,14 +196,38 @@ def show_direct():
                 unsafe_allow_html=True,
             )
 
+        # 身強身弱(簡易判定)
+        sj = calc_shinjaku(m)
+        marks = lambda b: "○" if b else "×"
+        st.markdown(f"<div class='luna-section-title'>◆ 身強身弱(簡易判定): {sj['判定']}</div>",
+                    unsafe_allow_html=True)
+        ne = "・".join(sj["通根"]) if sj["通根"] else "なし"
+        cats = " ".join(f"{k}{v}" for k, v in sj["勢力内訳"].items())
+        st.markdown(
+            f"<div class='luna-message'>"
+            f"得令: {marks(sj['得令'])}(月令{sj['月令']}) / "
+            f"得地: {marks(sj['得地'])}(通根: {ne}) / "
+            f"得勢: {marks(sj['得勢'])}<br>"
+            f"勢力内訳: {cats}<br>"
+            "<span style='font-size:12px; color:#6b7280;'>※得令・得地・得勢の3条件による簡易判定です。"
+            "最終的な強弱は命式全体でご判断ください。</span></div>",
+            unsafe_allow_html=True,
+        )
+
         # 格局
         kaku = calc_kakukyoku(m)
+        tokubetsu = calc_tokubetsu_kakukyoku(m)
         st.markdown(f"<div class='luna-section-title'>◆ 格局: {kaku['格局']}</div>",
                     unsafe_allow_html=True)
+        tokubetsu_html = ""
+        if tokubetsu:
+            tokubetsu_html = (f"<br><b>⭐ {tokubetsu['名称']}</b><br>"
+                              f"{tokubetsu['根拠']}<br>"
+                              "<span style='font-size:12px; color:#a855f7;'>"
+                              "特別格局は成立条件が厳格です。鑑定者の最終確認をおすすめします。</span>")
         st.markdown(
-            f"<div class='luna-message'>判定根拠: {kaku['根拠']}<br>"
-            "<span style='font-size:12px; color:#6b7280;'>※普通格局(建禄格・月刃格・八格)による判定です。"
-            "従格などの特別格局は対象外です。</span></div>",
+            f"<div class='luna-message'>判定根拠: {kaku['根拠']}{tokubetsu_html}<br>"
+            "<span style='font-size:12px; color:#6b7280;'>※普通格局(建禄格・月刃格・八格)による判定です。</span></div>",
             unsafe_allow_html=True,
         )
 
@@ -249,6 +274,8 @@ def show_direct():
                 "干支": x["干支"],
                 "通変星": x["通変星"],
                 "十二運": x["十二運"],
+                "空亡": "○" if x["空亡"] else "",
+                "命式との関係": "、".join(x["命式との関係"]) or "-",
             }
             for x in d["大運"]
         ]
@@ -267,6 +294,7 @@ def show_direct():
                 "納音": x["納音"],
                 "空亡": "○" if x["空亡"] else "",
                 "大運": x["大運"],
+                "命式との関係": "、".join(x["命式との関係"]) or "-",
             }
             for x in nenun
         ]
