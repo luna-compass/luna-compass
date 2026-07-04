@@ -1567,3 +1567,356 @@ def create_compatibility_pdf(
     doc.build(story)
     buf.seek(0)
     return buf
+
+
+# ============================================================
+# 四柱推命 鑑定書PDF生成
+# ============================================================
+def create_shichusuimei_pdf(user_data, shichu):
+    """四柱推命の鑑定書PDFを生成する。
+
+    user_data: {"name", "birthday", "birth_time", "reading_date", "time_unknown", "gender"}
+    shichu: {
+        "meishiki": build_meishiki() の戻り値,
+        "kakukyoku": calc_kakukyoku() の戻り値,
+        "tokubetsu": calc_tokubetsu_kakukyoku() の戻り値(None可),
+        "shinjaku": calc_shinjaku() の戻り値,
+        "getsurei": (状態, 得令bool),
+        "natchin": 日柱の納音(str),
+        "kankei": detect_kankei() の戻り値,
+        "shinsatsu": detect_shinsatsu() の戻り値,
+        "daiun": calc_daiun() の戻り値,
+        "nenun": calc_nenun() の戻り値(5年分推奨),
+        "messages": {"nikkan": dict, "ganmei": dict, "juniun": dict, "kubo": str},
+    }
+    構成順: 命式 → 本質 → 中心星と格局 → 命式の関係 → 大運 → 年運 → 補足(身強身弱) → 神殺 → 結び
+    """
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(
+        buf,
+        pagesize=A4,
+        rightMargin=18 * mm,
+        leftMargin=18 * mm,
+        topMargin=12 * mm,
+        bottomMargin=12 * mm,
+    )
+    story = []
+    time_unknown = user_data.get("time_unknown", False)
+
+    def section(title):
+        story.append(Spacer(1, 8))
+        sec_rows = [[Paragraph(f"◆ {title}", S('sec', 13, colors.white, True, sb=0, sa=0))]]
+        sec_table = Table(sec_rows, colWidths=[165*mm])
+        sec_table.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,-1), PURPLE_DARK),
+            ('LEFTPADDING', (0,0), (-1,-1), 14),
+            ('RIGHTPADDING', (0,0), (-1,-1), 14),
+            ('TOPPADDING', (0,0), (-1,-1), 10),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 10),
+        ]))
+        story.append(sec_table)
+        story.append(Spacer(1, 10))
+
+    def message_card(title, msg, extra_note=""):
+        content = [Paragraph(title, S('p', 11, PURPLE_MID, True, sb=6, sa=10))]
+        if msg:
+            for line in msg.split("\n"):
+                line = line.strip()
+                if not line:
+                    content.append(Spacer(1, 5))
+                elif line.startswith("【"):
+                    content.append(Paragraph(line, STYLE_H3))
+                else:
+                    content.append(Paragraph(line, STYLE_BODY))
+        if extra_note:
+            content.append(Paragraph(extra_note, STYLE_NOTE))
+        rows = [[item] for item in content]
+        card = Table(rows, colWidths=[165*mm])
+        card.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,-1), PURPLE_LIGHT),
+            ('LINEBEFORE', (0,0), (0,-1), 0.5, PURPLE_MID),
+            ('LINEAFTER', (0,0), (0,-1), 0.5, PURPLE_MID),
+            ('LINEABOVE', (0,0), (-1,0), 0.5, PURPLE_MID),
+            ('LINEBELOW', (0,-1), (-1,-1), 0.5, PURPLE_MID),
+            ('LEFTPADDING', (0,0), (-1,-1), 14),
+            ('RIGHTPADDING', (0,0), (-1,-1), 14),
+            ('TOPPADDING', (0,0), (0,0), 12),
+            ('BOTTOMPADDING', (0,-1), (-1,-1), 12),
+            ('TOPPADDING', (0,1), (-1,-1), 2),
+            ('BOTTOMPADDING', (0,0), (-1,-2), 2),
+        ]))
+        story.append(card)
+        story.append(Spacer(1, 14))
+
+    def data_table(header, rows_data, col_widths):
+        rows = [[Paragraph(h, S('th', 9, colors.white, True, 'CENTER', sb=0, sa=0)) for h in header]]
+        rows.extend(rows_data)
+        tbl = Table(rows, colWidths=col_widths)
+        tbl.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), PURPLE_DARK),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, PURPLE_LIGHT]),
+            ('BOX', (0, 0), (-1, -1), 1, PURPLE_BORDER),
+            ('INNERGRID', (0, 0), (-1, -1), 0.5, PURPLE_BORDER),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('TOPPADDING', (0, 0), (-1, -1), 4),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ]))
+        story.append(tbl)
+        story.append(Spacer(1, 8))
+
+    def C(text, size=9, color=TEXT_DARK, bold=False, align='CENTER'):
+        return Paragraph(text, S('cell', size, color, bold, align, sb=0, sa=0))
+
+    m = shichu["meishiki"]
+    msgs = shichu.get("messages", {})
+
+    # --------------------------------------------------------
+    # 1ページ目: タイトル + 基本情報 + 命式表
+    # --------------------------------------------------------
+    story.append(Paragraph("Luna 四柱推命", S('t1', 16, PURPLE_DARK, True, 'CENTER', sb=4, sa=2)))
+    story.append(Paragraph("命式鑑定書", S('t2', 11, PURPLE_MID, True, 'CENTER', sb=2, sa=4)))
+    story.append(HRFlowable(width="100%", thickness=2, color=PURPLE_MID, spaceAfter=6))
+
+    info = [
+        [
+            Paragraph("お名前", S('h', 9, PURPLE_DARK, True)),
+            Paragraph(user_data.get("name", ""), S('v', 9)),
+            Paragraph("鑑定日", S('h', 9, PURPLE_DARK, True)),
+            Paragraph(user_data.get("reading_date", ""), S('v', 9)),
+        ],
+        [
+            Paragraph("生年月日", S('h', 9, PURPLE_DARK, True)),
+            Paragraph(user_data.get("birthday", ""), S('v', 9)),
+            Paragraph("出生時刻", S('h', 9, PURPLE_DARK, True)),
+            Paragraph(
+                "不明（時柱を省いています）" if time_unknown else user_data.get("birth_time", ""),
+                S('v', 9, color=TEXT_GRAY) if time_unknown else S('v', 9)
+            ),
+        ],
+    ]
+    t = Table(info, colWidths=[28 * mm, 62 * mm, 25 * mm, 45 * mm])
+    t.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (0, -1), PURPLE_LIGHT),
+        ('BACKGROUND', (2, 0), (2, -1), PURPLE_LIGHT),
+        ('BOX', (0, 0), (-1, -1), 1, PURPLE_BORDER),
+        ('INNERGRID', (0, 0), (-1, -1), 0.5, PURPLE_BORDER),
+        ('TOPPADDING', (0, 0), (-1, -1), 4),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ('LEFTPADDING', (0, 0), (-1, -1), 5),
+    ]))
+    story.append(t)
+    story.append(Spacer(1, 8))
+
+    story.append(Paragraph("この鑑定書について", STYLE_H2))
+    story.append(Paragraph(
+        "本鑑定書は四柱推命による命式鑑定書です。まず下の命式表があなたの生まれ持った星の配置です。"
+        "続く「あなたの本質」で日干（あなたの中心）を、「中心星と格局」で人生のテーマを読み解きます。"
+        "その後、命式の中の関係、大運（10年ごとの運気）、年運と続き、"
+        "巻末には補足資料と神殺・特殊星の一覧を収めています。",
+        STYLE_BODY))
+    story.append(Spacer(1, 10))
+
+    story.append(Paragraph("◆ あなたの命式", STYLE_H1))
+    pillar_names = ["年柱", "月柱", "日柱"] if time_unknown else ["年柱", "月柱", "日柱", "時柱"]
+    mrows = [[Paragraph(h, S('mh', 10, colors.white, True, 'CENTER', sb=0, sa=0))
+              for h in ["柱", "干支", "蔵干(初→本気)", "通変星(天干)", "通変星(蔵干)", "十二運"]]]
+    for pname in pillar_names:
+        kan, shi = m["四柱"][pname]
+        star = m["通変星"][pname]
+        mrows.append([
+            C(pname, 11, PURPLE_DARK, True),
+            C(f"{kan}{shi}", 18, TEXT_DARK, True),
+            C("→".join(m["蔵干"][pname]), 11),
+            C(star["天干"], 11),
+            C(star["蔵干本気"], 11),
+            C(m["十二運"][pname], 11),
+        ])
+    mt = Table(mrows, colWidths=[18*mm, 30*mm, 40*mm, 28*mm, 28*mm, 21*mm])
+    mt.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), PURPLE_DARK),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, PURPLE_LIGHT]),
+        ('BOX', (0, 0), (-1, -1), 1, PURPLE_BORDER),
+        ('INNERGRID', (0, 0), (-1, -1), 0.5, PURPLE_BORDER),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('TOPPADDING', (0, 0), (-1, 0), 6),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 6),
+        ('TOPPADDING', (0, 1), (-1, -1), 9),
+        ('BOTTOMPADDING', (0, 1), (-1, -1), 9),
+    ]))
+    story.append(mt)
+    story.append(Spacer(1, 10))
+
+    e, yang = m["日干五行"]
+    g_state, g_toku = shichu["getsurei"]
+    bal = m["五行バランス"]
+    bal_s = "　".join(f"{k}:{v}" for k, v in bal.items())
+    kubo_s = "・".join(m["空亡"])
+    summary_rows = [
+        [Paragraph(
+            f"日干: <b>{m['日干']}</b>（{e}の{'陽' if yang else '陰'}）　月令: {g_state}（{'得令' if g_toku else '失令'}）　日柱の納音: {shichu['natchin']}",
+            S('sm', 10, TEXT_DARK, False, sb=0, sa=0))],
+        [Paragraph(f"空亡（天中殺）: {kubo_s}　　五行バランス: {bal_s}",
+                   S('sm', 10, TEXT_DARK, False, sb=0, sa=0))],
+    ]
+    sm_card = Table(summary_rows, colWidths=[165*mm])
+    sm_card.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,-1), PURPLE_LIGHT),
+        ('BOX', (0,0), (-1,-1), 0.5, PURPLE_MID),
+        ('LEFTPADDING', (0,0), (-1,-1), 14),
+        ('RIGHTPADDING', (0,0), (-1,-1), 14),
+        ('TOPPADDING', (0,0), (-1,0), 10),
+        ('BOTTOMPADDING', (0,-1), (-1,-1), 10),
+        ('TOPPADDING', (0,1), (-1,-1), 2),
+        ('BOTTOMPADDING', (0,0), (-1,-2), 2),
+    ]))
+    story.append(sm_card)
+    if time_unknown:
+        story.append(Paragraph(
+            "※ 出生時刻が不明のため、時柱を省いた三柱で作成しています。五行バランスは三柱分の集計です。",
+            STYLE_NOTE))
+
+    story.append(PageBreak())
+
+    # --------------------------------------------------------
+    # あなたの本質(日干)
+    # --------------------------------------------------------
+    section("あなたの本質（日干）")
+    nk = msgs.get("nikkan", {})
+    if nk:
+        body = nk.get("message", "")
+        extra = []
+        if nk.get("talent"):
+            extra.append(f"【才能】{nk['talent']}")
+        if nk.get("challenge"):
+            extra.append("【課題】" + nk["challenge"].replace("\n", " "))
+        if nk.get("keywords"):
+            extra.append(f"【キーワード】{nk['keywords']}")
+        full = body + ("\n\n" + "\n".join(extra) if extra else "")
+        message_card(nk.get("title", f"日干 {m['日干']}"), full)
+
+    # --------------------------------------------------------
+    # 中心星(元命)と格局
+    # --------------------------------------------------------
+    section("あなたの中心星と格局")
+    gm_ = msgs.get("ganmei", {})
+    if gm_:
+        message_card(f"中心星（元命）: {gm_.get('title', '')}", gm_.get("message", ""))
+    kaku = shichu["kakukyoku"]
+    tokubetsu = shichu.get("tokubetsu")
+    kaku_msg = f"判定根拠: {kaku['根拠']}"
+    if tokubetsu:
+        kaku_msg += f"\n\n【特別格局】{tokubetsu['名称']}\n{tokubetsu['根拠']}"
+    message_card(f"格局: {kaku['格局']}", kaku_msg,
+                 extra_note="※ 普通格局（建禄格・月刃格・八格）による判定です。")
+    ju = msgs.get("juniun", {})
+    if ju:
+        message_card(f"日柱の十二運: {ju.get('title', '')}", ju.get("message", ""))
+
+    # --------------------------------------------------------
+    # 命式の中の関係
+    # --------------------------------------------------------
+    kankei = shichu.get("kankei", [])
+    if time_unknown:
+        kankei = [f for f in kankei if "時柱" not in f["柱"]]
+    section("命式の中の関係（合・冲・刑・害・破）")
+    if kankei:
+        krows = [[C(f["種類"], 9, PURPLE_DARK, True), C(f["内容"]), C(f["柱"])] for f in kankei]
+        data_table(["種類", "内容", "柱"], krows, [35*mm, 70*mm, 60*mm])
+    else:
+        story.append(Paragraph("命式の中に目立った合・冲・刑・害・破はありません。穏やかな配置です。", STYLE_BODY))
+        story.append(Spacer(1, 4))
+
+    kubo_msg = msgs.get("kubo", "")
+    if kubo_msg:
+        message_card(f"空亡（天中殺）: {kubo_s}", kubo_msg)
+
+    # --------------------------------------------------------
+    # 大運
+    # --------------------------------------------------------
+    section("大運（10年ごとの運気の流れ）")
+    d = shichu["daiun"]
+    ry, rm = d["立運"]
+    story.append(Paragraph(
+        f"大運は<b>{d['順逆']}</b>、立運は<b>{ry}歳{rm}ヶ月</b>です。"
+        + ("※出生時刻不明のため立運は目安です。" if time_unknown else ""),
+        STYLE_BODY))
+    story.append(Spacer(1, 4))
+    drows = []
+    for x in d["大運"]:
+        drows.append([
+            C(f"{x['開始年齢']}歳〜", 9, PURPLE_DARK, True),
+            C(x["干支"], 10, TEXT_DARK, True),
+            C(x["通変星"]),
+            C(x["十二運"]),
+            C("○" if x["空亡"] else "", 9, GOLD, True),
+            C("、".join(x["命式との関係"]) or "-", 8, TEXT_DARK, False, 'LEFT'),
+        ])
+    data_table(["開始年齢", "干支", "通変星", "十二運", "空亡", "命式との関係"],
+               drows, [20*mm, 20*mm, 20*mm, 18*mm, 12*mm, 75*mm])
+
+    # --------------------------------------------------------
+    # 年運
+    # --------------------------------------------------------
+    section("年運（これからの流れ）")
+    nrows = []
+    for x in shichu["nenun"]:
+        nrows.append([
+            C(f"{x['西暦']}年", 9, PURPLE_DARK, True),
+            C(x["干支"], 10, TEXT_DARK, True),
+            C(x["通変星"]),
+            C(x["十二運"]),
+            C("○" if x["空亡"] else "", 9, GOLD, True),
+            C("、".join(x["命式との関係"]) or "-", 8, TEXT_DARK, False, 'LEFT'),
+        ])
+    data_table(["西暦", "干支", "通変星", "十二運", "空亡", "命式との関係"],
+               nrows, [18*mm, 20*mm, 20*mm, 18*mm, 12*mm, 77*mm])
+    story.append(Paragraph("※ 年の切り替わりは立春基準です。空亡○の年は「手放しと充電」を意識してお過ごしください。", STYLE_NOTE))
+
+    # --------------------------------------------------------
+    # 補足: 身強身弱
+    # --------------------------------------------------------
+    sj = shichu["shinjaku"]
+    section("補足資料: 身強身弱について")
+    ne = "・".join(sj["通根"]) if sj["通根"] else "なし"
+    cats = "　".join(f"{k}:{v}" for k, v in sj["勢力内訳"].items())
+    story.append(Paragraph(
+        f"簡易判定: <b>{sj['判定']}</b>（得令: {'○' if sj['得令'] else '×'}　"
+        f"得地: {'○' if sj['得地'] else '×'}　得勢: {'○' if sj['得勢'] else '×'}）",
+        STYLE_BODY))
+    story.append(Paragraph(f"通根: {ne}", STYLE_BODY))
+    story.append(Paragraph(f"勢力内訳: {cats}", STYLE_BODY))
+    story.append(Paragraph(
+        "※ 得令・得地・得勢の3条件による簡易判定です。命式全体の総合判断とは異なる場合があります。",
+        STYLE_NOTE))
+
+    # --------------------------------------------------------
+    # 神殺・特殊星(巻末一覧)
+    # --------------------------------------------------------
+    shinsatsu = shichu.get("shinsatsu", [])
+    if time_unknown:
+        shinsatsu = [f for f in shinsatsu if "時柱" not in f["該当"]]
+    if shinsatsu:
+        section("神殺・特殊星一覧")
+        srows = [[C(f["神殺"], 9, PURPLE_DARK, True), C(f["該当"]),
+                  C(f.get("説明", ""), 8, TEXT_DARK, False, 'LEFT')] for f in shinsatsu]
+        data_table(["星", "該当", "意味"], srows, [30*mm, 50*mm, 85*mm])
+
+    # --------------------------------------------------------
+    # 結び + フッター(セットで改ページされないよう KeepTogether)
+    # --------------------------------------------------------
+    story.append(KeepTogether([
+        Spacer(1, 10),
+        Paragraph(
+            "あなたの命式は、この世でただ一つの星の配置です。"
+            "その光が、これからの歩みをやさしく照らしますように。",
+            S('close', 9, PURPLE_MID, False, 'CENTER', sb=4, sa=6)),
+        HRFlowable(width="100%", thickness=1, color=PURPLE_BORDER),
+        Paragraph(
+            "Luna 四柱推命　Luna-compass",
+            S('ft', 8, TEXT_GRAY, align='CENTER', sb=4, sa=0),
+        ),
+    ]))
+
+    doc.build(story)
+    buf.seek(0)
+    return buf

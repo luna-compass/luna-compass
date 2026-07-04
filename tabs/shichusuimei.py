@@ -13,11 +13,12 @@ from utils.shichusuimei import (build_meishiki, calc_daiun, calc_kakukyoku, calc
                                 calc_shinjaku, calc_tokubetsu_kakukyoku,
                                 detect_kankei, detect_shinsatsu,
                                 getsurei, natchin, KAN_GOGYO, SHI_GOGYO, ZOKAN)
+from utils.pdf_report import create_shichusuimei_pdf
 from utils.messages_loader import get_message
 
 
 def show_direct():
-    st.markdown("### 🀄 四柱推命(開発中)")
+    st.markdown("### 🏮 四柱推命")
     st.caption("節入りは太陽黄経による精密計算。境界±1時間は警告を表示します。")
 
     with st.expander("👤 基本情報を入力する", expanded=True):
@@ -300,6 +301,44 @@ def show_direct():
         ]
         st.table(nenun_rows)
         st.caption("※年齢は各年に迎える満年齢の目安です。年の切り替わりは立春基準で計算しています。")
+
+        # 鑑定書PDFダウンロード
+        st.markdown("<div class='luna-section-title'>◆ 鑑定書PDF</div>", unsafe_allow_html=True)
+        ganmei_key = m["通変星"]["月柱"]["蔵干本気"]
+        shichu_data = {
+            "meishiki": m,
+            "kakukyoku": kaku,
+            "tokubetsu": tokubetsu,
+            "shinjaku": sj,
+            "getsurei": (g_state, g_toku),
+            "natchin": natchin(d_kan_p, d_shi_p),
+            "kankei": kankei,
+            "shinsatsu": shinsatsu,
+            "daiun": d,
+            "nenun": nenun[:5],
+            "messages": {
+                "nikkan": get_message("shichu_nikkan", m["日干"], {}),
+                "ganmei": get_message("shichu_tsuhensei", ganmei_key, {}),
+                "juniun": get_message("shichu_juniun", m["十二運"]["日柱"], {}),
+                "kubo": get_message("shichu_kubo", "general", ""),
+            },
+        }
+        pdf_user_data = {
+            "name": name,
+            "birthday": f"{birthday.year}年{birthday.month}月{birthday.day}日",
+            "birth_time": f"{hour:02d}:{minute:02d}",
+            "reading_date": datetime.date.today().strftime("%Y年%m月%d日"),
+            "time_unknown": time_unknown,
+            "gender": gender,
+        }
+        pdf_buf = create_shichusuimei_pdf(pdf_user_data, shichu_data)
+        st.download_button(
+            label="📄 四柱推命鑑定書PDFをダウンロード",
+            data=pdf_buf,
+            file_name=f"luna_shichusuimei_{name or 'guest'}.pdf",
+            mime="application/pdf",
+            key="dl_shichu_pdf",
+        )
 
         with st.expander("計算メモ(開発用)"):
             st.write(f"換算年(立春基準): {m['換算年(立春基準)']}年")

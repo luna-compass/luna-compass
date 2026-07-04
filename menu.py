@@ -202,8 +202,8 @@ def show():
                 <div class='menu-card-icon'>🏮</div>
                 <div class='menu-card-title'>四柱推命</div>
             </div>
-            <div class='menu-card-desc'>生年月日と出生時刻から命式（四柱・蔵干・通変星・五行バランス）を算出します。東洋の視点からあなたを読み解きます。</div>
-            <div class='menu-badge'>🛠 開発中</div>
+            <div class='menu-card-desc'>生年月日と出生時刻から命式を作成し、あなたの本質・中心星・格局・大運・年運を東洋の視点から読み解きます。命式鑑定書PDFをお届けします。</div>
+            <div class='menu-badge'>✨ 鑑定書PDF付き</div>
         </div>
     </div>
     """, unsafe_allow_html=True)
