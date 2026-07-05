@@ -161,7 +161,7 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
         symbol_html = f'<font name="{_sym_f}">{symbol}</font>'
         header = f"{symbol_html} {label}　{sign} {deg}"
         if house and not time_unknown:
-            header += f"　{house}ハウス"
+            header += f"&nbsp;&nbsp;&nbsp;&nbsp;{house}ハウス"
         content.append(Paragraph(
             header,
             S('p', 11, PURPLE_MID, True, sb=6, sa=10)
@@ -470,6 +470,44 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
     # ★ 3ページ目：ASC（第一印象）
     # --------------------------------------------------------
     if not user_data.get("time_unknown"):
+        # 占星術の基本用語解説（惑星・ハウス・アセンダント）
+        term_guide_rows = [
+            [Paragraph("占星術の基本用語", S('tg', 10, PURPLE_DARK, True, 'CENTER', sb=4, sa=4))],
+            [Paragraph(
+                "占星術には「惑星」「ハウス」「アセンダント」という基本要素があります。"
+                "この3つを組み合わせて読み解くことで、あなたらしさが立体的に見えてきます。",
+                S('tg_i', 9, TEXT_DARK, False, 'LEFT', sb=0, sa=8)
+            )],
+            [Paragraph(
+                "◇ 惑星（天体）とは：太陽・月・水星・金星・火星などの天体は、それぞれ性格や才能の"
+                "異なるテーマ・エネルギーを象徴します。太陽は「本質」、月は「感情」、水星は「思考・"
+                "コミュニケーション」、金星は「愛や好み」、火星は「行動力」を表します。さらに木星から"
+                "冥王星までの外惑星は、幸運や人生の課題など、より大きなスケールでの成長テーマを示します。",
+                S('tg_p', 9, TEXT_DARK, False, 'LEFT', sb=0, sa=6)
+            )],
+            [Paragraph(
+                "◇ ハウスとは：天体が人生のどの分野（仕事・家庭・人間関係など）で力を発揮しやすいかを示す"
+                "「舞台」です。星座が天体の「性質」を表すのに対し、ハウスは「舞台」というイメージです。",
+                S('tg_h', 9, TEXT_DARK, False, 'LEFT', sb=0, sa=6)
+            )],
+            [Paragraph(
+                "◇ アセンダントとは：生まれた瞬間に東の地平線から昇っていた星座で、「第一印象」や"
+                "「外から見たあなた」を表します。太陽が「本質」なら、アセンダントは「見た目の入り口」です。",
+                S('tg_a', 9, TEXT_DARK, False, 'LEFT', sb=0, sa=0)
+            )],
+        ]
+        term_guide_table = Table(term_guide_rows, colWidths=[165*mm])
+        term_guide_table.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,-1), PURPLE_LIGHT),
+            ('BOX', (0,0), (-1,-1), 0.5, PURPLE_BORDER),
+            ('LEFTPADDING', (0,0), (-1,-1), 12),
+            ('RIGHTPADDING', (0,0), (-1,-1), 12),
+            ('TOPPADDING', (0,0), (0,0), 8),
+            ('BOTTOMPADDING', (0,-1), (-1,-1), 8),
+        ]))
+        story.append(term_guide_table)
+        story.append(Spacer(1, 8))
+
         section("第一印象（ASC）")
 
         asc_title = f"ASC アセンダント　{user_data.get('asc_sign', '')} {user_data.get('asc_deg', '')}"
@@ -507,6 +545,31 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
     # --------------------------------------------------------
     # ★ 太陽・月（性格の核）
     # --------------------------------------------------------
+    if time_unknown:
+        # 出生時刻不明の場合はASC・ハウスの説明がないため、惑星のみの簡易版をここに表示
+        term_guide_rows_tu = [
+            [Paragraph("占星術の基本用語", S('tgu', 10, PURPLE_DARK, True, 'CENTER', sb=4, sa=4))],
+            [Paragraph(
+                "◇ 惑星（天体）とは：太陽・月・水星・金星・火星などの天体は、それぞれ性格や才能の"
+                "異なるテーマ・エネルギーを象徴します。太陽は「本質」、月は「感情」、水星は「思考・"
+                "コミュニケーション」、金星は「愛や好み」、火星は「行動力」を表します。さらに木星から"
+                "冥王星までの外惑星は、幸運や人生の課題など、より大きなスケールでの成長テーマを示します。"
+                "これから登場する天体それぞれの意味を読み解いていきましょう。",
+                S('tgu_p', 9, TEXT_DARK, False, 'LEFT', sb=0, sa=0)
+            )],
+        ]
+        term_guide_table_tu = Table(term_guide_rows_tu, colWidths=[165*mm])
+        term_guide_table_tu.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,-1), PURPLE_LIGHT),
+            ('BOX', (0,0), (-1,-1), 0.5, PURPLE_BORDER),
+            ('LEFTPADDING', (0,0), (-1,-1), 12),
+            ('RIGHTPADDING', (0,0), (-1,-1), 12),
+            ('TOPPADDING', (0,0), (0,0), 8),
+            ('BOTTOMPADDING', (0,-1), (-1,-1), 8),
+        ]))
+        story.append(term_guide_table_tu)
+        story.append(Spacer(1, 8))
+
     section("太陽・月")
 
     # 時刻不明時、月が星座の境界付近（0〜7度・23〜30度）なら注記を出す
