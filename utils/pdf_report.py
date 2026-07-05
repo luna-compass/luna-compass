@@ -495,7 +495,7 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
         term_guide_rows = [
             [Paragraph("占星術の基本用語", S('tg', 10, PURPLE_DARK, True, 'CENTER', sb=4, sa=4))],
             [Paragraph(
-                "占星術には「惑星」「ハウス」「アセンダント」という基本要素があります。"
+                "占星術には「惑星」「ハウス」「ASC（アセンダント）」という基本要素があります。"
                 "この3つを組み合わせて読み解くことで、あなたらしさが立体的に見えてきます。",
                 S('tg_i', 9, TEXT_DARK, False, 'LEFT', sb=0, sa=8)
             )],
@@ -512,8 +512,8 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
                 S('tg_h', 9, TEXT_DARK, False, 'LEFT', sb=0, sa=6)
             )],
             [Paragraph(
-                "◇ アセンダントとは：生まれた瞬間に東の地平線から昇っていた星座で、「第一印象」や"
-                "「外から見たあなた」を表します。太陽が「本質」なら、アセンダントは「見た目の入り口」です。",
+                "◇ ASC（アセンダント）とは：生まれた瞬間に東の地平線から昇っていた星座で、「第一印象」や"
+                "「外から見たあなた」を表します。太陽が「本質」なら、ASC（アセンダント）は「見た目の入り口」です。",
                 S('tg_a', 9, TEXT_DARK, False, 'LEFT', sb=0, sa=0)
             )],
         ]

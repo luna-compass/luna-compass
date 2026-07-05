@@ -404,7 +404,7 @@ def _render(container, user_info):
             # ===== ②ASC =====
             if not time_unknown:
                 st.markdown("---")
-                st.markdown("### ☺ 第一印象（ASC）")
+                st.markdown("### ☺ ASC（第一印象）")
                 st.markdown(f"**{asc_sign} {format_degree(asc_deg_val)}**")
                 st.markdown(f"<div class='luna-message'>{get_asc_message(asc_sign)}</div>", unsafe_allow_html=True)
 
@@ -552,7 +552,7 @@ def _render(container, user_info):
             overall_parts = []
             name_display = (name + "さん") if name else "あなた"
             if not time_unknown:
-                overall_parts.append(f"{name_display}は{asc_sign}のASCを持ち、{asc_full}")
+                overall_parts.append(f"{name_display}は{asc_sign}のASC（アセンダント）を持ち、{asc_full}")
                 overall_parts.append(f"太陽は{sun_sign}の{planet_houses['太陽']}ハウスに位置し、{sun_full}")
                 overall_parts.append(f"月は{moon_sign}の{planet_houses['月']}ハウスにあり、{moon_full}")
             else:
