@@ -162,32 +162,13 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
         # 惑星記号にSymbolsフォントを適用
         _sym_f = 'Symbols2' if _symbol2_font_registered and symbol == "☉" else ('Symbols' if _symbol_font_registered else 'JP')
         symbol_html = f'<font name="{_sym_f}">{symbol}</font>'
-        main_text = f"{symbol_html} {label}　{sign} {deg}"
+        header = f"{symbol_html} {label}　{sign} {deg}"
         if house and not time_unknown:
-            # 空白文字はPDF上で連続分が1個にまとめられてしまうため、
-            # 2列のテーブルにしてハウス表示との間隔を確実に空ける
-            header_table = Table(
-                [[
-                    Paragraph(main_text, S('p', 11, PURPLE_MID, True, sb=0, sa=0)),
-                    Paragraph(f"{house}ハウス", S('ph', 11, PURPLE_MID, True, 'LEFT', sb=0, sa=0)),
-                ]],
-                colWidths=[118 * mm, 47 * mm]
-            )
-            header_table.setStyle(TableStyle([
-                ('LEFTPADDING', (0, 0), (-1, -1), 0),
-                ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-                ('TOPPADDING', (0, 0), (-1, -1), 0),
-                ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
-                ('VALIGN', (0, 0), (-1, -1), 'BOTTOM'),
-            ]))
-            content.append(Spacer(1, 6))
-            content.append(header_table)
-            content.append(Spacer(1, 10))
-        else:
-            content.append(Paragraph(
-                main_text,
-                S('p', 11, PURPLE_MID, True, sb=6, sa=10)
-            ))
+            header += f"　　　　　　{house}ハウス"
+        content.append(Paragraph(
+            header,
+            S('p', 11, PURPLE_MID, True, sb=6, sa=10)
+        ))
 
         if msg:
             for line in msg.split("\n"):
@@ -409,6 +390,7 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
     astrologer_top = user_data.get("astrologer_message", "")
 
     if overall_first or astrologer_top:
+        story.append(HRFlowable(width="100%", thickness=1, color=PURPLE_MID, spaceAfter=4))
         story.append(Paragraph("◆ あなたへの総合メッセージ", STYLE_H1))
         story.append(Spacer(1, 4))
 
