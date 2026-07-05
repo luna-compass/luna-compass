@@ -891,7 +891,7 @@ def _star_category(nikkan, kan):
             "食神": "食傷", "傷官": "食傷", "偏財": "財", "正財": "財",
             "偏官": "官殺", "正官": "官殺"}[s]
 
-def calc_shinjaku(meishiki):
+def calc_shinjaku(meishiki, exclude_hour=False):
     """身強身弱の簡易判定(得令・得地・得勢の3条件)。
 
     - 得令: 月令が旺または相
@@ -900,8 +900,13 @@ def calc_shinjaku(meishiki):
 
     2条件以上で「身強」、1条件で「やや身弱」、0で「身弱」。
     ※あくまで簡易判定。従格などの見極めは総合判断が必要です。
+
+    exclude_hour=True の場合、時柱を判定対象から除外する
+    （出生時刻不明で時柱が正午基準の仮の値になっているとき用）。
     """
     pillars = meishiki["四柱"]
+    if exclude_hour:
+        pillars = {p: v for p, v in pillars.items() if p != "時柱"}
     d_kan = meishiki["日干"]
     e = KAN_GOGYO[d_kan][0]
 
@@ -939,22 +944,27 @@ def calc_shinjaku(meishiki):
         "得勢": tokusei, "勢力内訳": cat_count,
     }
 
-def calc_tokubetsu_kakukyoku(meishiki):
+def calc_tokubetsu_kakukyoku(meishiki, exclude_hour=False):
     """特別格局(従格・化気格)の「可能性」を保守的な条件で判定する。
 
     自動判定はあくまで候補の提示。成立の最終判断は鑑定者が行うこと。
     戻り値: None または {"名称", "根拠"}
+
+    exclude_hour=True の場合、時柱を判定対象から除外する
+    （出生時刻不明で時柱が正午基準の仮の値になっているとき用）。
     """
     pillars = meishiki["四柱"]
     d_kan = meishiki["日干"]
     e = KAN_GOGYO[d_kan][0]
-    sj = calc_shinjaku(meishiki)
+    sj = calc_shinjaku(meishiki, exclude_hour=exclude_hour)
     cat = sj["勢力内訳"]
 
-    other_kans = [pillars[p][0] for p in ("年柱", "月柱", "時柱")]
+    _kan_pillar_names = ("年柱", "月柱") if exclude_hour else ("年柱", "月柱", "時柱")
+    other_kans = [pillars[p][0] for p in _kan_pillar_names]
 
     # --- 化気格(日干が月干または時干と干合し、化神が月令を得る) ---
-    for partner_name in ("月柱", "時柱"):
+    _partner_names = ("月柱",) if exclude_hour else ("月柱", "時柱")
+    for partner_name in _partner_names:
         partner = pillars[partner_name][0]
         pair = frozenset([d_kan, partner])
         if pair in KANGO:
@@ -988,7 +998,7 @@ def calc_tokubetsu_kakukyoku(meishiki):
 
     return None
 
-def calc_kakukyoku(meishiki):
+def calc_kakukyoku(meishiki, exclude_hour=False):
     """普通格局を判定する(子平法の標準方式)。
 
     優先順:
@@ -999,6 +1009,9 @@ def calc_kakukyoku(meishiki):
     4. 透干なし → 月支本気の通変星を格とする
 
     ※従格・化気格などの特別格局は未実装(身強身弱の判定方式を要相談)。
+
+    exclude_hour=True の場合、時干を透干のチェック対象から除外する
+    （出生時刻不明で時柱が正午基準の仮の値になっているとき用）。
     """
     pillars = meishiki["四柱"]
     d_kan = meishiki["日干"]
@@ -1014,7 +1027,8 @@ def calc_kakukyoku(meishiki):
 
     # 3. 蔵干の透干(本気→中気→初気)
     zokan_list = list(reversed(ZOKAN[m_shi]))  # [本気, (中気,) 初気]
-    other_kans = [pillars[p][0] for p in ("年柱", "月柱", "時柱")]
+    _kan_pillar_names = ("年柱", "月柱") if exclude_hour else ("年柱", "月柱", "時柱")
+    other_kans = [pillars[p][0] for p in _kan_pillar_names]
     labels = ["本気", "中気", "初気"]
     for i, zk in enumerate(zokan_list):
         if zk in other_kans:

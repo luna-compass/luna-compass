@@ -207,7 +207,7 @@ def show_direct():
             )
 
         # 身強身弱(簡易判定)
-        sj = calc_shinjaku(m)
+        sj = calc_shinjaku(m, exclude_hour=time_unknown)
         marks = lambda b: "○" if b else "×"
         st.markdown(f"<div class='luna-section-title'>◆ 身強身弱(簡易判定): {sj['判定']}</div>",
                     unsafe_allow_html=True)
@@ -225,8 +225,8 @@ def show_direct():
         )
 
         # 格局
-        kaku = calc_kakukyoku(m)
-        tokubetsu = calc_tokubetsu_kakukyoku(m)
+        kaku = calc_kakukyoku(m, exclude_hour=time_unknown)
+        tokubetsu = calc_tokubetsu_kakukyoku(m, exclude_hour=time_unknown)
         st.markdown(f"<div class='luna-section-title'>◆ 格局: {kaku['格局']}</div>",
                     unsafe_allow_html=True)
         tokubetsu_html = ""
