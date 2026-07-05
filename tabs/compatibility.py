@@ -201,8 +201,9 @@ def _render(container):
                 min_value=datetime.date(1800, 1, 1),
                 max_value=datetime.date.today()
             )
-            hour1 = st.number_input("出生時（時）", min_value=0, max_value=23, value=0, key="hour1")
-            min1  = st.number_input("出生時（分）", min_value=0, max_value=59, value=0, key="min1")
+            time_unknown1 = st.checkbox("出生時刻が不明", value=False, key="time_unknown1")
+            hour1 = st.number_input("出生時（時）", min_value=0, max_value=23, value=0, key="hour1", disabled=time_unknown1)
+            min1  = st.number_input("出生時（分）", min_value=0, max_value=59, value=0, key="min1", disabled=time_unknown1)
 
         with col2:
             st.markdown("**👤 お相手2**")
@@ -214,8 +215,9 @@ def _render(container):
                 min_value=datetime.date(1800, 1, 1),
                 max_value=datetime.date.today()
             )
-            hour2 = st.number_input("出生時（時）", min_value=0, max_value=23, value=12, key="hour2")
-            min2  = st.number_input("出生時（分）", min_value=0, max_value=59, value=0, key="min2")
+            time_unknown2 = st.checkbox("出生時刻が不明", value=False, key="time_unknown2")
+            hour2 = st.number_input("出生時（時）", min_value=0, max_value=23, value=12, key="hour2", disabled=time_unknown2)
+            min2  = st.number_input("出生時（分）", min_value=0, max_value=59, value=0, key="min2", disabled=time_unknown2)
 
         btn_compat = st.button("💕 相性を見る", use_container_width=True, type="primary", key="btn_compat")
 
@@ -224,8 +226,12 @@ def _render(container):
             disp2 = name2 or "Bさん"
 
             # ===== 天文計算 =====
-            t1 = make_ts_from_local(bday1, int(hour1), int(min1), 9)
-            t2 = make_ts_from_local(bday2, int(hour2), int(min2), 9)
+            _calc_hour1 = 12 if time_unknown1 else int(hour1)
+            _calc_min1 = 0 if time_unknown1 else int(min1)
+            _calc_hour2 = 12 if time_unknown2 else int(hour2)
+            _calc_min2 = 0 if time_unknown2 else int(min2)
+            t1 = make_ts_from_local(bday1, _calc_hour1, _calc_min1, 9)
+            t2 = make_ts_from_local(bday2, _calc_hour2, _calc_min2, 9)
 
             longs1 = get_body_longitudes_ts(t1)
             longs2 = get_body_longitudes_ts(t2)
@@ -291,10 +297,13 @@ def _render(container):
             st.markdown("---")
             st.markdown("### ☽ 月の相性（感情・安心感の相性）")
             st.write(f"{disp1}：{moon_sign1}　×　{disp2}：{moon_sign2}")
-            moon_aspect = calc_aspect(longs1.get("月", 0), longs2.get("月", 0))
+            _moon_time_uncertain = time_unknown1 or time_unknown2
+            moon_aspect = None if _moon_time_uncertain else calc_aspect(longs1.get("月", 0), longs2.get("月", 0))
             me1 = ELEMENTS.get(moon_sign1, "")
             me2 = ELEMENTS.get(moon_sign2, "")
             moon_compat = ELEMENT_COMPAT.get((me1, me2))
+            if _moon_time_uncertain:
+                st.caption("※ どちらかの出生時刻が不明のため、月同士の正確なアスペクトは判定していません。")
             if moon_aspect:
                 asp_info = ASPECT_COMPAT.get(moon_aspect)
                 if asp_info:
@@ -355,7 +364,7 @@ def _render(container):
 
             dt_utc1 = datetime.datetime(
                 bday1.year, bday1.month, bday1.day,
-                int(hour1), int(min1)
+                _calc_hour1, _calc_min1
             ) - datetime.timedelta(hours=9)
             jd1 = swe.julday(
                 dt_utc1.year, dt_utc1.month, dt_utc1.day,
@@ -363,7 +372,9 @@ def _render(container):
             )
             house_cusps1, _ = swe.houses(jd1, 35.68, 139.69, b'P')
 
-            fig = plot_horoscope(longs1, house_cusps1, longs2)
+            if time_unknown1:
+                st.caption(f"※ {disp1}の出生時刻が不明のため、ソーラーチャート（太陽を1ハウスとする簡易表示）です。")
+            fig = plot_horoscope(longs1, house_cusps1, longs2, time_unknown=time_unknown1)
             buf = io.BytesIO()
             fig.savefig(buf, format="png", dpi=150, bbox_inches="tight")  # 表示用はdpi=150で十分
             buf.seek(0)
@@ -408,14 +419,23 @@ def _render(container):
 """)
 
             # ===== グランドトライン・グランドクロス判定（2人合わせて） =====
-            combined_longs = {**longs1, **{f"B_{k}": v for k, v in longs2.items()}}
-            patterns = detect_special_patterns(longs1, longs2)
+            # 出生時刻不明の人の「月」は度数が不正確なため、検出対象から除外する
+            _longs1_for_pattern = (
+                {k: v for k, v in longs1.items() if k != "月"} if time_unknown1 else longs1
+            )
+            _longs2_for_pattern = (
+                {k: v for k, v in longs2.items() if k != "月"} if time_unknown2 else longs2
+            )
+            patterns = detect_special_patterns(_longs1_for_pattern, _longs2_for_pattern)
             gt_combined = patterns["transit_grand_trine"]
             gc_combined = patterns["transit_grand_cross"]
+            _pattern_moon_excluded = time_unknown1 or time_unknown2
 
             if gt_combined or gc_combined:
                 st.markdown("---")
                 st.markdown("### ✨ 2人の特別なパターン")
+                if _pattern_moon_excluded:
+                    st.caption("※ どちらかの出生時刻が不明のため、月が関わるパターンは精度が低くなるため表示していません。")
 
             for gt in gt_combined:
                 elem = gt["element"]
@@ -467,6 +487,8 @@ def _render(container):
 
             # 月の相性（Web表示と同じ内容をPDFにも収録）
             _moon_note_lines = []
+            if _moon_time_uncertain:
+                _moon_note_lines.append("※ どちらかの出生時刻が不明のため、月同士の正確なアスペクトは判定していません。")
             if moon_aspect and ASPECT_COMPAT.get(moon_aspect):
                 _ai = ASPECT_COMPAT[moon_aspect]
                 _moon_note_lines.append(f"{_pdf_clean(_ai[0])}：{_ai[1]}")

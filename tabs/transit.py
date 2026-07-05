@@ -27,8 +27,14 @@ def get_transit_aspect_message(transit_planet, natal_planet, aspect):
 from utils.chart import plot_horoscope
 
 
-def get_aspects_transit(natal_planets, transit_planets):
-    """トランジット天体×ネイタル天体のアスペクトを計算"""
+def get_aspects_transit(natal_planets, transit_planets, exclude_natal_moon=False):
+    """
+    トランジット天体×ネイタル天体のアスペクトを計算
+    exclude_natal_moon=True の場合、natal_planets側の「月」を除外する
+    （ネイタルの出生時刻が不明で月の度数が不正確なとき用。トランジット側の月には影響しない）
+    """
+    if exclude_natal_moon:
+        natal_planets = {k: v for k, v in natal_planets.items() if k != "月"}
     aspects = []
     aspect_defs = {
         "コンジャンクション": 0,
@@ -252,7 +258,11 @@ def show(tab, user_info):
                 "冥王星": transit_longs.get("冥王星", 0),
             }
 
-            aspects = get_aspects_transit(natal_key_planets, transit_key_planets)
+            time_unknown = user_info.get("time_unknown", False)
+            aspects = get_aspects_transit(natal_key_planets, transit_key_planets, exclude_natal_moon=time_unknown)
+
+            if time_unknown and "月" in natal_key_planets:
+                st.caption("※ 出生時刻が不明のため、ネイタルの月が関わるアスペクトは精度が低くなるため表示していません。")
 
             if aspects:
                 for a in aspects:
@@ -271,7 +281,7 @@ def show(tab, user_info):
                 st.write("現在、主要なアスペクトはありません。")
 
             # ===== グランドトライン・グランドクロス判定（トランジット込み） =====
-            patterns = detect_special_patterns(natal_longs, transit_longs)
+            patterns = detect_special_patterns(natal_longs, transit_longs, exclude_moon=time_unknown)
             gt_natal = patterns["natal_grand_trine"]
             gc_natal = patterns["natal_grand_cross"]
             gt_transit = patterns["transit_grand_trine"]

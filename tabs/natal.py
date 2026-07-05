@@ -452,7 +452,7 @@ def _render(container, user_info):
                 "天王星": natal_longs["天王星"], "海王星": natal_longs["海王星"], "冥王星": natal_longs["冥王星"],
             }
             OUTER_PLANETS = {"天王星", "海王星", "冥王星"}
-            aspects_raw = get_aspects(aspect_planets)
+            aspects_raw = get_aspects(aspect_planets, exclude_moon=time_unknown)
             aspects_filtered = [
                 a for a in aspects_raw
                 if not (a["p1"] in OUTER_PLANETS and a["p2"] in OUTER_PLANETS)
@@ -465,15 +465,8 @@ def _render(container, user_info):
                 ASPECT_PRIO.get(a["type"], 5)
             ))
 
-            # 出生時刻不明の場合：月は度数の誤差が大きくアスペクトが不正確なため除外
-            _moon_aspect_excluded = False
-            if time_unknown:
-                _before_count = len(aspects)
-                aspects = [a for a in aspects if "月" not in (a["p1"], a["p2"])]
-                _moon_aspect_excluded = len(aspects) != _before_count
-
             st.markdown("### 🔷 アスペクト（天体の関係性）")
-            if _moon_aspect_excluded:
+            if time_unknown and "月" in aspect_planets:
                 st.caption("※ 出生時刻が不明のため、月が関わるアスペクトは精度が低くなるため表示していません。")
             if aspects:
                 for a in aspects:
@@ -483,13 +476,15 @@ def _render(container, user_info):
                 st.write("主要アスペクトはありません。")
 
             # ===== グランドトライン・グランドクロス判定 =====
-            patterns = detect_special_patterns(natal_longs)
+            patterns = detect_special_patterns(natal_longs, exclude_moon=time_unknown)
             gt_natal = patterns["natal_grand_trine"]
             gc_natal = patterns["natal_grand_cross"]
 
-            if gt_natal or gc_natal:
+            if (gt_natal or gc_natal):
                 st.markdown("---")
                 st.markdown("### ✨ 特別なパターン（ネイタル）")
+                if time_unknown and "月" in natal_longs:
+                    st.caption("※ 出生時刻が不明のため、月が関わるパターンは精度が低くなるため表示していません。")
 
             for gt in gt_natal:
                 elem = gt["element"]
@@ -569,16 +564,11 @@ def _render(container, user_info):
                 f"火星は{mars_sign}にあり、{mars_full}",
             ]
             if aspects:
-                # 出生時刻不明の場合、月は度数誤差が大きくアスペクトが不正確なため
-                # 総合メッセージに使う代表アスペクトからも月がらみのものを除外する
-                _overall_aspect_candidates = (
-                    [a for a in aspects if "月" not in (a["p1"], a["p2"])]
-                    if time_unknown else aspects
-                )
-                if _overall_aspect_candidates:
-                    a0 = _overall_aspect_candidates[0]
-                    asp_short = get_aspect_message(a0['p1'], a0['p2'], a0['type']).split("\n")[0]
-                    overall_parts.append(f"また、{a0['p1']}と{a0['p2']}の{a0['type']}が示すように、{asp_short}")
+                # aspects は取得時点で exclude_moon=time_unknown 済みのため、
+                # ここでは単純に先頭（最優先）のアスペクトを使うだけでよい
+                a0 = aspects[0]
+                asp_short = get_aspect_message(a0['p1'], a0['p2'], a0['type']).split("\n")[0]
+                overall_parts.append(f"また、{a0['p1']}と{a0['p2']}の{a0['type']}が示すように、{asp_short}")
 
             overall_text = "\n".join(overall_parts)
             summary = [overall_text]
@@ -691,8 +681,8 @@ def _render(container, user_info):
                 "kw_mercury": _gkw("mercury", mercury_sign),
                 "kw_venus":   _gkw("venus", venus_sign),
                 "kw_mars":    _gkw("mars", mars_sign),
-                "grand_trines": detect_special_patterns(natal_longs)["natal_grand_trine"],
-                "grand_crosses": detect_special_patterns(natal_longs)["natal_grand_cross"],
+                "grand_trines": detect_special_patterns(natal_longs, exclude_moon=time_unknown)["natal_grand_trine"],
+                "grand_crosses": detect_special_patterns(natal_longs, exclude_moon=time_unknown)["natal_grand_cross"],
             }
 
             # ===== 通常PDF =====

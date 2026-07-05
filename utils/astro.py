@@ -130,7 +130,15 @@ def get_equal_houses():
     return houses
 
 # ---------- アスペクト ----------
-def get_aspects(planets):
+def get_aspects(planets, exclude_moon=False):
+    """
+    天体同士のアスペクトを計算する。
+    exclude_moon=True の場合、渡された planets 辞書から「月」キーを除外してから計算する。
+    出生時刻不明で月の度数が不正確なときに使う。
+    （トランジットの「今日の月」など、別の月を含む辞書には影響しない）
+    """
+    if exclude_moon:
+        planets = {k: v for k, v in planets.items() if k != "月"}
     aspects = []
     aspect_defs = {
         "コンジャンクション": 0,
@@ -225,13 +233,16 @@ MODES = {
 def _get_sign_from_lon(lon_deg):
     return SIGNS[int((lon_deg % 360) / 30)]
 
-def detect_grand_trine(planets: dict, orb: float = 8.0) -> list:
+def detect_grand_trine(planets: dict, orb: float = 8.0, exclude_moon: bool = False) -> list:
     """
     グランドトライン（大三角）を検出する
     同じエレメントの3天体がそれぞれ120°を形成
     同じエレメントが複数ある場合は最初の1つだけ返す
+    exclude_moon=True の場合、「月」を検出対象から除外する（出生時刻不明時用）
     返り値：[{"planets": [p1,p2,p3], "element": "火", "signs": [s1,s2,s3]}]
     """
+    if exclude_moon:
+        planets = {k: v for k, v in planets.items() if k != "月"}
     results = []
     found_elements = {}  # 同じエレメントの重複を防ぐ（dict：エレメント→最優先候補）
     planet_list = list(planets.items())
@@ -286,12 +297,15 @@ def detect_grand_trine(planets: dict, orb: float = 8.0) -> list:
     return results
 
 
-def detect_grand_cross(planets: dict, orb: float = 8.0) -> list:
+def detect_grand_cross(planets: dict, orb: float = 8.0, exclude_moon: bool = False) -> list:
     """
     グランドクロス（大十字）を検出する
     4天体がスクエア×4＋オポジション×2を形成
+    exclude_moon=True の場合、「月」を検出対象から除外する（出生時刻不明時用）
     返り値：[{"planets": [p1,p2,p3,p4], "mode": "活動", "signs": [...]}]
     """
+    if exclude_moon:
+        planets = {k: v for k, v in planets.items() if k != "月"}
     results = []
     planet_list = list(planets.items())
 
@@ -361,19 +375,21 @@ def detect_grand_cross(planets: dict, orb: float = 8.0) -> list:
     return merged
 
 
-def detect_special_patterns(natal: dict, transit: dict = None) -> dict:
+def detect_special_patterns(natal: dict, transit: dict = None, exclude_moon: bool = False) -> dict:
     """
     ネイタル単体＋トランジット込みの両方でグランドトライン・グランドクロスを検出
+    exclude_moon=True の場合、ネイタルの「月」を除外する（出生時刻不明時用）。
+    トランジット側の「今日の月」（T_月）は度数が正確なので除外されない。
     """
     results = {
-        "natal_grand_trine": detect_grand_trine(natal),
-        "natal_grand_cross": detect_grand_cross(natal),
+        "natal_grand_trine": detect_grand_trine(natal, exclude_moon=exclude_moon),
+        "natal_grand_cross": detect_grand_cross(natal, exclude_moon=exclude_moon),
         "transit_grand_trine": [],
         "transit_grand_cross": [],
     }
     if transit:
         combined = {**natal, **{f"T_{k}": v for k, v in transit.items()}}
-        results["transit_grand_trine"] = detect_grand_trine(combined)
-        results["transit_grand_cross"] = detect_grand_cross(combined)
+        results["transit_grand_trine"] = detect_grand_trine(combined, exclude_moon=exclude_moon)
+        results["transit_grand_cross"] = detect_grand_cross(combined, exclude_moon=exclude_moon)
 
     return results
