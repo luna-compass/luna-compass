@@ -402,10 +402,11 @@ def _render(container, user_info):
             st.markdown(kw_html, unsafe_allow_html=True)
 
             # ===== ②ASC =====
-            st.markdown("---")
-            st.markdown("### ☺ 第一印象（ASC）")
-            st.markdown(f"**{asc_sign} {format_degree(asc_deg_val)}**")
-            st.markdown(f"<div class='luna-message'>{get_asc_message(asc_sign)}</div>", unsafe_allow_html=True)
+            if not time_unknown:
+                st.markdown("---")
+                st.markdown("### ☺ 第一印象（ASC）")
+                st.markdown(f"**{asc_sign} {format_degree(asc_deg_val)}**")
+                st.markdown(f"<div class='luna-message'>{get_asc_message(asc_sign)}</div>", unsafe_allow_html=True)
 
             # ===== ③内惑星（太陽・月・水星・金星・火星） =====
             st.markdown("---")
@@ -463,7 +464,17 @@ def _render(container, user_info):
                 (0 if a["p1"] in PERSONAL else 1) + (0 if a["p2"] in PERSONAL else 1),
                 ASPECT_PRIO.get(a["type"], 5)
             ))
+
+            # 出生時刻不明の場合：月は度数の誤差が大きくアスペクトが不正確なため除外
+            _moon_aspect_excluded = False
+            if time_unknown:
+                _before_count = len(aspects)
+                aspects = [a for a in aspects if "月" not in (a["p1"], a["p2"])]
+                _moon_aspect_excluded = len(aspects) != _before_count
+
             st.markdown("### 🔷 アスペクト（天体の関係性）")
+            if _moon_aspect_excluded:
+                st.caption("※ 出生時刻が不明のため、月が関わるアスペクトは精度が低くなるため表示していません。")
             if aspects:
                 for a in aspects:
                     st.markdown(f"**{a['p1']} × {a['p2']}** ：{a['type']}")

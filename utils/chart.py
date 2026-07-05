@@ -120,6 +120,9 @@ def plot_horoscope(natal_longitudes, houses, transit_longitudes=None, time_unkno
     for i in range(len(pnames)):
         for j in range(i+1, len(pnames)):
             p1, p2 = pnames[i], pnames[j]
+            if time_unknown and ("月" in (p1, p2)):
+                # 出生時刻不明の場合、月は度数の誤差が大きくアスペクトが不正確なため線を引かない
+                continue
             d1, d2 = natal_longitudes[p1], natal_longitudes[p2]
             diff = abs(d1-d2) % 360
             if diff > 180: diff = 360-diff
