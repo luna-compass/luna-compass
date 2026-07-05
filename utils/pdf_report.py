@@ -662,7 +662,21 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
     grand_trines = user_data.get("grand_trines", [])
     grand_crosses = user_data.get("grand_crosses", [])
 
-    if aspects or grand_trines or grand_crosses:
+    # 出生時刻不明の場合：月は度数の誤差が大きく、アスペクトの正確な判定ができないため除外
+    _moon_excluded = False
+    if time_unknown:
+        _orig_aspect_count = len(aspects)
+        _orig_gt_count = len(grand_trines)
+        _orig_gc_count = len(grand_crosses)
+        aspects = [a for a in aspects if "月" not in (a.get("p1", ""), a.get("p2", ""))]
+        grand_trines = [gt for gt in grand_trines if "月" not in gt.get("planets", [])]
+        grand_crosses = [gc for gc in grand_crosses if "月" not in gc.get("planets", [])]
+        if (len(aspects) != _orig_aspect_count
+                or len(grand_trines) != _orig_gt_count
+                or len(grand_crosses) != _orig_gc_count):
+            _moon_excluded = True
+
+    if aspects or grand_trines or grand_crosses or _moon_excluded:
         section("アスペクト（天体の関係性）")
 
         # アスペクトの説明文＋凡例（一般の方向けの補足）
@@ -690,6 +704,14 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
         ]))
         story.append(aspect_intro)
         story.append(Spacer(1, 10))
+
+        if _moon_excluded:
+            story.append(Paragraph(
+                "※ 出生時刻が不明のため、月は度数の誤差が大きくなります。"
+                "月が関わるアスペクトは正確な判定が難しいため、こちらには表示していません。",
+                STYLE_NOTE
+            ))
+            story.append(Spacer(1, 8))
 
         for a in aspects:
             story.append(Paragraph(
