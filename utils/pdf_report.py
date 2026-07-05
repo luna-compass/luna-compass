@@ -129,8 +129,8 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
     # --------------------------------------------------------
     # ★ ここで section を定義（絶対に最初）
     # --------------------------------------------------------
-    def section(title):
-        story.append(Spacer(1, 8))
+    def section(title, defer=False):
+        flowables = [Spacer(1, 8)]
         # グラデーション風セクションヘッダー
         sec_rows = [[Paragraph(f"◆ {title}", S('sec', 13, colors.white, True, sb=0, sa=0))]]
         sec_table = Table(sec_rows, colWidths=[165*mm])
@@ -141,8 +141,11 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
             ('TOPPADDING', (0,0), (-1,-1), 10),
             ('BOTTOMPADDING', (0,0), (-1,-1), 10),
         ]))
-        story.append(sec_table)
-        story.append(Spacer(1, 10))
+        flowables.append(sec_table)
+        flowables.append(Spacer(1, 10))
+        if defer:
+            return flowables
+        story.extend(flowables)
 
 
     # --------------------------------------------------------
@@ -150,22 +153,41 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
     # --------------------------------------------------------
     time_unknown = user_data.get("time_unknown", False)
 
-    def planet_row(symbol, label, sign, deg, house, msg, house_msg="", extra_note=""):
+    def planet_row(symbol, label, sign, deg, house, msg, house_msg="", extra_note="", defer=False):
         if not sign:
-            return
+            return [] if defer else None
 
         content = []
         # ハウス表示：time_unknownのとき非表示
         # 惑星記号にSymbolsフォントを適用
         _sym_f = 'Symbols2' if _symbol2_font_registered and symbol == "☉" else ('Symbols' if _symbol_font_registered else 'JP')
         symbol_html = f'<font name="{_sym_f}">{symbol}</font>'
-        header = f"{symbol_html} {label}　{sign} {deg}"
+        main_text = f"{symbol_html} {label}　{sign} {deg}"
         if house and not time_unknown:
-            header += f"　　　{house}ハウス"
-        content.append(Paragraph(
-            header,
-            S('p', 11, PURPLE_MID, True, sb=6, sa=10)
-        ))
+            # 空白文字はPDF上で連続分が1個にまとめられてしまうため、
+            # 2列のテーブルにしてハウス表示との間隔を確実に空ける
+            header_table = Table(
+                [[
+                    Paragraph(main_text, S('p', 11, PURPLE_MID, True, sb=0, sa=0)),
+                    Paragraph(f"{house}ハウス", S('ph', 11, PURPLE_MID, True, 'LEFT', sb=0, sa=0)),
+                ]],
+                colWidths=[118 * mm, 47 * mm]
+            )
+            header_table.setStyle(TableStyle([
+                ('LEFTPADDING', (0, 0), (-1, -1), 0),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+                ('TOPPADDING', (0, 0), (-1, -1), 0),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+                ('VALIGN', (0, 0), (-1, -1), 'BOTTOM'),
+            ]))
+            content.append(Spacer(1, 6))
+            content.append(header_table)
+            content.append(Spacer(1, 10))
+        else:
+            content.append(Paragraph(
+                main_text,
+                S('p', 11, PURPLE_MID, True, sb=6, sa=10)
+            ))
 
         if msg:
             for line in msg.split("\n"):
@@ -203,6 +225,9 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
         ]
         card.setStyle(TableStyle(card_style))
         card.repeatRows = 0
+
+        if defer:
+            return [card, Spacer(1, 20)]
 
         story.append(card)
         story.append(Spacer(1, 20))
@@ -348,7 +373,7 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
     name       = user_data.get("name", "あなた")
 
     if kw_sun or kw_moon:
-        story.append(HRFlowable(width="100%", thickness=2, color=PURPLE_MID, spaceAfter=4))
+        story.append(HRFlowable(width="100%", thickness=1, color=PURPLE_MID, spaceAfter=4))
         story.append(Paragraph("◆ あなたのキーワード", STYLE_H1))
         story.append(Spacer(1, 6))
 
@@ -384,7 +409,6 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
     astrologer_top = user_data.get("astrologer_message", "")
 
     if overall_first or astrologer_top:
-        story.append(HRFlowable(width="100%", thickness=2, color=PURPLE_MID, spaceAfter=4))
         story.append(Paragraph("◆ あなたへの総合メッセージ", STYLE_H1))
         story.append(Spacer(1, 4))
 
@@ -508,7 +532,7 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
         story.append(term_guide_table)
         story.append(Spacer(1, 8))
 
-        section("第一印象（ASC）")
+        asc_header_flowables = section("第一印象（ASC）", defer=True)
 
         asc_title = f"ASC アセンダント　{user_data.get('asc_sign', '')} {user_data.get('asc_deg', '')}"
         asc_msg = user_data.get("asc_message", "")
@@ -539,7 +563,7 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
             ('BOTTOMPADDING', (0,0), (-1,-1), 10),
         ]))
 
-        story.append(asc_card)
+        story.append(KeepTogether(asc_header_flowables + [asc_card]))
         story.append(Spacer(1, 10))
 
     # --------------------------------------------------------
@@ -570,7 +594,7 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
         story.append(term_guide_table_tu)
         story.append(Spacer(1, 8))
 
-    section("太陽・月")
+    sun_moon_header_flowables = section("太陽・月", defer=True)
 
     # 時刻不明時、月が星座の境界付近（0〜7度・23〜30度）なら注記を出す
     # （月は1日に約13度動くため、正午±12時間で約±6.5度の幅がある）
@@ -586,10 +610,23 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
         except (ValueError, TypeError):
             pass
 
-    for sym, lbl, ks, kd, kh, km, khm in [
+    for _sm_idx, (sym, lbl, ks, kd, kh, km, khm) in enumerate([
         ("☉", "太陽（本質）", "sun_sign", "sun_deg", "sun_house", "sun_message", "sun_house_message"),
         ("☽", "月（感情）", "moon_sign", "moon_deg", "moon_house", "moon_message", "moon_house_message"),
-    ]:
+    ]):
+        if _sm_idx == 0:
+            first_flowables = planet_row(
+                sym, lbl,
+                user_data.get(ks, ""),
+                user_data.get(kd, ""),
+                user_data.get(kh, ""),
+                user_data.get(km, ""),
+                user_data.get(khm, ""),
+                extra_note=moon_boundary_note if ks == "moon_sign" else "",
+                defer=True,
+            )
+            story.append(KeepTogether(sun_moon_header_flowables + first_flowables))
+            continue
         planet_row(
             sym, lbl,
             user_data.get(ks, ""),
