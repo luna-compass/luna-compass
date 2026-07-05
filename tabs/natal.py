@@ -558,9 +558,16 @@ def _render(container, user_info):
                 f"火星は{mars_sign}にあり、{mars_full}",
             ]
             if aspects:
-                a0 = aspects[0]
-                asp_short = get_aspect_message(a0['p1'], a0['p2'], a0['type']).split("\n")[0]
-                overall_parts.append(f"また、{a0['p1']}と{a0['p2']}の{a0['type']}が示すように、{asp_short}")
+                # 出生時刻不明の場合、月は度数誤差が大きくアスペクトが不正確なため
+                # 総合メッセージに使う代表アスペクトからも月がらみのものを除外する
+                _overall_aspect_candidates = (
+                    [a for a in aspects if "月" not in (a["p1"], a["p2"])]
+                    if time_unknown else aspects
+                )
+                if _overall_aspect_candidates:
+                    a0 = _overall_aspect_candidates[0]
+                    asp_short = get_aspect_message(a0['p1'], a0['p2'], a0['type']).split("\n")[0]
+                    overall_parts.append(f"また、{a0['p1']}と{a0['p2']}の{a0['type']}が示すように、{asp_short}")
 
             overall_text = "\n".join(overall_parts)
             summary = [overall_text]
