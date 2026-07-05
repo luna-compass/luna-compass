@@ -149,7 +149,7 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
     # --------------------------------------------------------
     time_unknown = user_data.get("time_unknown", False)
 
-    def planet_row(symbol, label, sign, deg, house, msg, house_msg=""):
+    def planet_row(symbol, label, sign, deg, house, msg, house_msg="", extra_note=""):
         if not sign:
             return
 
@@ -179,6 +179,10 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
         # ハウスメッセージ：time_unknownのとき非表示
         if house_msg and not time_unknown:
             content.append(Paragraph(f"【ハウス】{house_msg}", STYLE_NOTE))
+
+        # 追加注記（月星座の境界注意など）
+        if extra_note:
+            content.append(Paragraph(extra_note, STYLE_NOTE))
 
         # 各行を別セルにしてページまたぎ対応
         rows = [[item] for item in content]
@@ -304,6 +308,8 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
     # --------------------------------------------------------
 
     # 鑑定書の読み方ガイド（新テキスト）
+    # 時刻不明時はASCセクションが無いため、読み順の文言を切り替える
+    _guide_order = "続いて太陽・月・水星・金星・火星、" if time_unknown else "続いてASC・太陽・月・水星・金星・火星、"
     guide_rows = [
         [Paragraph("この鑑定書について", S('gt', 10, PURPLE_DARK, True, 'CENTER', sb=4, sa=4))],
         [Paragraph(
@@ -312,7 +318,8 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
             "次にキーワードと総合メッセージをご覧ください。"
             "また「占い師からのひとこと」には、鑑定師があなたのホロスコープを見て感じたメッセージを込めています。"
             "その後の「今日のあなたへのメッセージ」は、タロットからの「今このときのあなたへ」のメッセージです。"
-            "続いてASC・太陽・月・水星・金星・火星、そしてアスペクト（天体同士の関係性）、数秘術と"
+            + _guide_order +
+            "そしてアスペクト（天体同士の関係性）、数秘術と"
             "順にお読みいただくと、あなたの全体像がより深く理解できます。"
             "最後の外惑星は、興味のある方向けの補足資料としてご覧ください。",
             S('gb', 9, TEXT_DARK, False, 'LEFT', sb=2, sa=4)
@@ -501,6 +508,20 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
     # --------------------------------------------------------
     section("太陽・月")
 
+    # 時刻不明時、月が星座の境界付近（0〜7度・23〜30度）なら注記を出す
+    # （月は1日に約13度動くため、正午±12時間で約±6.5度の幅がある）
+    moon_boundary_note = ""
+    if time_unknown:
+        try:
+            _moon_d = int(str(user_data.get("moon_deg", "")).split("°")[0].strip())
+            if _moon_d < 7 or _moon_d >= 23:
+                moon_boundary_note = (
+                    "※ 月は1日に約13度動くため、出生時刻が不明の場合、"
+                    "実際の出生時刻によっては月星座が隣の星座になる可能性があります。"
+                )
+        except (ValueError, TypeError):
+            pass
+
     for sym, lbl, ks, kd, kh, km, khm in [
         ("☉", "太陽（本質）", "sun_sign", "sun_deg", "sun_house", "sun_message", "sun_house_message"),
         ("☽", "月（感情）", "moon_sign", "moon_deg", "moon_house", "moon_message", "moon_house_message"),
@@ -512,6 +533,7 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
             user_data.get(kh, ""),
             user_data.get(km, ""),
             user_data.get(khm, ""),
+            extra_note=moon_boundary_note if ks == "moon_sign" else "",
         )
 
     # --------------------------------------------------------
