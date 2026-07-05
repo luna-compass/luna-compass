@@ -101,6 +101,7 @@ def S(name, size=10, color=TEXT_DARK, bold=False, align='LEFT', sb=6, sa=6):
         spaceBefore=sb,
         spaceAfter=sa,
         leading=size * 1.8,
+        wordWrap='CJK',  # 日本語禁則処理（。、」等が行頭に来ないようにする）
     )
 
 STYLE_H1   = S('h1', 13, PURPLE_DARK, True, 'LEFT', sb=10, sa=6)
