@@ -166,18 +166,11 @@ if st.session_state["menu_selected"] == "general":
             horizontal=True
         )
 
-        if mode == "自分を占う":
-            default_name = "Luna"
-            default_date = datetime.date(1968, 5, 27)
-            default_hour = 0
-            default_min = 0
-            default_city = "北九州"
-        else:
-            default_name = ""
-            default_date = datetime.date(1990, 1, 1)
-            default_hour = 12
-            default_min = 0
-            default_city = "東京"
+        default_name = ""
+        default_date = datetime.date(1990, 1, 1)
+        default_hour = 12
+        default_min = 0
+        default_city = "東京"
 
         col1, col2 = st.columns(2)
         with col1:
