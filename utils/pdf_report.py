@@ -161,7 +161,7 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
         symbol_html = f'<font name="{_sym_f}">{symbol}</font>'
         header = f"{symbol_html} {label}　{sign} {deg}"
         if house and not time_unknown:
-            header += f"&nbsp;&nbsp;&nbsp;&nbsp;{house}ハウス"
+            header += f"　　　{house}ハウス"
         content.append(Paragraph(
             header,
             S('p', 11, PURPLE_MID, True, sb=6, sa=10)
