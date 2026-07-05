@@ -581,6 +581,7 @@ def _render(container):
                 overall_data={
                     "grand_trines": gt_combined,
                     "grand_crosses": gc_combined,
+                    "moon_time_uncertain": _pattern_moon_excluded,
                     "num_lp1": lp1, "num_bd1": bd1, "num_rl1": rl1,
                     "num_lp2": lp2, "num_bd2": bd2, "num_rl2": rl2,
                     "num_lp_msg": _pdf_clean(lp_msg), "num_bd_msg": _pdf_clean(bd_msg),

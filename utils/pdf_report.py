@@ -663,18 +663,13 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
     grand_crosses = user_data.get("grand_crosses", [])
 
     # 出生時刻不明の場合：月は度数の誤差が大きく、アスペクトの正確な判定ができないため除外
-    _moon_excluded = False
+    # （呼び出し元（natal.py側）で既に月を除外して渡してくる場合もあるため、
+    #   件数の増減ではなく time_unknown フラグ自体で判定する）
+    _moon_excluded = bool(time_unknown)
     if time_unknown:
-        _orig_aspect_count = len(aspects)
-        _orig_gt_count = len(grand_trines)
-        _orig_gc_count = len(grand_crosses)
         aspects = [a for a in aspects if "月" not in (a.get("p1", ""), a.get("p2", ""))]
         grand_trines = [gt for gt in grand_trines if "月" not in gt.get("planets", [])]
         grand_crosses = [gc for gc in grand_crosses if "月" not in gc.get("planets", [])]
-        if (len(aspects) != _orig_aspect_count
-                or len(grand_trines) != _orig_gt_count
-                or len(grand_crosses) != _orig_gc_count):
-            _moon_excluded = True
 
     if aspects or grand_trines or grand_crosses or _moon_excluded:
         section("アスペクト（天体の関係性）")
@@ -1216,6 +1211,11 @@ def create_transit_pdf(natal_data, transit_data, aspects, outer_planets, chart_i
     # --------------------------------------------------------
     section("トランジット × ネイタル アスペクト")
     story.append(Paragraph("今この星があなたに与えている影響を示します。", STYLE_NOTE))
+    if natal_data.get("time_unknown"):
+        story.append(Paragraph(
+            "※ 出生時刻が不明のため、ネイタルの月が関わるアスペクトは精度が低くなるため表示していません。",
+            STYLE_NOTE
+        ))
     story.append(Spacer(1, 6))
 
     asp_icons = {
@@ -1565,6 +1565,12 @@ def create_compatibility_pdf(
 
     if grand_trines or grand_crosses:
         section("2人の特別なパターン")
+        if isinstance(overall_data, dict) and overall_data.get("moon_time_uncertain"):
+            story.append(Paragraph(
+                "※ どちらかの出生時刻が不明のため、月が関わるパターンは精度が低くなるため表示していません。",
+                STYLE_NOTE
+            ))
+            story.append(Spacer(1, 6))
 
         for gt in grand_trines:
             elem = gt.get("element", "")
