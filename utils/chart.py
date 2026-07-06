@@ -49,11 +49,14 @@ def plot_horoscope(natal_longitudes, houses, transit_longitudes=None, time_unkno
         "オポジション":       {"color": "#9333ea", "lw": 1.0, "ls": "--"},
     }
 
-    # ソーラーチャート：出生時刻不明のとき太陽を1ハウスに固定
+    # ソーラーチャート：出生時刻不明のとき太陽星座を第1ハウスに固定
+    # ハウス番号計算（natal.py）と揃えるため、太陽の「度数」ではなく
+    # 「星座の頭」を第1ハウスの起点にする（星座単位のソーラーサインハウス）
     if time_unknown and "太陽" in natal_longitudes:
         sun_lon = natal_longitudes["太陽"]
-        asc = sun_lon
-        houses = [(sun_lon + i * 30) % 360 for i in range(12)]
+        sun_sign_start = (int(sun_lon) // 30) * 30
+        asc = sun_sign_start
+        houses = [(sun_sign_start + i * 30) % 360 for i in range(12)]
     else:
         asc = houses[0]
 

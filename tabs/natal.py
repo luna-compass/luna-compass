@@ -304,18 +304,27 @@ def _render(container, user_info):
             asc_sign = get_sign(asc)
 
             # 各天体のハウス番号
-            planet_houses = {
-                "太陽": get_house_num(sun, houses),
-                "月": get_house_num(moon, houses),
-                "水星": get_house_num(mercury, houses),
-                "金星": get_house_num(venus, houses),
-                "火星": get_house_num(mars, houses),
-                "木星": get_house_num(jupiter, houses),
-                "土星": get_house_num(saturn, houses),
-                "天王星": get_house_num(natal_longs["天王星"], houses),
-                "海王星": get_house_num(natal_longs["海王星"], houses),
-                "冥王星": get_house_num(natal_longs["冥王星"], houses),
+            _planet_lons = {
+                "太陽": sun, "月": moon, "水星": mercury, "金星": venus, "火星": mars,
+                "木星": jupiter, "土星": saturn,
+                "天王星": natal_longs["天王星"], "海王星": natal_longs["海王星"],
+                "冥王星": natal_longs["冥王星"],
             }
+            if time_unknown:
+                # ソーラーサインハウス：太陽星座の頭を第1ハウスの起点とする
+                # （「太陽星座を第1ハウスとする」注記と一致する星座単位方式。
+                #  正午Placidusのハウス番号は実際の出生時刻と無関係で無意味なため使わない）
+                _sun_sign_start = (int(sun) // 30) * 30
+                _solar_cusps = [(_sun_sign_start + i * 30) % 360 for i in range(12)]
+                planet_houses = {
+                    name: get_house_num(lon, _solar_cusps)
+                    for name, lon in _planet_lons.items()
+                }
+            else:
+                planet_houses = {
+                    name: get_house_num(lon, houses)
+                    for name, lon in _planet_lons.items()
+                }
 
             target_label = "あなた" if mode == "自分を占う" else f"{name or 'この方'}"
 
@@ -418,13 +427,22 @@ def _render(container, user_info):
                 ("♂ 火星（行動）", mars_sign, mars_deg, f"{mars_sign} {format_degree(mars_deg)}", get_mars_message, "火星"),
             ]
 
+            if time_unknown:
+                st.caption("※ 出生時刻不明のため、ハウスは太陽星座を第1ハウスとするソーラーサインハウス（分野の目安）で表示しています。")
+
             for title, sign, deg, text, msg_func, pname in planets_inner:
+                # 時刻不明時、太陽は必ず第1ハウスになり全員同じになるため省略
+                _show_house = not (time_unknown and pname == "太陽")
                 house_num = planet_houses[pname]
                 st.markdown(f"### {title}")
-                st.markdown(f"**{text}　{house_num}ハウス**")
+                if _show_house:
+                    st.markdown(f"**{text}　{house_num}ハウス**")
+                else:
+                    st.markdown(f"**{text}**")
                 st.markdown(f"<div class='luna-message'>{msg_func(sign)}</div>", unsafe_allow_html=True)
-                house_msg = get_house_planet_message(house_num, pname)
-                st.markdown(f"<div class='luna-message'>🏠 {house_msg}</div>", unsafe_allow_html=True)
+                if _show_house:
+                    house_msg = get_house_planet_message(house_num, pname)
+                    st.markdown(f"<div class='luna-message'>🏠 {house_msg}</div>", unsafe_allow_html=True)
 
             # ===== ④外惑星 =====
             st.markdown("---")
@@ -616,10 +634,17 @@ def _render(container, user_info):
                 lp_full = lp_data.get("message", "")
 
             # user_dataを組み立て
+            # 時刻不明時はソーラーサインハウスのハウス番号・解釈を出す。
+            # ただし太陽はソーラーサインハウスの定義上、必ず第1ハウスになり
+            # 全員同じ文章になるため省略する。
             def _house(planet_jp):
-                return "" if time_unknown else planet_houses[planet_jp]
+                if time_unknown and planet_jp == "太陽":
+                    return ""
+                return planet_houses[planet_jp]
             def _house_msg(planet_jp, planet_name):
-                return "" if time_unknown else get_house_planet_message(planet_houses[planet_jp], planet_name)
+                if time_unknown and planet_jp == "太陽":
+                    return ""
+                return get_house_planet_message(planet_houses[planet_jp], planet_name)
 
             user_data = {
                 "name": name or "　",

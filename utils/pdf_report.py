@@ -4,7 +4,7 @@ from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import mm
 from reportlab.platypus import (
     SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle,
-    HRFlowable, Image, KeepTogether, PageBreak,
+    HRFlowable, Image, KeepTogether, PageBreak, CondPageBreak,
 )
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
@@ -163,7 +163,7 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
         _sym_f = 'Symbols2' if _symbol2_font_registered and symbol == "☉" else ('Symbols' if _symbol_font_registered else 'JP')
         symbol_html = f'<font name="{_sym_f}">{symbol}</font>'
         main_text = f"{symbol_html} {label}　{sign} {deg}"
-        if house and not time_unknown:
+        if house:
             # 空白文字はPDF上で連続分が1個にまとめられてしまうため、
             # 2列のテーブルにしてハウス表示との間隔を確実に空ける
             header_table = Table(
@@ -199,8 +199,9 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
                 else:
                     content.append(Paragraph(line, STYLE_BODY))
 
-        # ハウスメッセージ：time_unknownのとき非表示
-        if house_msg and not time_unknown:
+        # ハウスメッセージ：値があれば表示
+        # （時刻不明時はソーラーサインハウスの解釈。natal.py側で太陽のみ空にしている）
+        if house_msg:
             content.append(Paragraph(f"【ハウス】{house_msg}", STYLE_NOTE))
 
         # 追加注記（月星座の境界注意など）
@@ -327,7 +328,7 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
         story.append(sign_legend)
         story.append(Spacer(1, 6))
 
-    story.append(PageBreak())
+    story.append(CondPageBreak(680))  # 空白ページ防止
 
     # --------------------------------------------------------
     # ★ 2ページ目：読み方ガイド＋キーワード＋総合メッセージ＋占い師メッセージ
@@ -434,7 +435,7 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
                 story.append(Paragraph(line, STYLE_BODY))
         story.append(Spacer(1, 8))
 
-    story.append(PageBreak())
+    story.append(CondPageBreak(680))  # 空白ページ防止
 
     # --------------------------------------------------------
     # ★ タロットメッセージ（「今知りたい答え」を早めに渡す）
@@ -485,7 +486,7 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
                 else:
                     story.append(Paragraph(line, S('tmm', 10, TEXT_DARK, align='LEFT', sb=0, sa=3)))
 
-        story.append(PageBreak())
+        story.append(CondPageBreak(680))  # 空白ページ防止
 
     # --------------------------------------------------------
     # ★ 3ページ目：ASC（第一印象）
@@ -578,6 +579,13 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
                 "これから登場する天体それぞれの意味を読み解いていきましょう。",
                 S('tgu_p', 9, TEXT_DARK, False, 'LEFT', sb=0, sa=0)
             )],
+            [Paragraph(
+                "◇ ハウスとは：天体が「人生のどの分野」で働くかを示す12の部屋です。"
+                "本来は出生時刻から計算しますが、今回は出生時刻が不明のため、"
+                "太陽星座を第1ハウスとする「ソーラーサインハウス」で読み解いています"
+                "（雑誌やテレビの12星座占いと同じ方式です）。分野の目安としてご覧ください。",
+                S('tgu_p2', 9, TEXT_DARK, False, 'LEFT', sb=6, sa=0)
+            )],
         ]
         term_guide_table_tu = Table(term_guide_rows_tu, colWidths=[165*mm])
         term_guide_table_tu.setStyle(TableStyle([
@@ -653,7 +661,7 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
             user_data.get(khm, ""),
         )
 
-    story.append(PageBreak())
+    story.append(CondPageBreak(680))  # 空白ページ防止：残り高さが少ない時のみ改ページ
 
     # --------------------------------------------------------
     # ★ アスペクト（特別なパターンもここに含める）
@@ -794,7 +802,7 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
             story.append(card)
             story.append(Spacer(1, 12))
 
-    story.append(PageBreak())
+    story.append(CondPageBreak(680))  # 空白ページ防止：残り高さが少ない時のみ改ページ
 
     # --------------------------------------------------------
     # ★ 数秘術
@@ -962,7 +970,7 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
                 rl_block.append(Paragraph(line, STYLE_BODY))
         story.append(KeepTogether(rl_block))
 
-    story.append(PageBreak())
+    story.append(CondPageBreak(680))  # 空白ページ防止：残り高さが少ない時のみ改ページ
 
     # --------------------------------------------------------
     # ★ 外惑星（資料編）の前置き

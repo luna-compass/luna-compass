@@ -193,11 +193,11 @@ def _render(container):
         col1, col2 = st.columns(2)
         with col1:
             st.markdown("**👤 お相手1**")
-            name1 = st.text_input("お名前", value="Luna", key="compat_name1")
+            name1 = st.text_input("お名前", value="", placeholder="お名前", key="compat_name1")
             bday1 = st.date_input(
                 "生年月日",
                 key="bday1",
-                value=datetime.date(1968, 5, 27),
+                value=datetime.date(1990, 1, 1),
                 min_value=datetime.date(1800, 1, 1),
                 max_value=datetime.date.today()
             )
