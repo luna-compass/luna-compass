@@ -5,14 +5,53 @@
 import json
 import os
 
-_JSON_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "messages_data.json")
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# 従来どおりのルート直下 messages_data.json（デフォルト・後方互換）
+_DEFAULT_JSON_PATH = os.path.join(_ROOT, "messages_data.json")
+
+# テンプレート（鑑定スタイル）の置き場所： templates/<style>/messages_data.json
+_TEMPLATES_DIR = os.path.join(_ROOT, "templates")
+
+# 現在選択中のスタイル名。None のときは従来どおりルートのJSONを読む。
+_current_style = None
 _cache = None
+
+
+def _resolve_json_path():
+    """現在のスタイルに応じて読み込むJSONのパスを返す。
+    スタイル未指定、またはスタイル用ファイルが存在しない場合は
+    従来のルート messages_data.json にフォールバックする（後方互換）。"""
+    if _current_style:
+        style_path = os.path.join(_TEMPLATES_DIR, _current_style, "messages_data.json")
+        if os.path.exists(style_path):
+            return style_path
+        # スタイル指定はあるがファイルが無い → デフォルトにフォールバック
+    return _DEFAULT_JSON_PATH
+
+
+def set_style(style_name):
+    """鑑定スタイルを切り替える。
+    style_name: 例 'standard', 'love'。None または '' でデフォルトに戻る。
+    切り替え時はキャッシュを破棄して次回読み込みで反映する。"""
+    global _current_style, _cache
+    new_style = style_name or None
+    if new_style != _current_style:
+        _current_style = new_style
+        _cache = None  # スタイルが変わったらキャッシュを捨てる
+
+
+def get_style():
+    """現在選択中のスタイル名を返す（未指定なら None）。"""
+    return _current_style
+
 
 def _load():
     global _cache
     if _cache is None:
-        if os.path.exists(_JSON_PATH):
-            with open(_JSON_PATH, "r", encoding="utf-8") as f:
+        path = _resolve_json_path()
+        if os.path.exists(path):
+            with open(path, "r", encoding="utf-8") as f:
                 _cache = json.load(f)
         else:
             _cache = {}

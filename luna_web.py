@@ -4,8 +4,16 @@ import pandas as pd
 
 # ---------- 起動時キャッシュウォームアップ ----------
 # JSONファイルを起動時に読み込んでおくことで、1回目のボタン操作を高速化する
-from utils.messages_loader import reload as _reload_messages
+from utils.messages_loader import reload as _reload_messages, set_style as _set_style
 _reload_messages()  # 毎回リロードして最新JSONを確実に読み込む
+
+# ---------- 鑑定スタイル（テンプレート）定義 ----------
+# 表示名 → templates/ 内のフォルダ名。増やすときはここに1行足すだけ。
+# フォルダに messages_data.json が無い場合は自動で標準文面にフォールバックする。
+READING_STYLES = {
+    "スタンダード（総合）": "standard",
+    "恋愛・相性": "love",
+}
 
 # ---------- ページ設定 ----------
 st.set_page_config(
@@ -159,6 +167,16 @@ if st.session_state["menu_selected"] == "general":
     st.markdown("### 🌟 総合鑑定")
 
     with st.expander("👤 基本情報を入力する", expanded=True):
+        # 鑑定スタイル（テンプレート）の選択
+        style_label = st.selectbox(
+            "鑑定スタイル",
+            list(READING_STYLES.keys()),
+            index=0,
+            key="reading_style_general",
+            help="鑑定書の文面のトーンを切り替えます。「恋愛・相性」は恋愛・対人向けの文面になります（準備中の項目は標準文面で表示されます）。"
+        )
+        selected_style = READING_STYLES.get(style_label, "standard")
+
         mode = st.radio(
             "占う対象",
             ("自分を占う", "別の人を占う"),
@@ -227,7 +245,12 @@ if st.session_state["menu_selected"] == "general":
         "lon": lon_city,
         "mode": mode,
         "time_unknown": time_unknown,
+        "reading_style": selected_style,
     }
+
+    # 選択された鑑定スタイルを適用（文面を切り替える）。
+    # messages_loader 経由で全タブ共通に効くため、タブ描画の直前で一度呼べば十分。
+    _set_style(selected_style)
 
     from tabs import natal, transit, numerology
 
