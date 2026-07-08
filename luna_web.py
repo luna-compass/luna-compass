@@ -4,16 +4,19 @@ import pandas as pd
 
 # ---------- 起動時キャッシュウォームアップ ----------
 # JSONファイルを起動時に読み込んでおくことで、1回目のボタン操作を高速化する
-from utils.messages_loader import reload as _reload_messages, set_style as _set_style
+from utils.messages_loader import (
+    reload as _reload_messages,
+    set_style as _set_style,
+    discover_styles as _discover_styles,
+)
 _reload_messages()  # 毎回リロードして最新JSONを確実に読み込む
 
 # ---------- 鑑定スタイル（テンプレート）定義 ----------
-# 表示名 → templates/ 内のフォルダ名。増やすときはここに1行足すだけ。
-# フォルダに messages_data.json が無い場合は自動で標準文面にフォールバックする。
-READING_STYLES = {
-    "スタンダード（総合）": "standard",
-    "恋愛・相性": "love",
-}
+# templates/ を自動スキャンして選択肢を作る。
+# templates/<フォルダ>/messages_data.json を置けば自動でプルダウンに増える。
+def _get_reading_styles():
+    # {表示名: フォルダ名} の辞書を返す
+    return {label: folder for folder, label in _discover_styles()}
 
 # ---------- ページ設定 ----------
 st.set_page_config(
@@ -168,6 +171,7 @@ if st.session_state["menu_selected"] == "general":
 
     with st.expander("👤 基本情報を入力する", expanded=True):
         # 鑑定スタイル（テンプレート）の選択
+        READING_STYLES = _get_reading_styles()
         style_label = st.selectbox(
             "鑑定スタイル",
             list(READING_STYLES.keys()),

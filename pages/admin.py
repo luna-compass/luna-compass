@@ -46,8 +46,19 @@ label {
 st.markdown("<div class='admin-title'>⚙️ Luna メッセージ管理画面</div>", unsafe_allow_html=True)
 st.markdown("<div class='admin-caption'>鑑定メッセージを編集・保存できます。保存後すぐにアプリに反映されます。</div>", unsafe_allow_html=True)
 
-# ---------- JSONファイルパス ----------
-JSON_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "messages_data.json")
+# ---------- パス定義 ----------
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_TEMPLATES_DIR = os.path.join(_ROOT, "templates")
+# 従来のルート直下（後方互換：standardが無い等のフォールバック用）
+_DEFAULT_JSON_PATH = os.path.join(_ROOT, "messages_data.json")
+
+# 編集できる鑑定スタイルは templates/ を自動スキャンして取得する。
+# templates/<フォルダ>/messages_data.json があれば自動で選択肢に増える。
+from utils.messages_loader import discover_styles as _discover_styles
+
+def get_json_path(style):
+    """スタイルのJSONパスを返す（templates/<style>/messages_data.json）。"""
+    return os.path.join(_TEMPLATES_DIR, style, "messages_data.json")
 
 SIGNS = ["牡羊座","牡牛座","双子座","蟹座","獅子座","乙女座",
          "天秤座","蠍座","射手座","山羊座","水瓶座","魚座"]
@@ -66,18 +77,112 @@ PLANET_LABELS = {
     "asc": "☺ ASC（アセンダント）",
 }
 
+# ---------- 編集スタイルの選択 ----------
+# (フォルダ名, 表示名) のリスト。表示名でプルダウンを出し、選択からフォルダ名を引く。
+_style_options = _discover_styles()
+_style_folders = [f for f, _label in _style_options]
+_style_labels = [label for _f, label in _style_options]
+_label_to_folder = {label: f for f, label in _style_options}
+_folder_to_label = {f: label for f, label in _style_options}
+
+# 実際に編集対象として「反映済み」のスタイル（session_stateで管理）。
+# 初回はリストの先頭（standard）を採用する。
+if "_admin_active_style" not in st.session_state:
+    st.session_state["_admin_active_style"] = _style_folders[0] if _style_folders else "standard"
+
+# プルダウンは「候補の選択」だけ。押すまで反映しない。
+_active_folder = st.session_state["_admin_active_style"]
+_active_index = _style_folders.index(_active_folder) if _active_folder in _style_folders else 0
+
+col_style, col_apply = st.columns([3, 1])
+with col_style:
+    _picked_label = st.selectbox(
+        "編集する鑑定スタイル",
+        _style_labels,
+        index=_active_index,
+        key="admin_edit_style",
+        help="スタイルを選んで、右の「このスタイルを開く」を押すと反映されます。templates/ にフォルダを追加すると、ここに自動で表示されます。",
+    )
+_picked_folder = _label_to_folder.get(_picked_label, "standard")
+
+with col_apply:
+    st.write("")  # ボタンの高さをラベルに合わせる
+    _apply_style = st.button(
+        "このスタイルを開く",
+        type="primary",
+        use_container_width=True,
+        key="admin_apply_style",
+    )
+
+# 「開く」ボタンが押され、かつ選択が現在のアクティブと違うときだけ切り替える。
+if _apply_style and _picked_folder != st.session_state["_admin_active_style"]:
+    # 前スタイルの編集値・選択（天体選択なども含む）をすべてリセットしてから切り替える。
+    # これをしないと、Streamlitがウィジェットキー単位で前の状態を保持し、
+    # 選択と表示中の文面がズレる。
+    _protected = {"admin_edit_style", "_admin_active_style"}
+    for _k in list(st.session_state.keys()):
+        if _k in _protected:
+            continue
+        st.session_state.pop(_k, None)
+    st.session_state["_admin_active_style"] = _picked_folder
+    st.rerun()
+
+# 以降は「反映済み」のアクティブスタイルを使う（プルダウンの一時選択ではなく）
+CURRENT_STYLE = st.session_state["_admin_active_style"]
+_style_label = _folder_to_label.get(CURRENT_STYLE, CURRENT_STYLE)
+JSON_PATH = get_json_path(CURRENT_STYLE)
+
+# プルダウンの選択が未反映のときは、その旨を知らせる
+if _picked_folder != CURRENT_STYLE:
+    st.info(f"「{_picked_label}」を選択中です。「このスタイルを開く」を押すと切り替わります。（現在の編集対象：{_style_label}）")
+
 # ---------- JSONを読み込む ----------
 def load_data():
     if os.path.exists(JSON_PATH):
         with open(JSON_PATH, "r", encoding="utf-8") as f:
             return json.load(f)
+    # スタイル用ファイルが無い場合は、従来のルートJSONにフォールバック
+    if os.path.exists(_DEFAULT_JSON_PATH):
+        with open(_DEFAULT_JSON_PATH, "r", encoding="utf-8") as f:
+            return json.load(f)
     return {}
 
 def save_data(data):
+    # スタイルのフォルダが無ければ作成してから保存
+    os.makedirs(os.path.dirname(JSON_PATH), exist_ok=True)
     with open(JSON_PATH, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 data = load_data()
+
+# ---------- 「標準版からコピーして初期化」機能 ----------
+if CURRENT_STYLE != "standard":
+    with st.expander("このスタイルを標準版から初期化する", expanded=False):
+        st.caption(
+            "標準版（スタンダード）の全メッセージを、このスタイルにコピーして上書きします。"
+            "新しいスタイルの土台づくりや、編集をやり直したいときに使えます。"
+            "※ 現在のこのスタイルの内容は上書きされます。"
+        )
+        _standard_path = get_json_path("standard")
+        _standard_exists = os.path.exists(_standard_path)
+        if not _standard_exists:
+            st.warning("標準版（templates/standard/messages_data.json）が見つかりません。")
+        confirm_copy = st.checkbox(
+            "内容が上書きされることを理解しました",
+            key="admin_confirm_copy",
+        )
+        if st.button(
+            f"標準版から「{_style_label}」へコピーして初期化",
+            type="secondary",
+            use_container_width=True,
+            key="admin_copy_from_standard",
+            disabled=(not _standard_exists or not confirm_copy),
+        ):
+            with open(_standard_path, "r", encoding="utf-8") as f:
+                _std_data = json.load(f)
+            save_data(_std_data)
+            st.success(f"標準版の内容を「{_style_label}」にコピーしました。画面を更新します。")
+            st.rerun()
 
 if not data:
     st.error("⚠️ messages_data.json が見つかりません。まず export_messages.py を実行してください。")
@@ -400,7 +505,7 @@ with tab_numerology:
         st.rerun()
 
 st.markdown("---")
-st.caption(f"📁 保存先: {JSON_PATH}")
+st.caption(f"編集中のスタイル：{_style_label}　／　保存先: {JSON_PATH}")
 
 # ===== エレメントテンプレ =====
 with tab_elem:

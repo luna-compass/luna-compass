@@ -17,6 +17,44 @@ _TEMPLATES_DIR = os.path.join(_ROOT, "templates")
 _current_style = None
 _cache = None
 
+# フォルダ名 → 画面表示名。ここに無いフォルダはフォルダ名がそのまま表示される。
+# 新しいスタイルを追加したいだけなら、templates/ にフォルダを作れば自動で選べる。
+# 表示名をきれいにしたいときだけ、ここに1行足す。
+STYLE_DISPLAY_NAMES = {
+    "standard": "スタンダード（総合）",
+    "love": "恋愛・相性",
+}
+
+
+def discover_styles():
+    """templates/ 内の messages_data.json を持つフォルダを自動検出し、
+    [(フォルダ名, 表示名), ...] のリストを返す。
+    standard を先頭にし、残りはフォルダ名順で並べる。
+    templates/standard/ が無くても、ルート直下 messages_data.json があれば
+    standard を必ず選択肢に含める（後方互換）。"""
+    found = []
+    if os.path.isdir(_TEMPLATES_DIR):
+        for entry in sorted(os.listdir(_TEMPLATES_DIR)):
+            style_dir = os.path.join(_TEMPLATES_DIR, entry)
+            if not os.path.isdir(style_dir):
+                continue
+            if os.path.exists(os.path.join(style_dir, "messages_data.json")):
+                found.append(entry)
+    # standard を必ず先頭に。
+    # templates/standard/ が無くても、ルート直下 messages_data.json があれば
+    # standard は使える（_resolve_json_path がルートにフォールバックするため）。
+    ordered = []
+    if "standard" in found:
+        found.remove("standard")
+        ordered.append("standard")
+    elif os.path.exists(_DEFAULT_JSON_PATH):
+        ordered.append("standard")
+    ordered.extend(found)
+    # 何も無い場合の最終保険
+    if not ordered:
+        ordered = ["standard"]
+    return [(name, STYLE_DISPLAY_NAMES.get(name, name)) for name in ordered]
+
 
 def _resolve_json_path():
     """現在のスタイルに応じて読み込むJSONのパスを返す。
