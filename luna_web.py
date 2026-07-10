@@ -2,14 +2,14 @@ import streamlit as st
 import datetime
 import pandas as pd
 
-# ---------- 起動時キャッシュウォームアップ ----------
-# JSONファイルを起動時に読み込んでおくことで、1回目のボタン操作を高速化する
+# ---------- メッセージローダー ----------
+# JSONの読み込みは messages_loader 内でスタイル別にキャッシュされる。
+# （毎リランで reload すると全キャッシュが捨てられ遅くなるため、
+#   JSON編集後の反映は管理画面の「スタイル適用」ボタンで reload() を呼ぶ運用）
 from utils.messages_loader import (
-    reload as _reload_messages,
     set_style as _set_style,
     discover_styles as _discover_styles,
 )
-_reload_messages()  # 毎回リロードして最新JSONを確実に読み込む
 
 # ---------- 鑑定スタイル（テンプレート）定義 ----------
 # templates/ を自動スキャンして選択肢を作る。
@@ -17,6 +17,13 @@ _reload_messages()  # 毎回リロードして最新JSONを確実に読み込む
 def _get_reading_styles():
     # {表示名: フォルダ名} の辞書を返す
     return {label: folder for folder, label in _discover_styles()}
+
+# ---------- 都市データ（キャッシュ付き） ----------
+# 毎リランのCSV読み込みを避ける。cities.csv を更新したときは
+# Streamlit Cloud の再デプロイでキャッシュも新しくなるので運用上は問題なし。
+@st.cache_data
+def _load_cities():
+    return pd.read_csv("cities.csv")
 
 # ---------- ページ設定 ----------
 st.set_page_config(
@@ -160,6 +167,7 @@ if st.session_state["menu_selected"] is None:
 # ---------- メニュー選択後：戻るボタン ----------
 if st.button("← メニューに戻る", key="back_to_menu"):
     st.session_state["menu_selected"] = None
+    _set_style(None)  # スタイルをデフォルトに戻す（他メニューへの持ち越し防止）
     st.rerun()
 
 st.markdown("---")
@@ -232,7 +240,7 @@ if st.session_state["menu_selected"] == "general":
         )
         tz_offset = 9 if tz_label.startswith("日本") else 0
 
-        cities = pd.read_csv("cities.csv")
+        cities = _load_cities()
         default_city_index = int(cities[cities["city"] == default_city].index[0]) if default_city in cities["city"].values else 0
         city = st.selectbox("出生地", cities["city"], index=default_city_index, key="city_general")
         row = cities[cities["city"] == city].iloc[0]

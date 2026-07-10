@@ -1,2 +1,4 @@
 de406.bsp
 de421.bsp
+.streamlit/secrets.toml
+__pycache__/
