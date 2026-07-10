@@ -116,28 +116,54 @@ STYLE_NOTE = S('note', 8, TEXT_GRAY,  False, 'LEFT', sb=2,  sa=4)
 # 各 create_*_pdf の先頭で _apply_theme() を呼ぶと、選択中スタイルの
 # 設定が上の色定数と共通スタイルに反映される（設定が無ければ従来どおり）。
 # -----------------------------
-from utils.messages_loader import get_style_config as _get_style_config
+_DEFAULT_THEME = {
+    "cover_title": "ホロスコープ鑑定書",
+    "colors": {
+        "heading":    "#7c3aed",
+        "background": "#f3f0ff",
+        "border":     "#c4b5fd",
+        "accent":     "#d946ef",
+        "gold":       "#d97706",
+    },
+}
+
+def _get_style_config_safe():
+    """スタイル設定を取得する。messages_loader が古い版でも、
+    設定ファイルが壊れていても、絶対に例外を出さずデフォルトを返す。"""
+    try:
+        from utils.messages_loader import get_style_config
+        cfg = get_style_config()
+        if isinstance(cfg, dict):
+            return cfg
+    except Exception:
+        pass
+    return _DEFAULT_THEME
 
 def _apply_theme():
     """現在の鑑定スタイルの style_config.json を色定数に反映する。
-    戻り値は設定dict（表紙タイトルなどに使う）。"""
+    戻り値は設定dict（表紙タイトルなどに使う）。
+    どんな状況でも例外を出さない（失敗時は従来のパープル配色）。"""
     global PURPLE_DARK, PURPLE_MID, PURPLE_LIGHT, PURPLE_BORDER, PURPLE_ACCENT, GOLD
     global STYLE_H1, STYLE_H2, STYLE_H3, STYLE_BODY, STYLE_NOTE
-    cfg = _get_style_config()
-    c = cfg.get("colors", {})
-    PURPLE_DARK   = colors.HexColor(c.get("heading",    "#7c3aed"))
-    PURPLE_MID    = colors.HexColor(c.get("heading",    "#7c3aed"))
-    PURPLE_LIGHT  = colors.HexColor(c.get("background", "#f3f0ff"))
-    PURPLE_BORDER = colors.HexColor(c.get("border",     "#c4b5fd"))
-    PURPLE_ACCENT = colors.HexColor(c.get("accent",     "#d946ef"))
-    GOLD          = colors.HexColor(c.get("gold",       "#d97706"))
-    # 色定数を使う共通スタイルも作り直す
-    STYLE_H1   = S('h1', 13, PURPLE_DARK, True, 'LEFT', sb=10, sa=6)
-    STYLE_H2   = S('h2', 11, PURPLE_MID,  True, 'LEFT', sb=8,  sa=4)
-    STYLE_H3   = S('h3', 10, PURPLE_MID,  True, 'LEFT', sb=6,  sa=2)
-    STYLE_BODY = S('body', 9, TEXT_DARK,  False, 'LEFT', sb=0,  sa=3)
-    STYLE_NOTE = S('note', 8, TEXT_GRAY,  False, 'LEFT', sb=2,  sa=4)
-    return cfg
+    cfg = _get_style_config_safe()
+    try:
+        c = cfg.get("colors", {}) if isinstance(cfg, dict) else {}
+        PURPLE_DARK   = colors.HexColor(c.get("heading",    "#7c3aed"))
+        PURPLE_MID    = colors.HexColor(c.get("heading",    "#7c3aed"))
+        PURPLE_LIGHT  = colors.HexColor(c.get("background", "#f3f0ff"))
+        PURPLE_BORDER = colors.HexColor(c.get("border",     "#c4b5fd"))
+        PURPLE_ACCENT = colors.HexColor(c.get("accent",     "#d946ef"))
+        GOLD          = colors.HexColor(c.get("gold",       "#d97706"))
+        # 色定数を使う共通スタイルも作り直す
+        STYLE_H1   = S('h1', 13, PURPLE_DARK, True, 'LEFT', sb=10, sa=6)
+        STYLE_H2   = S('h2', 11, PURPLE_MID,  True, 'LEFT', sb=8,  sa=4)
+        STYLE_H3   = S('h3', 10, PURPLE_MID,  True, 'LEFT', sb=6,  sa=2)
+        STYLE_BODY = S('body', 9, TEXT_DARK,  False, 'LEFT', sb=0,  sa=3)
+        STYLE_NOTE = S('note', 8, TEXT_GRAY,  False, 'LEFT', sb=2,  sa=4)
+    except Exception:
+        # 色コードの書き間違い等があってもPDF生成は止めない
+        return _DEFAULT_THEME
+    return cfg if isinstance(cfg, dict) else _DEFAULT_THEME
 
 # ============================================================
 # ★ create_reading_pdf（完全版）
