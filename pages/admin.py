@@ -46,41 +46,6 @@ label {
 st.markdown("<div class='admin-title'>⚙️ Luna メッセージ管理画面</div>", unsafe_allow_html=True)
 st.markdown("<div class='admin-caption'>鑑定メッセージを編集・保存できます。保存後すぐにアプリに反映されます。</div>", unsafe_allow_html=True)
 
-# ---------- 管理者パスワード ----------
-# Streamlit Cloud: アプリの Settings → Secrets に以下を設定する
-#   admin_password = "ここにパスワード"
-# ローカル開発: プロジェクト直下に .streamlit/secrets.toml を作り同じ行を書く
-#   （.gitignore に .streamlit/secrets.toml を追加してコミットしないこと）
-import hmac
-
-def _require_password():
-    try:
-        expected = st.secrets.get("admin_password", "")
-    except Exception:
-        expected = ""
-    if not expected:
-        st.error(
-            "⚠️ 管理者パスワードが未設定のため、管理画面をロックしています。\n\n"
-            "Streamlit Cloud の Settings → Secrets（ローカルは .streamlit/secrets.toml）に "
-            "`admin_password = \"...\"` を設定してください。"
-        )
-        st.stop()
-    if st.session_state.get("_admin_authed"):
-        return
-    pw = st.text_input("管理者パスワード", type="password", key="_admin_pw_input")
-    if st.button("ログイン", type="primary", key="_admin_login_btn"):
-        # UTF-8バイト列に変換してから比較する。
-        # compare_digest は文字列だとASCII限定のため、日本語パスワードだと
-        # TypeError になる。バイト列なら任意の文字が使える。
-        if hmac.compare_digest(pw.encode("utf-8"), expected.encode("utf-8")):
-            st.session_state["_admin_authed"] = True
-            st.rerun()
-        else:
-            st.error("パスワードが違います。")
-    st.stop()
-
-_require_password()
-
 # ---------- パス定義 ----------
 _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 _TEMPLATES_DIR = os.path.join(_ROOT, "templates")
@@ -162,7 +127,6 @@ if _apply_style and _picked_folder != st.session_state["_admin_active_style"]:
     _protected = {
         "admin_edit_style",
         "_admin_active_style",
-        "_admin_authed",          # ログイン状態（消すと切替のたびに再ログイン）
         "menu_selected",          # メインアプリのメニュー選択
         "_luna_reading_style",    # メインアプリの鑑定スタイル
     }

@@ -229,3 +229,49 @@ def reload():
     管理画面でJSONを編集・保存した後に呼べば、次の読み込みで反映される。"""
     global _caches
     _caches = {}
+
+
+# ============================================================
+# PDFデザイン設定（style_config.json）
+# templates/<style>/style_config.json を置くと、そのスタイルの
+# PDFの配色・表紙タイトルを切り替えられる。無ければデフォルト。
+# ============================================================
+
+# デフォルト設定（従来のパープル基調のデザイン）
+DEFAULT_STYLE_CONFIG = {
+    "cover_title": "ホロスコープ鑑定書",
+    "colors": {
+        "heading":    "#7c3aed",   # 見出し・セクションヘッダー（旧 PURPLE_DARK/MID）
+        "background": "#f3f0ff",   # 表の縞・ボックス背景（旧 PURPLE_LIGHT）
+        "border":     "#c4b5fd",   # 枠線（旧 PURPLE_BORDER）
+        "accent":     "#d946ef",   # アクセント（旧 PURPLE_ACCENT）
+        "gold":       "#d97706",   # 強調ゴールド（旧 GOLD）
+    },
+}
+
+
+def get_style_config():
+    """現在の鑑定スタイルのPDFデザイン設定を返す。
+    templates/<style>/style_config.json があれば読み込み、
+    無い項目はデフォルト値で補完する（部分的な設定でOK）。"""
+    style = get_style() or "standard"
+    path = os.path.join(_TEMPLATES_DIR, style, "style_config.json")
+    cache_key = "styleconfig:" + path
+    if cache_key not in _caches:
+        loaded = {}
+        if os.path.exists(path):
+            try:
+                with open(path, "r", encoding="utf-8") as f:
+                    loaded = json.load(f)
+            except Exception:
+                loaded = {}  # 壊れたJSONでもアプリを止めない
+        # デフォルトとマージ（colors は項目単位で補完）
+        merged = dict(DEFAULT_STYLE_CONFIG)
+        merged["colors"] = dict(DEFAULT_STYLE_CONFIG["colors"])
+        for k, v in loaded.items():
+            if k == "colors" and isinstance(v, dict):
+                merged["colors"].update(v)
+            else:
+                merged[k] = v
+        _caches[cache_key] = merged
+    return _caches[cache_key]

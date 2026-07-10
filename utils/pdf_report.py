@@ -110,10 +110,40 @@ STYLE_H3   = S('h3', 10, PURPLE_MID,  True, 'LEFT', sb=6,  sa=2)
 STYLE_BODY = S('body', 9, TEXT_DARK,  False, 'LEFT', sb=0,  sa=3)
 STYLE_NOTE = S('note', 8, TEXT_GRAY,  False, 'LEFT', sb=2,  sa=4)
 
+# -----------------------------
+# 鑑定スタイル別のPDFテーマ
+# templates/<style>/style_config.json で配色・表紙タイトルを切り替える。
+# 各 create_*_pdf の先頭で _apply_theme() を呼ぶと、選択中スタイルの
+# 設定が上の色定数と共通スタイルに反映される（設定が無ければ従来どおり）。
+# -----------------------------
+from utils.messages_loader import get_style_config as _get_style_config
+
+def _apply_theme():
+    """現在の鑑定スタイルの style_config.json を色定数に反映する。
+    戻り値は設定dict（表紙タイトルなどに使う）。"""
+    global PURPLE_DARK, PURPLE_MID, PURPLE_LIGHT, PURPLE_BORDER, PURPLE_ACCENT, GOLD
+    global STYLE_H1, STYLE_H2, STYLE_H3, STYLE_BODY, STYLE_NOTE
+    cfg = _get_style_config()
+    c = cfg.get("colors", {})
+    PURPLE_DARK   = colors.HexColor(c.get("heading",    "#7c3aed"))
+    PURPLE_MID    = colors.HexColor(c.get("heading",    "#7c3aed"))
+    PURPLE_LIGHT  = colors.HexColor(c.get("background", "#f3f0ff"))
+    PURPLE_BORDER = colors.HexColor(c.get("border",     "#c4b5fd"))
+    PURPLE_ACCENT = colors.HexColor(c.get("accent",     "#d946ef"))
+    GOLD          = colors.HexColor(c.get("gold",       "#d97706"))
+    # 色定数を使う共通スタイルも作り直す
+    STYLE_H1   = S('h1', 13, PURPLE_DARK, True, 'LEFT', sb=10, sa=6)
+    STYLE_H2   = S('h2', 11, PURPLE_MID,  True, 'LEFT', sb=8,  sa=4)
+    STYLE_H3   = S('h3', 10, PURPLE_MID,  True, 'LEFT', sb=6,  sa=2)
+    STYLE_BODY = S('body', 9, TEXT_DARK,  False, 'LEFT', sb=0,  sa=3)
+    STYLE_NOTE = S('note', 8, TEXT_GRAY,  False, 'LEFT', sb=2,  sa=4)
+    return cfg
+
 # ============================================================
 # ★ create_reading_pdf（完全版）
 # ============================================================
 def create_reading_pdf(user_data, chart_image_bytes=None):
+    _theme = _apply_theme()  # 鑑定スタイルの配色を反映
     buf = io.BytesIO()
     doc = SimpleDocTemplate(
         buf,
@@ -240,7 +270,7 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
 
     # タイトル（コンパクト）
     story.append(Paragraph("Luna 占星術", S('t1', 16, PURPLE_DARK, True, 'CENTER', sb=4, sa=2)))
-    story.append(Paragraph("ホロスコープ鑑定書", S('t2', 11, PURPLE_MID, True, 'CENTER', sb=2, sa=4)))
+    story.append(Paragraph(_theme.get("cover_title", "ホロスコープ鑑定書"), S('t2', 11, PURPLE_MID, True, 'CENTER', sb=2, sa=4)))
     story.append(HRFlowable(width="100%", thickness=2, color=PURPLE_MID, spaceAfter=6))
 
     # 基本情報（コンパクト）
@@ -1056,6 +1086,7 @@ def create_transit_pdf(natal_data, transit_data, aspects, outer_planets, chart_i
     outer_planets: list of dict（name, sign, deg, message）
     chart_image_bytes: BytesIO（2重円チャート）
     """
+    _theme = _apply_theme()  # 鑑定スタイルの配色を反映
     import io as _io
 
     buf = _io.BytesIO()
@@ -1397,6 +1428,7 @@ def create_compatibility_pdf(
     name2, birthday2, sun_sign2, moon_sign2, venus_sign2, mars_sign2,
     overall, compat_note, chart_image_bytes=None, overall_data=None
 ):
+    _theme = _apply_theme()  # 鑑定スタイルの配色を反映
     import io as _io
 
     buf = _io.BytesIO()
@@ -1747,6 +1779,7 @@ def create_shichusuimei_pdf(user_data, shichu):
     }
     構成順: 命式 → 本質 → 中心星と格局 → 命式の関係 → 大運 → 年運 → 補足(身強身弱) → 神殺 → 結び
     """
+    _theme = _apply_theme()  # 鑑定スタイルの配色を反映
     buf = io.BytesIO()
     doc = SimpleDocTemplate(
         buf,
@@ -2094,6 +2127,7 @@ def create_kotoshi_pdf(user_data, kotoshi):
         "messages": {"year_star": 通変星メッセージdict, "kubo": 空亡総論str},
     }
     """
+    _theme = _apply_theme()  # 鑑定スタイルの配色を反映
     buf = io.BytesIO()
     doc = SimpleDocTemplate(
         buf, pagesize=A4,
