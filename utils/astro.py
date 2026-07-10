@@ -21,10 +21,51 @@ ELEMENTS = {
 # ---------- 天文準備 ----------
 TS = load.timescale()
 
-try:
-    EPH = load("de406.bsp")
-except:
-    EPH = load("de421.bsp")    
+
+def _is_valid_bsp(path):
+    """暦ファイル(.bsp)が正常かを開く前に検査する。
+    壊れたファイルを skyfield に渡すと Segmentation fault で
+    アプリごと即死するため（try/exceptでは防げない）、事前に弾く。
+    GitHubは100MB超のファイルを正常に扱えないので、de406.bsp(約190MB)は
+    リポジトリ経由だと壊れる（Git LFSのポインタファイル等になる）。"""
+    import os
+    try:
+        if not os.path.exists(path):
+            return False
+        # de406は約190MB・de421は約17MB。1MB未満は確実に壊れている
+        # （Git LFSポインタは数百バイトのテキストファイル）
+        if os.path.getsize(path) < 1_000_000:
+            return False
+        # SPK形式のマジックバイト確認
+        with open(path, "rb") as f:
+            magic = f.read(8)
+        return magic.startswith(b"DAF/")
+    except Exception:
+        return False
+
+
+def _load_ephemeris():
+    """暦を安全に読み込む。壊れたローカルファイルは削除してから
+    skyfield に正規版をダウンロードさせる（初回のみ時間がかかる）。"""
+    import os
+    for fname in ("de406.bsp", "de421.bsp"):
+        if os.path.exists(fname) and not _is_valid_bsp(fname):
+            # 壊れたファイルを残すと load() が拾ってセグフォするため削除。
+            # 削除すれば load() が正規版を自動ダウンロードする。
+            try:
+                os.remove(fname)
+            except Exception:
+                pass
+    # de406: 紀元前3000年〜西暦3000年対応（1800年代の鑑定に必要・約190MB）
+    try:
+        return load("de406.bsp")
+    except Exception:
+        pass
+    # ダウンロード失敗時の保険: de421（約17MB・1899〜2053年対応）
+    return load("de421.bsp")
+
+
+EPH = _load_ephemeris()
 
 # ---------- ヘルパー：度数 → サイン＋度 ----------
 def split_sign_degree(lon_deg: float):
