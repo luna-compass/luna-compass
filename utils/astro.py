@@ -45,23 +45,17 @@ def _is_valid_bsp(path):
 
 
 def _load_ephemeris():
-    """暦を安全に読み込む。壊れたローカルファイルは削除してから
-    skyfield に正規版をダウンロードさせる（初回のみ時間がかかる）。"""
-    import os
-    for fname in ("de406.bsp", "de421.bsp"):
-        if os.path.exists(fname) and not _is_valid_bsp(fname):
-            # 壊れたファイルを残すと load() が拾ってセグフォするため削除。
-            # 削除すれば load() が正規版を自動ダウンロードする。
-            try:
-                os.remove(fname)
-            except Exception:
-                pass
-    # de406: 紀元前3000年〜西暦3000年対応（1800年代の鑑定に必要・約190MB）
-    try:
-        return load("de406.bsp")
-    except Exception:
-        pass
-    # ダウンロード失敗時の保険: de421（約17MB・1899〜2053年対応）
+    """暦を確実に読み込む。
+    ・ローカルに正常な de406.bsp があればそれを使う（1800年代対応）
+    ・無い/壊れている場合は de421.bsp（約17MB・1899〜2053年対応）を使う。
+      軽量なのでクラウドでも確実にダウンロード・起動できる。
+    ※壊れたファイルを load() に渡すとセグフォでアプリごと死ぬため、
+      検査に通らないファイルには絶対に触れない。"""
+    if _is_valid_bsp("de406.bsp"):
+        try:
+            return load("de406.bsp")
+        except Exception:
+            pass
     return load("de421.bsp")
 
 
