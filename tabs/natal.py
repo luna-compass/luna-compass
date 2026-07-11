@@ -9,7 +9,7 @@ import swisseph as swe
 from utils.astro import (
     make_ts_from_local, get_sun_info, get_moon_info,
     get_planet_signs_ts, get_body_longitudes_ts,
-    split_sign_degree, get_aspects, get_sign,
+    split_sign_degree, get_aspects, get_aspect_grid, get_sign,
     simple_compare_message, format_degree,
     detect_special_patterns
 )
@@ -369,6 +369,41 @@ def _render(container, user_info):
                 mime="image/png",
             )
 
+            # ===== アスペクトグリッド（天体間の角度一覧表） =====
+            st.markdown("#### 📐 アスペクトグリッド")
+            _grid_order, _grid_cells = get_aspect_grid(natal_longs, exclude_moon=time_unknown)
+            if _grid_cells:
+                import pandas as _pd
+                _ASP_SYM = {
+                    "コンジャンクション": "☌",
+                    "セクスタイル": "⚹",
+                    "スクエア": "□",
+                    "トライン": "△",
+                    "オポジション": "☍",
+                }
+                # 下三角のマトリクス（行: 2番目以降の天体 / 列: 1つ前までの天体）
+                _rows = _grid_order[1:]
+                _cols = _grid_order[:-1]
+                _data = []
+                for _i, _rp in enumerate(_rows, start=1):
+                    _row = []
+                    for _j, _cp in enumerate(_cols):
+                        if _j < _i:
+                            _cell = _grid_cells.get((_cp, _rp))
+                            _row.append(f"{_ASP_SYM[_cell['type']]} {_cell['orb']:.1f}°" if _cell else "")
+                        else:
+                            _row.append("")
+                    _data.append(_row)
+                _df = _pd.DataFrame(_data, index=_rows, columns=_cols)
+                st.dataframe(_df, use_container_width=True)
+                st.caption(
+                    "☌ コンジャンクション（0°）　⚹ セクスタイル（60°）　□ スクエア（90°）　"
+                    "△ トライン（120°）　☍ オポジション（180°）　※数値はオーブ（角度の誤差）"
+                    + ("　※出生時刻不明のため月は除外しています" if time_unknown else "")
+                )
+            else:
+                st.caption("主要なアスペクトはありません。")
+
             # ===== 星座・惑星記号の見方 =====
             with st.expander("🔍 ホロスコープの記号の見方"):
                 st.markdown("""
@@ -702,6 +737,8 @@ def _render(container, user_info):
                 "pluto_sign": pluto_sign, "pluto_deg": format_degree(pluto_deg),
                 "pluto_house": _house("冥王星"), "pluto_message": get_pluto_message(pluto_sign),
                 "pluto_house_message": _house_msg("冥王星", "冥王星"),
+                "aspect_grid_order": _grid_order,
+                "aspect_grid_cells": _grid_cells,
                 "aspects": [
                     {"p1": a["p1"], "p2": a["p2"], "type": a["type"],
                      "message": get_aspect_message(a["p1"], a["p2"], a["type"])}

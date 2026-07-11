@@ -198,6 +198,40 @@ def get_aspects(planets, exclude_moon=False):
                     })
     return aspects
 
+# ---------- アスペクトグリッド（一覧表）用 ----------
+GRID_PLANET_ORDER = ["太陽", "月", "水星", "金星", "火星", "木星", "土星", "天王星", "海王星", "冥王星"]
+
+ASPECT_ANGLES = {
+    "コンジャンクション": 0,
+    "セクスタイル": 60,
+    "スクエア": 90,
+    "トライン": 120,
+    "オポジション": 180,
+}
+
+
+def get_aspect_grid(planets, exclude_moon=False):
+    """アスペクトグリッド（天体×天体の一覧表）用のデータを返す。
+    get_aspects と同じアスペクト定義・オーブ5度で判定し、オーブ値も含める。
+    戻り値: (順序付き天体名リスト, {(p1, p2): {"type", "angle", "orb"}})
+    キーは GRID_PLANET_ORDER の順で (先の天体, 後の天体)。"""
+    if exclude_moon:
+        planets = {k: v for k, v in planets.items() if k != "月"}
+    order = [p for p in GRID_PLANET_ORDER if p in planets]
+    cells = {}
+    for i, p1 in enumerate(order):
+        for p2 in order[i + 1:]:
+            diff = abs(planets[p1] - planets[p2])
+            if diff > 180:
+                diff = 360 - diff
+            for aspect_name, angle in ASPECT_ANGLES.items():
+                orb = abs(diff - angle)
+                if orb < 5:
+                    cells[(p1, p2)] = {"type": aspect_name, "angle": angle, "orb": orb}
+                    break
+    return order, cells
+
+
 # サインの短いキーワード（比較メッセージ用）
 SIGN_KEYWORDS = {
     "牡羊座": "行動力と情熱",

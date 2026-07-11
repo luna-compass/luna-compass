@@ -210,7 +210,7 @@ if st.session_state["menu_selected"] == "general":
                 "生年月日",
                 value=default_date,
                 min_value=datetime.date(1800, 1, 1),
-                max_value=datetime.date.today(),
+                max_value=datetime.date(2050, 12, 31),
                 key="birthday_general"
             )
 

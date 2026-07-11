@@ -75,6 +75,35 @@ def show_direct():
                  "23時台以外の出生時刻には影響しません。",
         )
 
+        # 地方時差補正（一般的な四柱推命鑑定で広く使われる補正）
+        local_time_adjust = st.checkbox(
+            "地方時差補正：出生地の経度で出生時刻を補正する",
+            value=True,
+            key="local_adjust_shichu",
+            disabled=time_unknown,
+            help="日本標準時は東経135度（兵庫県明石市）基準のため、出生地との経度差を"
+                 "1度＝4分で補正します（例：東京 約+19分、那覇 約-29分）。"
+                 "一般的な四柱推命の鑑定で広く使われる補正です。"
+                 "海外生まれの方はオフにしてください。",
+        )
+        adjust_lon = 135.0
+        adjust_min = 0
+        if local_time_adjust and not time_unknown:
+            import pandas as _pd
+
+            @st.cache_data
+            def _load_cities_shichu():
+                return _pd.read_csv("cities.csv")
+
+            _cities = _load_cities_shichu()
+            _default_idx = int(_cities[_cities["city"] == "東京"].index[0]) if "東京" in _cities["city"].values else 0
+            birth_city = st.selectbox(
+                "出生地", _cities["city"], index=_default_idx, key="city_shichu",
+            )
+            adjust_lon = float(_cities[_cities["city"] == birth_city].iloc[0]["lon"])
+            adjust_min = round((adjust_lon - 135.0) * 4)
+            st.caption(f"{birth_city}の地方時差: {adjust_min:+d}分（標準時に加算して補正します）")
+
         col_t1, col_t2 = st.columns(2)
         with col_t1:
             birth_hour = st.number_input(
@@ -91,6 +120,18 @@ def show_direct():
         hour = 12 if time_unknown else int(birth_hour)
         minute = 0 if time_unknown else int(birth_minute)
         birth = datetime.datetime(birthday.year, birthday.month, birthday.day, hour, minute)
+
+        # 地方時差補正を適用（時柱・日柱の境界をまたぐ場合もそのまま反映される）
+        adjusted = local_time_adjust and not time_unknown and adjust_min != 0
+        if adjusted:
+            birth = birth + datetime.timedelta(minutes=adjust_min)
+            _roll = ""
+            if birth.date() != birthday:
+                _roll = "（日付が変わるため日柱・年月柱も補正後の日時で判定します）"
+            st.info(
+                f"地方時差補正 {adjust_min:+d}分を適用: "
+                f"補正後の出生日時 {birth.strftime('%Y年%m月%d日 %H:%M')} {_roll}"
+            )
 
         m = build_meishiki(birth, yako_next_day=yako)
 
@@ -335,7 +376,10 @@ def show_direct():
         pdf_user_data = {
             "name": name,
             "birthday": f"{birthday.year}年{birthday.month}月{birthday.day}日",
-            "birth_time": f"{hour:02d}:{minute:02d}",
+            "birth_time": (
+                f"{hour:02d}:{minute:02d}（地方時差補正 {adjust_min:+d}分 → {birth.strftime('%H:%M')}）"
+                if adjusted else f"{hour:02d}:{minute:02d}"
+            ),
             "reading_date": datetime.date.today().strftime("%Y年%m月%d日"),
             "time_unknown": time_unknown,
             "gender": gender,

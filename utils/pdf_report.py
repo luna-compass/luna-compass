@@ -297,7 +297,7 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
     # タイトル（コンパクト）
     story.append(Paragraph("Luna 占星術", S('t1', 16, PURPLE_DARK, True, 'CENTER', sb=4, sa=2)))
     story.append(Paragraph(_theme.get("cover_title", "ホロスコープ鑑定書"), S('t2', 11, PURPLE_MID, True, 'CENTER', sb=2, sa=4)))
-    story.append(HRFlowable(width="100%", thickness=2, color=PURPLE_MID, spaceAfter=6))
+    story.append(HRFlowable(width="100%", thickness=2, color=PURPLE_MID, spaceAfter=4))
 
     # 基本情報（コンパクト）
     info = [
@@ -331,23 +331,23 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
         ('BACKGROUND', (2, 0), (2, -1), PURPLE_LIGHT),
         ('BOX', (0, 0), (-1, -1), 1, PURPLE_BORDER),
         ('INNERGRID', (0, 0), (-1, -1), 0.5, PURPLE_BORDER),
-        ('TOPPADDING', (0, 0), (-1, -1), 4),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ('TOPPADDING', (0, 0), (-1, -1), 2),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
         ('LEFTPADDING', (0, 0), (-1, -1), 5),
     ]))
     story.append(t)
-    story.append(Spacer(1, 8))
+    story.append(Spacer(1, 5))
 
-    # ホロスコープ画像（大きく・1ページ目メイン）
+    # ホロスコープ画像（1ページ目メイン。アスペクトグリッドも同ページに収めるため140mm）
     if chart_image_bytes:
-        img = Image(chart_image_bytes, width=155 * mm, height=155 * mm)
+        img = Image(chart_image_bytes, width=128 * mm, height=128 * mm)
         img.hAlign = 'CENTER'
         chart_title = "◆ 円形ホロスコープ（ソーラーチャート）" if user_data.get("time_unknown") else "◆ 円形ホロスコープ"
         chart_block = [
-            Paragraph(chart_title, STYLE_H1),
-            Spacer(1, 4),
+            Paragraph(chart_title, S('cht', 13, PURPLE_DARK, True, 'LEFT', sb=2, sa=2)),
+            Spacer(1, 3),
             img,
-            Spacer(1, 6),
+            Spacer(1, 3),
         ]
         if user_data.get("time_unknown"):
             chart_block.insert(1, Paragraph(
@@ -362,35 +362,103 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
         def _s(sym, jp):
             font = _sym2 if sym == "☉" else _sym
             return f'<font name="{font}">{sym}</font>{jp}'
-        sign_row1 = "\u00A0\u00A0\u00A0\u00A0".join([
+        sign_all = "\u00A0\u00A0\u00A0".join([
             _s("♈","牡羊座"), _s("♉","牡牛座"), _s("♊","双子座"), _s("♋","蟹座"),
             _s("♌","獅子座"), _s("♍","乙女座"),
-        ])
-        sign_row2 = "\u00A0\u00A0\u00A0\u00A0".join([
             _s("♎","天秤座"), _s("♏","蠍座"), _s("♐","射手座"),
             _s("♑","山羊座"), _s("♒","水瓶座"), _s("♓","魚座"),
         ])
         sign_legend_rows = [
-            [Paragraph("ホロスコープの記号の見方", S('sl', 10, PURPLE_DARK, True, 'CENTER', sb=4, sa=4))],
-            [Paragraph(sign_row1, S('sl2', 8, PURPLE_DARK, False, 'CENTER', sb=2, sa=2))],
-            [Paragraph(sign_row2, S('sl2b', 8, PURPLE_DARK, False, 'CENTER', sb=2, sa=2))],
+            [Paragraph("ホロスコープの記号の見方", S('sl', 9, PURPLE_DARK, True, 'CENTER', sb=2, sa=2))],
+            [Paragraph(sign_all, S('sl2', 7, PURPLE_DARK, False, 'CENTER', sb=1, sa=1))],
             [Paragraph(
                 "\u00A0\u00A0\u00A0\u00A0".join([
                     _s("☉","太陽"), _s("☽","月"), _s("☿","水星"), _s("♀","金星"), _s("♂","火星"),
                     _s("♃","木星"), _s("♄","土星"), _s("♅","天王星"), _s("♆","海王星"), _s("♇","冥王星"),
                 ]),
-                S('sl3', 8, TEXT_GRAY, False, 'CENTER', sb=2, sa=4)
+                S('sl3', 7, TEXT_GRAY, False, 'CENTER', sb=1, sa=2)
             )],
         ]
-        sign_legend = Table(sign_legend_rows, colWidths=[165*mm])
+        # 行高を固定：Symbolsフォントの行送りが大きく、可変だと各行に
+        # 1行分近い空白ができてしまうため（1ページ収納のための圧縮）
+        sign_legend = Table(sign_legend_rows, colWidths=[165*mm],
+                            rowHeights=[6*mm, 5*mm, 5*mm])
         sign_legend.setStyle(TableStyle([
             ('BACKGROUND', (0,0), (-1,-1), PURPLE_LIGHT),
             ('BOX', (0,0), (-1,-1), 0.5, PURPLE_BORDER),
             ('LEFTPADDING', (0,0), (-1,-1), 10),
             ('RIGHTPADDING', (0,0), (-1,-1), 10),
+            ('TOPPADDING', (0,0), (-1,-1), 0),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 0),
+            ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
         ]))
         story.append(sign_legend)
-        story.append(Spacer(1, 6))
+        story.append(Spacer(1, 3))
+
+        # ===== アスペクトグリッド（天体間の角度一覧表） =====
+        _grid_order = user_data.get("aspect_grid_order") or []
+        _grid_cells = user_data.get("aspect_grid_cells") or {}
+        if _grid_order and _grid_cells:
+            _glyph = {"太陽": "☉", "月": "☽", "水星": "☿", "金星": "♀", "火星": "♂",
+                      "木星": "♃", "土星": "♄", "天王星": "♅", "海王星": "♆", "冥王星": "♇"}
+            _asp_color = {
+                "コンジャンクション": "#e53e3e", "セクスタイル": "#2563eb",
+                "スクエア": "#dc2626", "トライン": "#16a34a", "オポジション": "#9333ea",
+            }
+            n = len(_grid_order)
+            _cell_style = S('agc', 6.5, TEXT_DARK, False, 'CENTER', sb=0, sa=0)
+            _glyph_style = S('agg', 8, PURPLE_DARK, True, 'CENTER', sb=0, sa=0)
+            # 惑星記号は専用フォント（Symbols/Symbols2）で描画しないと文字化けする
+            _gsym = 'Symbols' if _symbol_font_registered else 'JP'
+            _gsym2 = 'Symbols2' if _symbol2_font_registered else _gsym
+            grid_rows = []
+            for i, rp in enumerate(_grid_order):
+                row = []
+                for j in range(n):
+                    if j < i:
+                        cell = _grid_cells.get((_grid_order[j], rp))
+                        if cell:
+                            col = _asp_color.get(cell["type"], "#374151")
+                            row.append(Paragraph(
+                                f"<font color='{col}'><b>{cell['angle']}</b></font>"
+                                f"\u00A0<font size='5' color='#6b7280'>{cell['orb']:.1f}</font>",
+                                _cell_style))
+                        else:
+                            row.append(Paragraph("", _cell_style))
+                    elif j == i:
+                        _g = _glyph.get(rp, rp)
+                        _gf = _gsym2 if _g == "☉" else _gsym
+                        row.append(Paragraph(f'<font name="{_gf}">{_g}</font>', _glyph_style))
+                    else:
+                        row.append(Paragraph("", _cell_style))
+                grid_rows.append(row)
+            col_w = min(15, 150 // max(n, 1))
+            grid_table = Table(grid_rows, colWidths=[col_w * mm] * n, rowHeights=[4.3 * mm] * n)
+            grid_style = [
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ('TOPPADDING', (0, 0), (-1, -1), 0),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+                ('LEFTPADDING', (0, 0), (-1, -1), 1),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 1),
+            ]
+            for i in range(n):
+                # 対角セル（天体記号）の背景と、下三角セルの罫線
+                grid_style.append(('BACKGROUND', (i, i), (i, i), PURPLE_LIGHT))
+                grid_style.append(('BOX', (i, i), (i, i), 0.6, PURPLE_BORDER))
+                if i > 0:
+                    grid_style.append(('GRID', (0, i), (i - 1, i), 0.4, PURPLE_BORDER))
+            grid_table.setStyle(TableStyle(grid_style))
+            story.append(KeepTogether([
+                Paragraph("◆ アスペクトグリッド", S('agt', 11, PURPLE_MID, True, 'LEFT', sb=2, sa=2)),
+                Paragraph(
+                    "数字＝アスペクトの角度、小さい数字＝オーブ（誤差）　"
+                    "0＝コンジャンクション（合）　60＝セクスタイル　90＝スクエア　120＝トライン　180＝オポジション"
+                    + ("　※出生時刻不明のため月は除外" if user_data.get("time_unknown") else ""),
+                    STYLE_NOTE),
+                Spacer(1, 2),
+                grid_table,
+            ]))
+            story.append(Spacer(1, 4))
 
     story.append(CondPageBreak(680))  # 空白ページ防止
 
