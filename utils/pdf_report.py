@@ -317,6 +317,14 @@ def create_reading_pdf(user_data, chart_image_bytes=None):
             ),
         ],
     ]
+    # ハウス方式（natal.py から渡された場合のみ表示。無ければ従来どおり2行）
+    if user_data.get("house_system"):
+        info.append([
+            Paragraph("ハウス方式", S('h', 9, PURPLE_DARK, True)),
+            Paragraph(user_data.get("house_system", ""), S('v', 9)),
+            Paragraph("", S('h', 9)),
+            Paragraph("", S('v', 9)),
+        ])
     t = Table(info, colWidths=[28 * mm, 62 * mm, 25 * mm, 45 * mm])
     t.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (0, -1), PURPLE_LIGHT),
