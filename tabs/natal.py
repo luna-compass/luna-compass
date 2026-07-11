@@ -36,14 +36,14 @@ from utils.messages_loader import get_message, get_aspect_message_json, get_summ
 # ===== ハウス方式 =====
 # swisseph の方式コード → 画面表示名。luna_web.py 側のプルダウンと対応。
 HOUSE_SYSTEM_LABELS = {
-    "P": "プラシダス",
-    "K": "コッホ",
-    "W": "ホールサイン",
-    "A": "イコール",
+    "P": "Placidus（プラシーダス）",
+    "K": "Koch（コッホ）",
+    "W": "Whole Sign（ホールサイン）",
+    "A": "Equal House（イコールハウス）",
 }
 
 def _safe_hsys(code):
-    """未知の値が来ても必ず有効な方式コードを返す（既定はプラシダス）"""
+    """未知の値が来ても必ず有効な方式コードを返す（既定はPlacidus）"""
     return code if code in HOUSE_SYSTEM_LABELS else "P"
 
 
@@ -326,7 +326,7 @@ def _render(container, user_info):
                 "冥王星": natal_longs["冥王星"],
             }
             if time_unknown:
-                # ソーラーサインハウス：太陽星座の頭を第1ハウスの起点とする
+                #  Solar Chart（ソーラーチャート）：太陽星座の頭を第1ハウスの起点とする
                 # （「太陽星座を第1ハウスとする」注記と一致する星座単位方式。
                 #  正午Placidusのハウス番号は実際の出生時刻と無関係で無意味なため使わない）
                 _sun_sign_start = (int(sun) // 30) * 30
@@ -480,7 +480,7 @@ def _render(container, user_info):
             ]
 
             if time_unknown:
-                st.caption("※ 出生時刻不明のため、ハウスは太陽星座を第1ハウスとするソーラーサインハウス（分野の目安）で表示しています。")
+                st.caption("※ 出生時刻不明のため、ハウスは太陽星座を第1ハウスとする Solar Chart（ソーラーチャート）で表示しています。ハウスは分野の目安です。")
 
             for title, sign, deg, text, msg_func, pname in planets_inner:
                 # 時刻不明時、太陽は必ず第1ハウスになり全員同じになるため省略
@@ -686,8 +686,8 @@ def _render(container, user_info):
                 lp_full = lp_data.get("message", "")
 
             # user_dataを組み立て
-            # 時刻不明時はソーラーサインハウスのハウス番号・解釈を出す。
-            # ただし太陽はソーラーサインハウスの定義上、必ず第1ハウスになり
+            # 時刻不明時は Solar Chart（ソーラーチャート）のハウス番号・解釈を出す。
+            # ただし太陽は Solar Chart（ソーラーチャート）の定義上、必ず第1ハウスになり
             # 全員同じ文章になるため省略する。
             def _house(planet_jp):
                 if time_unknown and planet_jp == "太陽":
@@ -703,7 +703,7 @@ def _render(container, user_info):
                 "birthday": f"{birthday.year}年{birthday.month}月{birthday.day}日",
                 "birth_time": f"{int(birth_hour):02d}:{int(birth_minute):02d}",
                 "reading_date": datetime.date.today().strftime("%Y年%m月%d日"),
-                "house_system": HOUSE_SYSTEM_LABELS[hsys] if not time_unknown else "ソーラーサイン",
+                "house_system": HOUSE_SYSTEM_LABELS[hsys] if not time_unknown else "Solar Chart（ソーラーチャート）",
                 "asc_sign": asc_sign,
                 "asc_deg": format_degree(asc_deg_val),
                 "asc_message": get_asc_message(asc_sign),

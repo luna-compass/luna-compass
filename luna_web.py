@@ -242,17 +242,17 @@ if st.session_state["menu_selected"] == "general":
 
         # ハウス方式の選択（tabs/natal.py の HOUSE_SYSTEM_LABELS と対応）
         HOUSE_SYSTEMS = {
-            "プラシダス（標準）": "P",
-            "コッホ": "K",
-            "ホールサイン": "W",
-            "イコール": "A",
+            "Placidus（プラシーダス・標準）": "P",
+            "Koch（コッホ）": "K",
+            "Whole Sign（ホールサイン）": "W",
+            "Equal House（イコールハウス）": "A",
         }
         house_label = st.selectbox(
             "ハウス方式",
             list(HOUSE_SYSTEMS.keys()),
             index=0,
             key="house_system_general",
-            help="ハウス分割の計算方式です。迷ったらプラシダスのままでOKです。出生時刻不明の場合はソーラーサインハウスで計算するため、この設定は使われません。",
+            help="ハウス分割の計算方式です。迷ったら Placidus（プラシーダス）のままでOKです。出生時刻不明の場合は Solar Chart（ソーラーチャート）で計算するため、この設定は使われません。",
             disabled=time_unknown,
         )
         house_system = HOUSE_SYSTEMS.get(house_label, "P")
