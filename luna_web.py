@@ -240,6 +240,23 @@ if st.session_state["menu_selected"] == "general":
         )
         tz_offset = 9 if tz_label.startswith("日本") else 0
 
+        # ハウス方式の選択（tabs/natal.py の HOUSE_SYSTEM_LABELS と対応）
+        HOUSE_SYSTEMS = {
+            "プラシダス（標準）": "P",
+            "コッホ": "K",
+            "ホールサイン": "W",
+            "イコール": "A",
+        }
+        house_label = st.selectbox(
+            "ハウス方式",
+            list(HOUSE_SYSTEMS.keys()),
+            index=0,
+            key="house_system_general",
+            help="ハウス分割の計算方式です。迷ったらプラシダスのままでOKです。出生時刻不明の場合はソーラーサインハウスで計算するため、この設定は使われません。",
+            disabled=time_unknown,
+        )
+        house_system = HOUSE_SYSTEMS.get(house_label, "P")
+
         cities = _load_cities()
         default_city_index = int(cities[cities["city"] == default_city].index[0]) if default_city in cities["city"].values else 0
         city = st.selectbox("出生地", cities["city"], index=default_city_index, key="city_general")
@@ -258,6 +275,7 @@ if st.session_state["menu_selected"] == "general":
         "mode": mode,
         "time_unknown": time_unknown,
         "reading_style": selected_style,
+        "house_system": house_system,
     }
 
     # 選択された鑑定スタイルを適用（文面を切り替える）。

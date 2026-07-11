@@ -33,9 +33,23 @@ from utils.chart import plot_horoscope
 from utils.pdf_report import create_reading_pdf
 from utils.messages_loader import get_message, get_aspect_message_json, get_summary_keyword as _gkw, get_summary_keyword as _gkw
 
+# ===== ハウス方式 =====
+# swisseph の方式コード → 画面表示名。luna_web.py 側のプルダウンと対応。
+HOUSE_SYSTEM_LABELS = {
+    "P": "プラシダス",
+    "K": "コッホ",
+    "W": "ホールサイン",
+    "A": "イコール",
+}
+
+def _safe_hsys(code):
+    """未知の値が来ても必ず有効な方式コードを返す（既定はプラシダス）"""
+    return code if code in HOUSE_SYSTEM_LABELS else "P"
+
+
 # ===== キャッシュ付き天文計算関数 =====
 @st.cache_data(show_spinner=False)
-def _cached_calc(birthday_str, birth_hour, birth_minute, tz_offset, lat, lon):
+def _cached_calc(birthday_str, birth_hour, birth_minute, tz_offset, lat, lon, hsys="P"):
     """天文計算をキャッシュして高速化"""
     import datetime, swisseph as _swe
     birthday = datetime.date.fromisoformat(birthday_str)
@@ -47,7 +61,7 @@ def _cached_calc(birthday_str, birth_hour, birth_minute, tz_offset, lat, lon):
     import datetime as _dt
     dt = _dt.datetime(birthday.year, birthday.month, birthday.day, birth_hour, birth_minute)
     jd = _swe.julday(dt.year, dt.month, dt.day, dt.hour + dt.minute/60.0 - tz_offset)
-    house_cusps, ascmc = _swe.houses(jd, lat, lon, b'P')
+    house_cusps, ascmc = _swe.houses(jd, lat, lon, _safe_hsys(hsys).encode('ascii'))
     houses = house_cusps
     aspects = get_aspects(natal_longs)
     return t, natal_longs, sun_sign, sun_deg, sun_lon, moon_sign, moon_deg, moon_lon, houses, aspects
@@ -263,8 +277,9 @@ def _render(container, user_info):
             # ===== 天文計算（キャッシュ利用）=====
             time_unknown = user_info.get("time_unknown", False)
             import json as _json
+            hsys = _safe_hsys(user_info.get("house_system", "P"))
             t_natal, natal_longs, sun_sign, sun_deg, sun_lon, moon_sign, moon_deg, moon_lon, _houses_raw, _aspects_raw = _cached_calc(
-                birthday.isoformat(), int(birth_hour), int(birth_minute), tz_offset, lat, lon
+                birthday.isoformat(), int(birth_hour), int(birth_minute), tz_offset, lat, lon, hsys
             )
 
             sun     = natal_longs.get("太陽", sun_lon)
@@ -287,7 +302,7 @@ def _render(container, user_info):
             sun_text  = f"{sun_sign} {format_degree(sun_deg)}"
             moon_text = f"{moon_sign} {format_degree(moon_deg)}"
 
-            # ===== ハウス計算（Placidus） =====
+            # ===== ハウス計算（選択されたハウス方式） =====
             dt_utc = datetime.datetime(
                 birthday.year, birthday.month, birthday.day,
                 int(birth_hour), int(birth_minute)
@@ -297,7 +312,7 @@ def _render(container, user_info):
                 dt_utc.year, dt_utc.month, dt_utc.day,
                 dt_utc.hour + dt_utc.minute / 60.0
             )
-            house_cusps, ascmc = swe.houses(jd, lat, lon, b'P')
+            house_cusps, ascmc = swe.houses(jd, lat, lon, hsys.encode('ascii'))
             houses = house_cusps
             asc = ascmc[0]
             asc_deg_val = asc % 30
@@ -333,6 +348,8 @@ def _render(container, user_info):
             st.write("鑑定対象：", target_label)
             st.write("生年月日：", birthday)
             st.write("出生時刻：", f"{int(birth_hour):02d}:{int(birth_minute):02d}")
+            if not time_unknown:
+                st.write("ハウス方式：", HOUSE_SYSTEM_LABELS[hsys])
 
             # ===== ①円形ホロスコープ（一番上） =====
             st.markdown("### 🌙 円形ホロスコープ")
@@ -651,6 +668,7 @@ def _render(container, user_info):
                 "birthday": f"{birthday.year}年{birthday.month}月{birthday.day}日",
                 "birth_time": f"{int(birth_hour):02d}:{int(birth_minute):02d}",
                 "reading_date": datetime.date.today().strftime("%Y年%m月%d日"),
+                "house_system": HOUSE_SYSTEM_LABELS[hsys] if not time_unknown else "ソーラーサイン",
                 "asc_sign": asc_sign,
                 "asc_deg": format_degree(asc_deg_val),
                 "asc_message": get_asc_message(asc_sign),
