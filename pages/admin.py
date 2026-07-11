@@ -168,15 +168,14 @@ def save_data(data):
 
 data = load_data()
 
-# ---------- 編集内容のバックアップ（重要） ----------
-# Streamlit Cloud のファイルシステムは一時的なので、クラウド上で保存した
-# 編集は再デプロイ・再起動で消える（GitHubのファイルで上書きされる）。
-# 編集後は必ずここからJSONをダウンロードして、GitHubにコミットすること。
+# ---------- 編集内容のバックアップ ----------
+# クラウド上で保存した編集は、アプリの再起動や再デプロイで消えるため、
+# 編集セッションの終わりにダウンロードして手元に確保しておく。
 with st.expander("💾 編集中のJSONをダウンロード（バックアップ）", expanded=False):
     st.caption(
         "⚠️ クラウド上で保存した編集は、アプリの再起動や再デプロイで消えます。"
-        "編集が終わったら必ずダウンロードして、GitHubリポジトリの "
-        f"templates/{CURRENT_STYLE}/messages_data.json に上書きコミットしてください。"
+        "編集が終わったらダウンロードして、リポジトリの "
+        f"templates/{CURRENT_STYLE}/messages_data.json に上書きしてください。"
     )
     st.download_button(
         label=f"⬇️ {_style_label} のJSONをダウンロード",
