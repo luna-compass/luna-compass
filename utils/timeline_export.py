@@ -175,3 +175,50 @@ def build_export_json(user_info: dict) -> str:
         "events": generate_personal_events(user_info),
     }
     return json.dumps(data, ensure_ascii=False, indent=2)
+
+
+# ============================================================
+# 納品用1ファイルHTML生成
+# ============================================================
+# タイムラインの index.html をコピーして、Luna-compass の
+# ルートに「cosmic_timeline_template.html」という名前で置いておくこと。
+# (タイムライン本体を更新したら、このコピーも差し替える)
+#TEMPLATE_PATH = "cosmic_timeline_template.html"
+TEMPLATE_PATH = r"C:\Users\user\Desktop\cosmic_timeline\cosmic-timeline.html"
+
+_INJECT_ANCHOR = "async function init() {"
+
+
+def build_delivery_html(user_info: dict) -> str:
+    """
+    パーソナルイベントを直接埋め込んだ納品用HTML(1ファイル)を返す。
+    お客様はダブルクリックで開くだけでよい(events.json不要、通信不要)。
+    """
+    with open(TEMPLATE_PATH, encoding="utf-8") as f:
+        html = f.read()
+
+    if _INJECT_ANCHOR not in html:
+        raise RuntimeError(
+            "テンプレートに埋め込み位置が見つかりません。"
+            "cosmic_timeline_template.html が最新のタイムラインHTMLか確認してください。"
+        )
+
+    data = {
+        "layers": {
+            "personal": {"label": "あなた", "symbol": "👤", "color": "#7ee8c9"}
+        },
+        "events": generate_personal_events(user_info),
+    }
+    payload = json.dumps(data, ensure_ascii=False)
+
+    inject = (
+        "// ===== Luna-compass 納品用パーソナルデータ(自動埋め込み) =====\n"
+        f"const PERSONAL_DATA = {payload};\n"
+        "Object.entries(PERSONAL_DATA.layers || {}).forEach(([k, L]) => {\n"
+        "  LAYERS[k] = Object.assign({ on: true }, LAYERS[k] || {}, L);\n"
+        "});\n"
+        "EVENTS = EVENTS.concat(PERSONAL_DATA.events || []);\n"
+        "EVENTS.sort((a, b) => b.ybp - a.ybp);\n\n"
+        + _INJECT_ANCHOR
+    )
+    return html.replace(_INJECT_ANCHOR, inject, 1)

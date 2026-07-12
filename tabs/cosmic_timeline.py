@@ -36,6 +36,23 @@ def show(tab, user_info):
                 try:
                     st.session_state["timeline_json"] = \
                         timeline_export.build_export_json(user_info)
+                    st.session_state["timeline_html"] = \
+                        timeline_export.build_delivery_html(user_info)
+                    st.session_state["timeline_name"] = \
+                        (user_info.get("name") or "guest").strip() or "guest"
+                except FileNotFoundError:
+                    st.session_state.pop("timeline_html", None)
+                    st.warning(
+                        "納品用HTMLの雛形(cosmic_timeline_template.html)が"
+                        "見つかりません。タイムラインの index.html をコピーして、"
+                        "luna_web.py と同じフォルダにこの名前で置いてください。"
+                        "(events.json の生成だけは利用できます)"
+                    )
+                    try:
+                        st.session_state["timeline_json"] = \
+                            timeline_export.build_export_json(user_info)
+                    except Exception as e:
+                        st.error(f"計算に失敗しました: {e}")
                 except Exception as e:
                     st.error(f"計算に失敗しました: {e}")
 
@@ -52,16 +69,30 @@ def show(tab, user_info):
             )
             st.table(df)
 
+            # --- 納品用(お客様にはこちらを渡す) ---
+            if "timeline_html" in st.session_state:
+                st.download_button(
+                    "📦 納品用HTML(1ファイル)をダウンロード",
+                    data=st.session_state["timeline_html"],
+                    file_name=f"cosmic_timeline_{st.session_state['timeline_name']}.html",
+                    mime="text/html",
+                    key="dl_timeline_html",
+                    type="primary",
+                )
+                st.caption(
+                    "★お客様への納品はこの1ファイルだけでOK。"
+                    "ダブルクリックで開くだけで動きます(通信・設定不要)。"
+                )
+
+            # --- 開発用(自分のタイムラインフォルダに置く用) ---
             st.download_button(
-                "📥 events.json をダウンロード",
+                "📥 events.json をダウンロード(開発用)",
                 data=st.session_state["timeline_json"],
                 file_name="events.json",
                 mime="application/json",
                 key="dl_timeline",
             )
             st.caption(
-                "ダウンロードした events.json を、宇宙タイムラインの "
-                "index.html と同じフォルダに置いてページを開くと、"
-                "「👤 あなた」レイヤーとして表示されます。"
-                "(お客様への納品時は index.html + events.json の2ファイルを渡すだけでOK)"
+                "events.json は自分のタイムライン(index.html)と同じフォルダに"
+                "置いて使う開発・確認用です。"
             )
