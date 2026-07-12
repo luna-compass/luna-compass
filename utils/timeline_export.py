@@ -184,7 +184,8 @@ def build_export_json(user_info: dict) -> str:
 # ルートに「cosmic_timeline_template.html」という名前で置いておくこと。
 # (タイムライン本体を更新したら、このコピーも差し替える)
 #TEMPLATE_PATH = "cosmic_timeline_template.html"
-TEMPLATE_PATH = r"C:\Users\user\Desktop\cosmic_timeline\cosmic-timeline.html"
+#TEMPLATE_PATH = r"C:\Users\user\Desktop\cosmic_timeline\cosmic-timeline.html"
+TEMPLATE_PATH = "cosmic_timeline_template.html"
 
 _INJECT_ANCHOR = "async function init() {"
 

@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>宇宙タイムライン — 138億年の旅</title>
+<style>
+  :root {
+    --ink: #e8e6f0;
+    --dim: #8a87a3;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: #030308;
+    color: var(--ink);
+    font-family: "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif;
+    overflow-x: hidden;
+  }
+
+  /* ===== 背景レイヤー ===== */
+  #stars {
+    position: fixed; inset: 0; z-index: 0;
+    width: 100%; height: 100%;
+  }
+  #glow {
+    position: fixed; inset: 0; z-index: 1;
+    pointer-events: none;
+    transition: background 0.6s ease;
+  }
+
+  /* ===== 固定HUD:時間カウンター ===== */
+  #hud {
+    position: fixed;
+    top: 14px; left: 50%;
+    transform: translateX(-50%);
+    z-index: 20;
+    text-align: center;
+    pointer-events: none;
+    width: 100%;
+  }
+  #era-label {
+    font-size: 12px;
+    letter-spacing: 0.35em;
+    color: var(--dim);
+    margin-bottom: 2px;
+    text-indent: 0.35em;
+  }
+  #time-display {
+    font-size: clamp(26px, 7vw, 44px);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-shadow: 0 0 24px rgba(140,150,255,0.35);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ===== 右側の進行バー ===== */
+  #rail {
+    position: fixed;
+    right: 10px; top: 50%;
+    transform: translateY(-50%);
+    z-index: 20;
+    height: 62vh;
+    width: 2px;
+    background: rgba(255,255,255,0.12);
+    border-radius: 2px;
+  }
+  #rail-fill {
+    position: absolute; top: 0; left: 0;
+    width: 100%;
+    background: linear-gradient(#ffd9a0, #9db4ff);
+    border-radius: 2px;
+    height: 0%;
+  }
+  .rail-dot {
+    position: absolute;
+    left: 50%;
+    width: 7px; height: 7px;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background: #55536e;
+    border: 1px solid #030308;
+    cursor: pointer;
+    pointer-events: auto;
+    transition: background 0.3s, box-shadow 0.3s;
+  }
+  .rail-dot.active {
+    background: #ffe9c4;
+    box-shadow: 0 0 10px rgba(255,220,160,0.8);
+  }
+
+  /* ===== イベントセクション ===== */
+  .event {
+    position: relative;
+    z-index: 10;
+    min-height: 105vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 20vh 24px;
+  }
+  .event .icon {
+    font-size: clamp(48px, 12vw, 84px);
+    margin-bottom: 18px;
+    filter: drop-shadow(0 0 22px rgba(160,170,255,0.45));
+  }
+  .event .when {
+    font-size: 13px;
+    letter-spacing: 0.3em;
+    color: var(--dim);
+    margin-bottom: 10px;
+    text-indent: 0.3em;
+  }
+  .event h2 {
+    font-size: clamp(30px, 8vw, 56px);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    margin-bottom: 20px;
+    line-height: 1.3;
+  }
+  .event p {
+    max-width: 560px;
+    font-size: clamp(15px, 4vw, 17px);
+    line-height: 2.1;
+    color: #c8c5da;
+  }
+  .event .trivia {
+    margin-top: 26px;
+    max-width: 520px;
+    font-size: 13.5px;
+    line-height: 1.9;
+    color: #9a96b8;
+    border-top: 1px solid rgba(255,255,255,0.14);
+    padding-top: 16px;
+  }
+  .event .trivia::before {
+    content: "✦ ";
+    color: #ffd9a0;
+  }
+
+  /* フェードイン */
+  .reveal { opacity: 0; transform: translateY(28px); transition: opacity 1s ease, transform 1s ease; }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+
+  /* ===== ヒーロー ===== */
+  #hero {
+    min-height: 100vh;
+    position: relative; z-index: 10;
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: center;
+    text-align: center;
+    padding: 0 24px;
+  }
+  #hero .sub {
+    font-size: 13px; letter-spacing: 0.5em; text-indent: 0.5em;
+    color: var(--dim); margin-bottom: 22px;
+  }
+  #hero h1 {
+    font-size: clamp(34px, 9vw, 72px);
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    line-height: 1.4;
+    background: linear-gradient(180deg, #fff 30%, #a8b2ff);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  #hero .invite {
+    margin-top: 34px;
+    font-size: 15px;
+    color: #b7b3cf;
+    line-height: 2;
+  }
+  #hero .arrow {
+    margin-top: 40px;
+    font-size: 22px;
+    color: #ffd9a0;
+    animation: bob 2.2s ease-in-out infinite;
+  }
+  @keyframes bob {
+    0%,100% { transform: translateY(0); opacity: 0.6; }
+    50% { transform: translateY(10px); opacity: 1; }
+  }
+
+  #footer {
+    position: relative; z-index: 10;
+    text-align: center;
+    padding: 12vh 24px 16vh;
+    color: var(--dim);
+    font-size: 13px;
+    line-height: 2.2;
+    letter-spacing: 0.1em;
+  }
+
+  /* ===== レイヤー ===== */
+  .layer-tag {
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    text-indent: 0.3em;
+    padding: 5px 14px;
+    border-radius: 14px;
+    border: 1px solid;
+    margin-bottom: 16px;
+  }
+  /* レイヤーごとの色は events.json のレイヤー定義からJSで自動生成されます */
+
+  #layer-chips {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    max-width: 460px;
+    margin: 0 auto 22px;
+  }
+  .layer-chip {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.18);
+    color: #6b6885;
+    font-family: inherit;
+    font-size: 12.5px;
+    letter-spacing: 0.1em;
+    padding: 7px 14px;
+    border-radius: 18px;
+    cursor: pointer;
+    transition: all 0.25s;
+  }
+  .layer-chip.on {
+    background: rgba(255,255,255,0.12);
+    border-color: rgba(255,220,160,0.6);
+    color: var(--ink);
+  }
+  .layer-chip:focus-visible { outline: 2px solid #ffd9a0; outline-offset: 2px; }
+
+  /* ===== 目次ボタンとジャンプメニュー ===== */
+  #menu-btn {
+    position: fixed;
+    top: 14px; left: 14px;
+    z-index: 40;
+    background: rgba(20, 18, 40, 0.75);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: var(--ink);
+    font-family: inherit;
+    font-size: 13px;
+    letter-spacing: 0.15em;
+    padding: 8px 14px;
+    border-radius: 20px;
+    cursor: pointer;
+    backdrop-filter: blur(6px);
+    transition: background 0.3s;
+  }
+  #menu-btn:hover { background: rgba(60, 55, 100, 0.85); }
+  #menu-btn:focus-visible { outline: 2px solid #ffd9a0; outline-offset: 2px; }
+
+  #menu-overlay {
+    position: fixed; inset: 0;
+    z-index: 50;
+    background: rgba(3, 3, 10, 0.92);
+    backdrop-filter: blur(10px);
+    display: none;
+    overflow-y: auto;
+    padding: 70px 20px 40px;
+  }
+  #menu-overlay.open { display: block; }
+  #menu-close {
+    position: fixed;
+    top: 14px; right: 14px;
+    z-index: 51;
+    background: none;
+    border: 1px solid rgba(255,255,255,0.25);
+    color: var(--ink);
+    font-size: 18px;
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+  }
+  #menu-close:focus-visible { outline: 2px solid #ffd9a0; outline-offset: 2px; }
+  #menu-title {
+    text-align: center;
+    font-size: 13px;
+    letter-spacing: 0.4em;
+    text-indent: 0.4em;
+    color: var(--dim);
+    margin-bottom: 24px;
+  }
+  .menu-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    max-width: 460px;
+    margin: 0 auto 10px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    padding: 12px 16px;
+    color: var(--ink);
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.25s, border-color 0.25s;
+  }
+  .menu-item:hover {
+    background: rgba(255,255,255,0.12);
+    border-color: rgba(255,220,160,0.5);
+  }
+  .menu-item:focus-visible { outline: 2px solid #ffd9a0; outline-offset: 2px; }
+  .menu-item .mi-icon { font-size: 24px; flex-shrink: 0; }
+  .menu-item .mi-title { font-size: 15px; font-weight: 600; letter-spacing: 0.05em; }
+  .menu-item .mi-when { font-size: 11.5px; color: var(--dim); letter-spacing: 0.1em; margin-top: 2px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .reveal { transition: none; opacity: 1; transform: none; }
+    #hero .arrow { animation: none; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="stars"></canvas>
+<div id="glow"></div>
+
+<button id="menu-btn">☰ 目次</button>
+<div id="menu-overlay">
+  <button id="menu-close" aria-label="閉じる">✕</button>
+  <div id="menu-title">138億年の目次</div>
+  <div id="layer-chips"></div>
+  <div id="menu-list"></div>
+</div>
+
+<div id="hud">
+  <div id="era-label"></div>
+  <div id="time-display"></div>
+</div>
+
+<div id="rail"><div id="rail-fill"></div></div>
+
+<section id="hero">
+  <div class="sub">COSMIC TIMELINE</div>
+  <h1>138億年の旅</h1>
+  <div class="invite">下にスクロールすると、時間が流れはじめます。<br>ビッグバンから、未来の宇宙まで。</div>
+  <div class="arrow">▼</div>
+</section>
+
+<div id="events"></div>
+
+<section id="footer">
+  ここまでで138億年 ＋ 未来100億年の旅でした。<br>
+  この一本の線の上に、神話も、日本史も、あなたの人生も重ねられます。
+</section>
+
+<script>
+// ============================================================
+// イベントデータ
+// ybp: 現在から何年前か(負の値は未来)
+// hue: その時代の宇宙の色(HSLの色相)
+// ============================================================
+let EVENTS = [
+  {
+    ybp: 1.38e10, era: "宇宙のはじまり", title: "ビッグバン", icon: "💥", hue: 28, sat: 80,
+    text: "すべての時間と空間、物質とエネルギーが、一点から膨張をはじめました。最初の1秒未満で宇宙の基本法則が決まり、数分のうちに水素とヘリウムの原子核が生まれます。",
+    trivia: "ビッグバンの「残り火」であるマイクロ波背景放射は、今もアナログテレビの砂嵐ノイズの約1%として観測できます。"
+  },
+  {
+    ybp: 1.379e10, when: "時のはじまり", layer: "myth", era: "神話のはじまり", title: "天地開闢", icon: "🌀", hue: 35, sat: 65,
+    text: "古事記の冒頭「天地初めて発けし時」。混沌の中から高天原に天之御中主神をはじめ造化三神が現れました。世界のはじまりを問う心は、ビッグバン理論とまったく同じ問いから生まれています。",
+    trivia: "世界中の神話が「混沌からの分離」で始まります——ギリシャのカオス、中国の盤古、北欧のギンヌンガガプ、そして日本の天地開闢。"
+  },
+  {
+    ybp: 1.36e10, era: "星の時代のはじまり", title: "最初の恒星が輝く", icon: "✨", hue: 220, sat: 60,
+    text: "誕生から約2億年、暗黒時代の宇宙に最初の星々が灯りました。この巨大な恒星たちが核融合で炭素や酸素、鉄を作り、超新星爆発で宇宙にばらまきます。私たちの体の材料は、この星々の中で作られました。",
+    trivia: "「私たちは星のかけらでできている」——カール・セーガンの言葉は、文字通りの科学的事実です。"
+  },
+  {
+    ybp: 4.6e9, era: "太陽系の誕生", title: "太陽系誕生", icon: "☀️", hue: 45, sat: 75,
+    text: "天の川銀河の片隅で、ガスと塵の雲が重力で collapse し、中心に太陽が点火。残った円盤から水星・金星・地球・火星…と惑星たちが生まれていきます。",
+    trivia: "太陽は銀河系を約2億2600万年かけて一周します。太陽系誕生からまだ約20周しかしていません。"
+  },
+  {
+    ybp: 4.5e9, era: "地球のはじまり", title: "地球誕生と月の形成", icon: "🌍", hue: 200, sat: 65,
+    text: "微惑星が衝突と合体を繰り返して原始地球が完成。まもなく火星サイズの天体テイアが衝突し、飛び散った破片から月が生まれたと考えられています(ジャイアント・インパクト説)。",
+    trivia: "誕生直後の月は今の約16倍の大きさに見えたと推定されます。夜空を想像すると圧巻です。"
+  },
+  {
+    ybp: 4.49e9, when: "神代", layer: "myth", era: "神代", title: "イザナギとイザナミの国生み", icon: "🏝", hue: 195, sat: 60,
+    text: "イザナギとイザナミが天沼矛で混沌の海をかき混ぜ、滴り落ちた雫が固まってオノゴロ島に。二神はそこから日本の島々と、山や海や風の神々を次々と生んでいきます。",
+    trivia: "微惑星が衝突と合体を繰り返して地球が固まった過程と、「かき混ぜて固める」国生みのイメージは、不思議と響き合います。"
+  },
+  {
+    ybp: 4.45e9, when: "神代", layer: "myth", era: "神代", title: "天照大神と月読命", icon: "🌅", hue: 48, sat: 70,
+    text: "イザナギの禊から、太陽神・天照大神、月の神・月読命、嵐の神・須佐之男命が生まれました。天照大神が天岩戸に隠れると世界は闇に包まれます——皆既日食を思わせる神話です。",
+    trivia: "太陽と月が空でほぼ同じ大きさに見えるのは、太陽の直径が月の約400倍で、距離も約400倍という宇宙の偶然。皆既日食はこの奇跡の産物です。"
+  },
+  {
+    ybp: 3.8e9, era: "生命のはじまり", title: "最初の生命", icon: "🦠", hue: 165, sat: 55,
+    text: "原始の海で、自己複製する分子から最初の生命が誕生。以後30億年近く、生命は単細胞のまま海の中で進化を続けます。地球の歴史の大半は「微生物の時代」でした。",
+    trivia: "シアノバクテリアが光合成で酸素を作り始め、大気を一変させました。当時の生物にとって酸素は「猛毒」でした。"
+  },
+  {
+    ybp: 2.3e8, era: "恐竜の時代", title: "恐竜出現", icon: "🦕", hue: 100, sat: 45,
+    text: "三畳紀後期、恐竜が登場。以後1億6000万年以上にわたり地上に君臨します。人類の歴史(約30万年)の500倍以上という、圧倒的な繁栄の長さでした。",
+    trivia: "ティラノサウルスとステゴサウルスの生きた時代の差(約8000万年)は、ティラノサウルスと私たちの差(約6600万年)より大きいのです。"
+  },
+  {
+    ybp: 6.6e7, era: "大量絶滅", title: "恐竜絶滅・哺乳類の時代へ", icon: "☄️", hue: 15, sat: 70,
+    text: "直径約10kmの小惑星がユカタン半島に衝突。恐竜を含む生物種の約75%が姿を消しました。空いた生態系の椅子に、小さな哺乳類たちが座っていきます。",
+    trivia: "衝突のエネルギーは広島型原爆の約100億倍。それでも生き延びた恐竜の子孫が、いま窓の外でさえずる鳥たちです。"
+  },
+  {
+    ybp: 3e5, era: "人類の登場", title: "ホモ・サピエンス", icon: "🚶", hue: 35, sat: 50,
+    text: "アフリカで私たちの種が誕生。やがて言葉を持ち、物語を語り、星空を見上げて神話を紡ぎはじめます。星座も暦も占星術も、この「見上げる心」から生まれました。",
+    trivia: "宇宙の歴史を1年に縮めると、人類が登場するのは大晦日の23時52分ごろ。文明の歴史は最後の14秒です。"
+  },
+  {
+    ybp: 16000, when: "約1万6000年前", layer: "history", era: "縄文のはじまり", title: "縄文時代、はじまる", icon: "🏺", hue: 25, sat: 45,
+    text: "氷期の終わりごろ、日本列島で世界最古級の土器文化がはじまります。三内丸山遺跡には夏至や冬至の太陽の方角を意識したとされる配置があり、縄文の人々もまた、空を読んで暮らしていました。",
+    trivia: "縄文時代は約1万4000年続きました。飛鳥時代から現代まで(約1400年)の10倍という、途方もない長さです。"
+  },
+  {
+    ybp: 2686, when: "紀元前660年(伝承)", layer: "history", era: "神話から歴史へ", title: "神武天皇の即位", icon: "🌄", hue: 40, sat: 55,
+    text: "古事記・日本書紀が伝える初代天皇の即位。八咫烏に導かれた東征の物語は、神話の時代と歴史の時代が交差する地点です。この年を元年とする「皇紀」は、今も暦の話題にときどき顔を出します。",
+    trivia: "即位日の紀元前660年2月11日は、明治時代に暦を逆算して定められたもの。建国記念の日の由来です。"
+  },
+  {
+    ybp: 2440, when: "紀元前5世紀頃", layer: "astro", era: "占星術のはじまり", title: "バビロニアの星読みたち", icon: "📜", hue: 260, sat: 50,
+    text: "メソポタミアの神官たちは星の動きを粘土板に記録し続け、やがて個人の運命を星から読むホロスコープ占星術が誕生します。黄道十二宮(12サイン)もバビロニアで生まれました。現存最古の個人ホロスコープは紀元前410年のものです。",
+    trivia: "「占星術は天文学の母」——星を読むための緻密な観測記録が、のちの天文学の土台になりました。"
+  },
+  {
+    ybp: 2300, when: "古代ギリシャ・ローマ", layer: "myth", era: "神々と惑星", title: "惑星に宿る神々", icon: "🏛", hue: 40, sat: 55,
+    text: "古代の人々は、惑星に神々の名を与えました。赤く輝く火星は軍神マルス、明けの明星・金星は美の女神ヴィーナス、ひときわ大きな木星は最高神ユピテル。現代の占星術でも、この神々の性格がそのまま惑星の象意として生きています。",
+    trivia: "東洋では五行思想から火星・水星・木星・金星・土星と名付けられました。西の神話と東の哲学、二つの体系が今も惑星の名に共存しています。"
+  },
+  {
+    ybp: 1876, when: "西暦150年頃", layer: "astro", era: "古典占星術", title: "プトレマイオス『テトラビブロス』", icon: "📖", hue: 250, sat: 45,
+    text: "プトレマイオスが占星術を『テトラビブロス』に体系化。同じ著者の『アルマゲスト』は天動説の天文学書です。当時、占星術と天文学は一人の学者の中に共存する、双子の学問でした。",
+    trivia: "ハウス、アスペクト、ディグニティ——現代占星術の骨格の多くは、この時代にすでに整えられていました。"
+  },
+  {
+    ybp: 1787, layer: "history", era: "占う女王", title: "卑弥呼", icon: "🔮", hue: 300, sat: 40,
+    text: "魏志倭人伝に記された邪馬台国の女王。「鬼道に事え、能く衆を惑わす」——占いとまつりごとが一体だった時代、日本の歴史は「占う女王」から始まりました。",
+    trivia: "247〜248年に日本で見られた皆既日食が、卑弥呼の死や天岩戸神話と関係するという説もあります(諸説あり)。神話レイヤーの天岩戸と見比べてみてください。"
+  },
+  {
+    ybp: 1220, when: "西暦806年", layer: "astro", era: "平安の星占い", title: "宿曜道、日本へ", icon: "🌙", hue: 270, sat: 45,
+    text: "空海が唐から『宿曜経』を持ち帰り、インド発祥の宿曜占星術が日本に根づきます。平安貴族は宿曜師に運命を占わせ、『源氏物語』の光源氏の運命も宿曜で予言されました。",
+    trivia: "二十七宿で読む宿曜占星術は月の通り道がベース。太陽の黄道を使う西洋占星術との対比が面白いところです。"
+  },
+  {
+    ybp: 1080, when: "平安時代・10世紀", layer: "history", era: "陰陽師の時代", title: "安倍晴明", icon: "⭐", hue: 265, sat: 50,
+    text: "平安の都で活躍した陰陽師・安倍晴明。陰陽道は天文・暦・占いを司る国家の技術であり、晴明の官職は「天文博士」——星を読むことが正式な官僚の仕事だった時代です。",
+    trivia: "晴明神社の社紋・五芒星(晴明桔梗)は陰陽五行の相剋を表す図形。西洋魔術のペンタグラムと同じ形なのは、東西の不思議な一致です。"
+  },
+  {
+    ybp: 341, layer: "history", era: "江戸の天文学", title: "渋川春海と貞享暦", icon: "📐", hue: 210, sat: 45,
+    text: "江戸の天文家・渋川春海が、800年以上使われて狂いが生じていた宣明暦を改め、日本初の国産暦・貞享暦を完成させました。自らの観測データで中国伝来の暦を超えた、日本天文学の独立宣言です。",
+    trivia: "春海はもともと幕府お抱えの囲碁棋士。その生涯は小説『天地明察』の題材にもなりました。"
+  },
+  {
+    ybp: 245, layer: "astro", era: "近代占星術へ", title: "天王星発見", icon: "⚡", hue: 190, sat: 55,
+    text: "1781年、ウィリアム・ハーシェルが望遠鏡で新惑星を発見。土星までしか知らなかった人類の宇宙が、一夜にして倍の広さになりました。占星術で天王星が「革命と変革の星」とされるのは、発見直後にフランス革命が起きたことにちなみます。",
+    trivia: "発見された時代の出来事が、その惑星の象意になる——占星術の面白い伝統です。"
+  },
+  {
+    ybp: 180, when: "西暦1846年・1930年", layer: "astro", era: "モダン占星術", title: "海王星と冥王星の発見", icon: "🔱", hue: 230, sat: 55,
+    text: "1846年、計算によって予言された位置に海王星が発見されます(夢と霊性の星)。1930年には冥王星が発見され(変容と再生の星)、モダン占星術の10天体がついに出揃いました。",
+    trivia: "冥王星は2006年に準惑星に再分類されましたが、占星術では今も変わらず重要な天体として扱われ続けています。"
+  },
+  {
+    ybp: 153, layer: "history", era: "時間の近代化", title: "明治の改暦", icon: "📅", hue: 200, sat: 40,
+    text: "明治6年(1873年)、日本は太陰太陽暦から太陽暦へ一夜にして切り替えました。明治5年12月2日の翌日が、明治6年1月1日。人々の時間の感覚が根底から変わった日です。",
+    trivia: "旧暦は今も旧盆や中秋の名月に生きています。占いの世界でも、四柱推命は太陽の節気、宿曜は月と、暦の使い分けが続いています。"
+  },
+  {
+    ybp: 57, era: "宇宙開発の時代", title: "アポロ11号 月面着陸", icon: "🚀", hue: 240, sat: 40,
+    text: "1969年7月20日、人類が初めて別の天体に降り立ちました。星を見上げるだけだった生き物が、38万km彼方の月面に足跡を残した瞬間です。",
+    trivia: "アポロ誘導コンピュータの性能は、現代のスマートフォンの数十万分の一以下でした。"
+  },
+  {
+    ybp: 36, era: "探査機の時代", title: "宇宙望遠鏡と探査機たち", icon: "🔭", hue: 250, sat: 45,
+    text: "1977年打ち上げのボイジャーは今も太陽系の外を飛び続け、1990年のハッブル宇宙望遠鏡は宇宙の深部を私たちに見せてくれました。日本のはやぶさ・はやぶさ2は小惑星のかけらを地球に持ち帰り、生命の材料の謎に迫っています。",
+    trivia: "ボイジャー1号が撮った「ペイル・ブルー・ドット」——60億km彼方から見た地球は、たった0.12ピクセルの淡い点でした。"
+  },
+  {
+    ybp: 0, era: "そして", title: "現在", icon: "🌏", hue: 210, sat: 55,
+    text: "2026年。ジェイムズ・ウェッブ宇宙望遠鏡が135億年前の銀河を写し、アルテミス計画で人類は再び月を目指しています。あなたが今この画面をスクロールしている、この瞬間が138億年の物語の最先端。ここから先は、まだ書かれていないページです。",
+    trivia: "JWSTが観測しているのは「過去の光」。遠くを見ることは、このタイムラインを逆にさかのぼることと同じなのです。"
+  },
+  {
+    ybp: -4e9, era: "未来", title: "アンドロメダ銀河との衝突", icon: "🌌", hue: 280, sat: 55,
+    text: "約40億年後、天の川銀河はアンドロメダ銀河と衝突・合体をはじめます。夜空一面に広がる巨大な銀河の姿は、想像を絶する光景でしょう。星同士の間隔は広いため、星の衝突はほとんど起こりません。",
+    trivia: "合体後の銀河には「ミルコメダ(Milkomeda)」という愛称がすでに付けられています。"
+  },
+  {
+    ybp: -5e9, era: "太陽の最期", title: "太陽、赤色巨星へ", icon: "🔴", hue: 0, sat: 65,
+    text: "約50億年後、燃料の水素を使い果たした太陽は膨張をはじめ、水星・金星を飲み込みます。その後外層を放出して美しい惑星状星雲となり、中心には白色矮星が残ります。",
+    trivia: "太陽が放出したガスは、いつか新しい星と惑星の材料になります。物語は終わらず、次の章へ受け継がれていきます。"
+  }
+];
+
+// ============================================================
+// 時間の表示フォーマット
+// ============================================================
+function formatTime(ybp) {
+  if (ybp < 0) { // 未来
+    const y = -ybp;
+    if (y >= 1e8) return (y / 1e8).toFixed(y >= 1e9 ? 0 : 1).replace(/\.0$/, "") + "億年後";
+    if (y >= 1e4) return Math.round(y / 1e4).toLocaleString() + "万年後";
+    return Math.round(y).toLocaleString() + "年後";
+  }
+  if (ybp >= 1e8) {
+    const oku = ybp / 1e8;
+    return (oku >= 10 ? Math.round(oku) : oku.toFixed(1).replace(/\.0$/, "")) + "億年前";
+  }
+  if (ybp >= 1e4) return Math.round(ybp / 1e4).toLocaleString() + "万年前";
+  if (ybp <= 0.5) return "現在";
+  const year = Math.round(2026 - ybp);
+  if (year >= 1) return "西暦 " + year + "年";
+  return "紀元前 " + (1 - year) + "年頃";
+}
+
+// 対数スケール変換(スクロール補間用)
+function toLog(ybp) {
+  if (ybp > 0) return Math.log10(ybp + 1);          // 過去: 正
+  if (ybp < 0) return -Math.log10(-ybp + 1) * 0.4;  // 未来: 負(圧縮)
+  return 0;
+}
+function fromLog(v) {
+  if (v > 0) return Math.pow(10, v) - 1;
+  if (v < 0) return -(Math.pow(10, -v / 0.4) - 1);
+  return 0;
+}
+
+// ============================================================
+// レイヤー定義(colorはタグ・アイコン光彩・目次の色に使われます)
+// events.json の "layers" で新しいレイヤーを追加できます
+// ============================================================
+let LAYERS = {
+  cosmos:  { label: "宇宙",   symbol: "🌌", color: "#9db4ff", on: true },
+  astro:   { label: "占星術", symbol: "☿",  color: "#c9a6ff", on: true },
+  myth:    { label: "神話",   symbol: "⛩",  color: "#ffc46a", on: true },
+  history: { label: "日本史", symbol: "🗾", color: "#ff9d8a", on: true }
+};
+
+// ============================================================
+// DOM生成
+// ============================================================
+const eventsRoot = document.getElementById("events");
+const rail = document.getElementById("rail");
+let sections = [];
+let dots = [];
+
+function hexToRgba(hex, a) {
+  const n = parseInt(hex.slice(1), 16);
+  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
+}
+
+// レイヤー色のCSSを動的生成(JSONで追加したレイヤーにも自動対応)
+function injectLayerStyles() {
+  let css = "";
+  Object.entries(LAYERS).forEach(([key, L]) => {
+    if (key === "cosmos" || !L.color) return;
+    css += `
+      .layer-${key} .layer-tag { color: ${L.color}; border-color: ${hexToRgba(L.color, 0.5)}; }
+      .layer-${key} .icon { filter: drop-shadow(0 0 22px ${hexToRgba(L.color, 0.5)}); }
+      .menu-item.mi-${key} { border-left: 3px solid ${hexToRgba(L.color, 0.6)}; }`;
+  });
+  let tag = document.getElementById("layer-styles");
+  if (!tag) {
+    tag = document.createElement("style");
+    tag.id = "layer-styles";
+    document.head.appendChild(tag);
+  }
+  tag.textContent = css;
+}
+
+const revealObserver = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add("visible"); });
+}, { threshold: 0.15 });
+
+function buildTimeline() {
+  eventsRoot.innerHTML = "";
+  dots.forEach(d => d.remove());
+  sections = [];
+  dots = [];
+  EVENTS.forEach((ev, i) => {
+    const layer = ev.layer || "cosmos";
+    const L = LAYERS[layer] || LAYERS.cosmos;
+    const sec = document.createElement("section");
+    sec.className = "event layer-" + layer;
+    sec.id = "ev" + i;
+    const whenText = ev.when || formatTime(ev.ybp);
+    const tag = layer === "cosmos" ? "" :
+      `<div class="layer-tag reveal">${L.symbol} ${L.label}</div>`;
+    sec.innerHTML = `${tag}
+      <div class="icon reveal">${ev.icon}</div>
+      <div class="when reveal">${whenText}</div>
+      <h2 class="reveal">${ev.title}</h2>
+      <p class="reveal">${ev.text}</p>
+      <div class="trivia reveal">${ev.trivia}</div>`;
+    eventsRoot.appendChild(sec);
+    sections.push(sec);
+    sec.querySelectorAll(".reveal").forEach(el => revealObserver.observe(el));
+
+    const dot = document.createElement("div");
+    dot.className = "rail-dot";
+    dot.title = ev.title;
+    dot.addEventListener("click", () => sec.scrollIntoView({ behavior: "smooth" }));
+    rail.appendChild(dot);
+    dots.push(dot);
+  });
+}
+
+// 表示中のイベントのインデックス一覧
+function visibleIndices() {
+  return EVENTS.map((e, i) => i)
+    .filter(i => (LAYERS[EVENTS[i].layer || "cosmos"] || { on: true }).on);
+}
+
+// ============================================================
+// 星空キャンバス
+// ============================================================
+const canvas = document.getElementById("stars");
+const ctx = canvas.getContext("2d");
+let stars = [];
+const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+function resize() {
+  canvas.width = innerWidth;
+  canvas.height = innerHeight;
+  stars = Array.from({ length: Math.min(200, innerWidth / 4) }, () => ({
+    x: Math.random() * canvas.width,
+    y: Math.random() * canvas.height,
+    r: Math.random() * 1.4 + 0.3,
+    tw: Math.random() * Math.PI * 2,
+    sp: 0.02 + Math.random() * 0.05
+  }));
+}
+resize();
+addEventListener("resize", resize);
+
+function drawStars(t) {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  for (const s of stars) {
+    const a = 0.35 + 0.5 * Math.abs(Math.sin(s.tw + (reduceMotion ? 0 : t * 0.001 * s.sp * 30)));
+    ctx.globalAlpha = a;
+    ctx.fillStyle = "#dfe3ff";
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+  if (!reduceMotion) requestAnimationFrame(drawStars);
+}
+requestAnimationFrame(drawStars);
+
+// ============================================================
+// スクロール処理:時間カウンター・背景色・進行バー
+// ============================================================
+const timeDisplay = document.getElementById("time-display");
+const eraLabel = document.getElementById("era-label");
+const glow = document.getElementById("glow");
+const railFill = document.getElementById("rail-fill");
+
+function onScroll() {
+  if (!sections.length) return;
+  const vis = visibleIndices();
+  if (!vis.length) return;
+  const mid = scrollY + innerHeight / 2;
+  const cs = vis.map(i => {
+    const r = sections[i].getBoundingClientRect();
+    return r.top + scrollY + r.height / 2;
+  });
+  const evs = vis.map(i => EVENTS[i]);
+
+  // ヒーロー領域ではHUDを薄く
+  if (mid < cs[0] - innerHeight * 0.6) {
+    timeDisplay.textContent = "";
+    eraLabel.textContent = "";
+  } else {
+    // どの区間にいるか
+    let i = 0;
+    while (i < cs.length - 1 && mid > cs[i + 1]) i++;
+    let ybp, era;
+    if (mid <= cs[0]) {
+      ybp = evs[0].ybp; era = evs[0].era;
+    } else if (i >= cs.length - 1) {
+      ybp = evs[evs.length - 1].ybp; era = evs[evs.length - 1].era;
+    } else {
+      const f = Math.min(1, Math.max(0, (mid - cs[i]) / (cs[i + 1] - cs[i])));
+      const v = toLog(evs[i].ybp) + (toLog(evs[i + 1].ybp) - toLog(evs[i].ybp)) * f;
+      ybp = fromLog(v);
+      era = f < 0.5 ? evs[i].era : evs[i + 1].era;
+    }
+    timeDisplay.textContent = formatTime(ybp);
+    eraLabel.textContent = era;
+  }
+
+  // 背景の色(近いイベントの色相を補間)
+  let i2 = 0;
+  while (i2 < cs.length - 1 && mid > cs[i2 + 1]) i2++;
+  const f2 = i2 >= cs.length - 1 ? 0 : Math.min(1, Math.max(0, (mid - cs[i2]) / (cs[i2 + 1] - cs[i2])));
+  const a = evs[Math.max(0, i2)], b = evs[Math.min(evs.length - 1, i2 + 1)];
+  const hue = a.hue + (b.hue - a.hue) * f2;
+  const sat = a.sat + (b.sat - a.sat) * f2;
+  glow.style.background =
+    `radial-gradient(ellipse 120% 70% at 50% 35%, hsla(${hue}, ${sat}%, 30%, 0.32), transparent 70%)`;
+
+  // 進行バー
+  const total = document.body.scrollHeight - innerHeight;
+  const p = Math.min(1, Math.max(0, scrollY / total));
+  railFill.style.height = (p * 100) + "%";
+  vis.forEach((idx, k) => {
+    dots[idx].classList.toggle("active", Math.abs(mid - cs[k]) < innerHeight * 0.55);
+  });
+}
+addEventListener("scroll", onScroll, { passive: true });
+onScroll();
+
+// ============================================================
+// 目次メニュー
+// ============================================================
+const menuBtn = document.getElementById("menu-btn");
+const menuOverlay = document.getElementById("menu-overlay");
+const menuClose = document.getElementById("menu-close");
+const menuList = document.getElementById("menu-list");
+const layerChips = document.getElementById("layer-chips");
+let menuItems = [];
+
+function buildMenu() {
+  layerChips.innerHTML = "";
+  menuList.innerHTML = "";
+  menuItems = [];
+
+  // レイヤー切り替えチップ
+  Object.entries(LAYERS).forEach(([key, L]) => {
+    const chip = document.createElement("button");
+    chip.className = "layer-chip" + (L.on ? " on" : "");
+    chip.textContent = L.symbol + " " + L.label;
+    chip.addEventListener("click", () => {
+      L.on = !L.on;
+      chip.classList.toggle("on", L.on);
+      updateLayers();
+    });
+    layerChips.appendChild(chip);
+  });
+
+  EVENTS.forEach((ev, i) => {
+    const layer = ev.layer || "cosmos";
+    const item = document.createElement("button");
+    item.className = "menu-item mi-" + layer;
+    item.innerHTML = `
+      <span class="mi-icon">${ev.icon}</span>
+      <span>
+        <div class="mi-title">${ev.title}</div>
+        <div class="mi-when">${ev.when || formatTime(ev.ybp)}・${ev.era}</div>
+      </span>`;
+    item.addEventListener("click", () => {
+      menuOverlay.classList.remove("open");
+      sections[i].scrollIntoView({ behavior: "smooth" });
+    });
+    menuList.appendChild(item);
+    menuItems.push(item);
+  });
+}
+
+// レイヤー表示の更新
+function updateLayers() {
+  const vis = visibleIndices();
+  EVENTS.forEach((ev, i) => {
+    const show = vis.includes(i);
+    sections[i].style.display = show ? "" : "none";
+    menuItems[i].style.display = show ? "" : "none";
+    dots[i].style.display = show ? "" : "none";
+  });
+  vis.forEach((idx, k) => {
+    dots[idx].style.top = (vis.length > 1 ? (k / (vis.length - 1)) * 100 : 50) + "%";
+  });
+  onScroll();
+}
+
+menuBtn.addEventListener("click", () => menuOverlay.classList.add("open"));
+menuClose.addEventListener("click", () => menuOverlay.classList.remove("open"));
+menuOverlay.addEventListener("click", e => {
+  if (e.target === menuOverlay) menuOverlay.classList.remove("open");
+});
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") menuOverlay.classList.remove("open");
+});
+
+// ============================================================
+// データ読み込みと初期化
+// 同じフォルダに events.json があればそちらを使用します。
+// {
+//   "layers": { "personal": { "label": "あなた", "symbol": "👤", "color": "#7ee8c9" } },
+//   "mode": "replace",   ← "replace"(全置換・既定) または "append"(内蔵データに追加)
+//   "events": [ { "ybp": ..., "title": ..., ... } ]
+// }
+// events.json が無い場合は内蔵データで動作します(単一ファイルでもOK)。
+// ============================================================
+async function loadExternalData() {
+  try {
+    const res = await fetch("events.json", { cache: "no-store" });
+    if (!res.ok) throw new Error("not found");
+    const data = await res.json();
+    if (data.layers) {
+      Object.entries(data.layers).forEach(([key, L]) => {
+        LAYERS[key] = Object.assign({ on: true }, LAYERS[key] || {}, L);
+      });
+    }
+    if (Array.isArray(data.events) && data.events.length) {
+      EVENTS = data.mode === "append" ? EVENTS.concat(data.events) : data.events;
+      EVENTS.sort((a, b) => b.ybp - a.ybp);
+    }
+  } catch (e) {
+    // events.json なし → 内蔵データで続行
+  }
+}
+
+async function init() {
+  await loadExternalData();
+  injectLayerStyles();
+  buildTimeline();
+  buildMenu();
+  updateLayers();
+}
+init();
+</script>
+</body>
+</html>
