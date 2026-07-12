@@ -282,17 +282,20 @@ if st.session_state["menu_selected"] == "general":
     # messages_loader 経由で全タブ共通に効くため、タブ描画の直前で一度呼べば十分。
     _set_style(selected_style)
 
-    from tabs import natal, transit, numerology
+    #from tabs import natal, transit, numerology
+    from tabs import natal, transit, numerology, cosmic_timeline
 
-    tab1, tab2, tab3 = st.tabs([
+    tab1, tab2, tab3, tab4 = st.tabs([
         "🌙 ネイタル",
         "🌍 トランジット",
         "🔢 数秘術",
+        "🌌 タイムライン",
     ])
 
     natal.show(tab1, user_info)
     transit.show(tab2, user_info)
     numerology.show(tab3, user_info)
+    cosmic_timeline.show(tab4, user_info)
 
 # ---------- 相性占い ----------
 elif st.session_state["menu_selected"] == "compat":
