@@ -312,6 +312,14 @@ def show_direct():
         # 大運
         st.markdown("<div class='luna-section-title'>◆ 大運（10年ごとの運気の流れ）</div>", unsafe_allow_html=True)
         d = calc_daiun(birth, gender, yako_next_day=yako)
+
+        if time_unknown:
+            for x in d["大運"]:
+                x["命式との関係"] = [
+                    r for r in x["命式との関係"]
+                    if "(時干" not in r and "(時支" not in r
+        ]
+        
         ry, rm = d["立運"]
         st.markdown(
             f"<div class='luna-message'>大運は <b>{d['順逆']}</b>、"
@@ -335,6 +343,14 @@ def show_direct():
         # 年運(今年から10年)
         st.markdown("<div class='luna-section-title'>◆ 年運（今年からの10年）</div>", unsafe_allow_html=True)
         nenun = calc_nenun(birth, gender, start_year=datetime.date.today().year, n_years=10, yako_next_day=yako)
+
+        if time_unknown:
+            for x in nenun:
+                x["命式との関係"] = [
+                    r for r in x["命式との関係"]
+                    if "(時干" not in r and "(時支" not in r
+                ]
+
         nenun_rows = [
             {
                 "西暦": f"{x['西暦']}年",
