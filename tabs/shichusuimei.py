@@ -68,7 +68,7 @@ def show_direct():
 
         yako = st.checkbox(
             "夜子時：23時台生まれを翌日の日柱として扱う",
-            value=False,
+            value=True,
             key="yako_shichu",
             help="流派によって23時〜24時生まれの日柱の取り方が異なります。"
                  "オフ（標準）では当日の日柱、オンでは翌日の日柱として計算します。"
@@ -127,7 +127,7 @@ def show_direct():
             birth = birth + datetime.timedelta(minutes=adjust_min)
             _roll = ""
             if birth.date() != birthday:
-                _roll = "（日付が変わるため日柱・年月柱も補正後の日時で判定します）"
+                _roll = "（日柱は23時切替方式で判定します）" if yako else "（日柱は0時切替方式で判定します）"
             st.info(
                 f"地方時差補正 {adjust_min:+d}分を適用: "
                 f"補正後の出生日時 {birth.strftime('%Y年%m月%d日 %H:%M')} {_roll}"
@@ -377,7 +377,7 @@ def show_direct():
             "name": name,
             "birthday": f"{birthday.year}年{birthday.month}月{birthday.day}日",
             "birth_time": (
-                f"{hour:02d}:{minute:02d}（地方時差補正 {adjust_min:+d}分 → {birth.strftime('%H:%M')}）"
+                f"{hour:02d}:{minute:02d}（地方時差補正 {adjust_min:+d}分 → {birth.strftime('%Y年%m月%d日 %H:%M')}）"
                 if adjusted else f"{hour:02d}:{minute:02d}"
             ),
             "reading_date": datetime.date.today().strftime("%Y年%m月%d日"),
